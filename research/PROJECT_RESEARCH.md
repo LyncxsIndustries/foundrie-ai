@@ -63,7 +63,6 @@ If a feature depends on research, cite the relevant `research/...` path in the f
 - Foundrie AI as a pre-IDE architectural workspace.
 - Full Artkins style policy as a root project artifact.
 - Next.js 16 App Router with root-level folders.
-- Neon Postgres, Prisma, pooled runtime connections, read replicas, indexes, and autovacuum strategy.
 - Clerk authentication with application-layer authorization.
 - User ownership, plan gates, and intentionally minimal admin strategy.
 - Multi-model AI rotation and task-specialized model routing.

@@ -33,7 +33,7 @@ foundrie-ai/
 |-- research/
 |   |-- PROJECT_RESEARCH.md
 |   `-- FOUNDRIE_RESEARCH.md
-`-- Context_Features_Issues/
+`-- project-kit/
     |-- context/
     `-- feature-specs/
 ```
@@ -48,12 +48,12 @@ Every implementation session starts here:
 2. `ARTKINS_STYLE_GUIDE.md`
 3. `research/PROJECT_RESEARCH.md`
 4. `research/FOUNDRIE_RESEARCH.md`
-5. `Context_Features_Issues/context/project-overview.md`
-6. `Context_Features_Issues/context/architecture-context.md`
-7. `Context_Features_Issues/context/code-standards.md`
-8. `Context_Features_Issues/context/ui-context.md`
-9. `Context_Features_Issues/context/ai-workflow-rules.md`
-10. `Context_Features_Issues/context/progress-tracker.md`
+5. `project-kit/context/project-overview.md`
+6. `project-kit/context/architecture-context.md`
+7. `project-kit/context/code-standards.md`
+8. `project-kit/context/ui-context.md`
+9. `project-kit/context/ai-workflow-rules.md`
+10. `project-kit/context/progress-tracker.md`
 11. The single current feature spec in numeric order
 
 ## Plan Before Implementation
@@ -102,7 +102,7 @@ Files live in Vercel Blob. Neon stores metadata, extracted text, summaries, tags
 
 ## Context Files
 
-`Context_Features_Issues/context/` contains Foundrie's active product context:
+`project-kit/context/` contains Foundrie's active product context:
 
 - `project-overview.md`: what Foundrie is, who uses it, scope, non-goals, and success metrics.
 - `architecture-context.md`: stack, system boundaries, model routing, storage, database, APIs, ZIP contract, and invariants.
@@ -113,7 +113,7 @@ Files live in Vercel Blob. Neon stores metadata, extracted text, summaries, tags
 
 ## Feature Specs
 
-Feature specs live in `Context_Features_Issues/feature-specs/` and are implemented one at a time:
+Feature specs live in `project-kit/feature-specs/` and are implemented one at a time:
 
 ```text
 01 design system
@@ -152,7 +152,7 @@ Feature specs live in `Context_Features_Issues/feature-specs/` and are implement
 34 project settings
 ```
 
-The roadmap labels do not authorize batching. Each feature must be planned, approved, implemented, tested, pushed to GitHub, reviewed by CodeRabbit, fixed until clean, then marked done.
+The roadmap labels do not authorize batching. Each feature must be planned, approved, implemented, tested, reviewed locally with `coderabbit review --agent`, pushed to GitHub, reviewed again by CodeRabbit on the PR, fixed until clean, then marked done.
 
 ## Generated Project Output
 
@@ -193,7 +193,6 @@ Foundrie AI itself uses this stack. Generated projects do not inherit it by defa
 - Neon Postgres with Prisma.
 - Runtime DB traffic uses pooled `DATABASE_URL`.
 - Prisma CLI and migrations use direct `DIRECT_URL`.
-- Read-heavy paths use `DATABASE_READ_REPLICA_URL` when configured.
 - Vercel Blob stores assets and generated artifacts.
 - Trigger.dev handles durable long-running work.
 - React Flow and Liveblocks power the canvas.
@@ -207,7 +206,7 @@ Generated project stacks are chosen through discovery, Context7 research, offici
 Use these checks after docs/spec cleanup:
 
 ```bash
-find Context_Features_Issues/feature-specs -maxdepth 1 -type f -name '*.md' | sort
+find project-kit/feature-specs -maxdepth 1 -type f -name '*.md' | sort
 grep -RIn "deleted-folder-marker" . --include='*.md'
 grep -RIn "disallowed-media-marker" . --include='*.md'
 ```
