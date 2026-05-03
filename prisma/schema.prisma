@@ -1,0 +1,305 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserPlan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ProjectStatus {
+  DISCOVERY
+  REQUIREMENTS
+  ARCHITECTURE
+  DIAGRAM_GENERATION
+  SPEC_GENERATION
+  COMPLETE
+}
+
+enum ConversationPhase {
+  DISCOVERY
+  REQUIREMENTS
+  ARCHITECTURE
+  DIAGRAM_GENERATION
+  SPEC_GENERATION
+  COMPLETE
+}
+
+enum DiagramStatus {
+  QUEUED
+  GENERATING
+  RENDERING
+  CAPTURING
+  DONE
+  ERROR
+}
+
+enum ContextFileType {
+  PROJECT_OVERVIEW
+  ARCHITECTURE_CONTEXT
+  UI_CONTEXT
+  CODE_STANDARDS
+  AI_WORKFLOW_RULES
+  PROGRESS_TRACKER
+  AGENTS_MD
+}
+
+enum ResearchAssetType {
+  IMAGE_ASSET
+  SCREENSHOT
+  INSPIRATION
+  DOCUMENT
+  FRAME_ZIP
+  FRAME
+  SCRAPE_CAPTURE
+}
+
+enum ResearchSourceProvider {
+  MANUAL
+  CONTEXT7
+  TAVILY
+  OBSCURA
+  UPLOAD_DERIVED
+}
+
+enum ResearchSourceStatus {
+  PENDING
+  CAPTURED
+  FAILED
+}
+
+enum ExecutionPlanStatus {
+  PROPOSED
+  APPROVED
+  REVISION_REQUESTED
+  REJECTED
+  EXECUTED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  plan      UserPlan @default(FREE)
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  projects  Project[]
+}
+
+model Project {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                  String
+  slug                  String
+  description           String?
+  status                ProjectStatus @default(DISCOVERY)
+  diagramCount          Int      @default(0)
+  completedDiagramCount Int      @default(0)
+  featureSpecCount      Int      @default(0)
+  lastZipUrl            String?
+  lastZipGeneratedAt    DateTime?
+  lastZipFileName       String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  conversations         Conversation[]
+  requirements          Requirements?
+  diagrams              Diagram[]
+  contextFiles          ContextFile[]
+  featureSpecs          FeatureSpec[]
+  researchDocuments     ResearchDocument[]
+  researchAssets        ResearchAsset[]
+  researchSources       ResearchSource[]
+  projectAgentSkills    ProjectAgentSkill[]
+  executionPlans        ExecutionPlan[]
+
+  @@index([userId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@index([slug])
+  @@index([status])
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase     ConversationPhase
+  // messages contains { role, content, timestamp }
+  messages  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, phase])
+  @@index([projectId, updatedAt(sort: Desc)])
+}
+
+model Requirements {
+  id             String   @id @default(cuid())
+  projectId      String   @unique
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  discoveryNotes String?
+  analysisDoc    String?
+  adrDoc         String?
+  functional     Json?
+  nonFunctional  Json?
+  hiddenReqs     Json?
+  scaleEstimates Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Diagram {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name            String
+  diagramTypeId   String
+  category        String
+  orderInCategory Int
+  // reactFlowNodes, reactFlowEdges are large JSONs
+  reactFlowNodes  Json?
+  reactFlowEdges  Json?
+  pngStorageUrl   String?
+  fileName        String?
+  status          DiagramStatus @default(QUEUED)
+  errorMessage    String?
+  generatedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, category, orderInCategory])
+}
+
+model ContextFile {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fileName  String
+  fileType  ContextFileType
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, fileType])
+  @@index([projectId, fileType])
+}
+
+model FeatureSpec {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  order     Int
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, order])
+  @@index([projectId, order])
+}
+
+model ResearchDocument {
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title      String
+  fileName   String
+  content    String
+  sourceType String
+  tags       String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, sourceType])
+}
+
+model ResearchAsset {
+  id               String   @id @default(cuid())
+  projectId        String
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assetType        ResearchAssetType
+  originalFileName String
+  blobUrl          String
+  sourceUrl        String?
+  mimeType         String?
+  sizeBytes        Int?
+  // dimensions metadata stored in JSON
+  dimensions       Json?
+  tags             String[]
+  aiSummary        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, assetType])
+}
+
+model ResearchSource {
+  id               String   @id @default(cuid())
+  projectId        String
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  url              String
+  provider         ResearchSourceProvider
+  status           ResearchSourceStatus @default(PENDING)
+  title            String?
+  extractedContent String?
+  summary          String?
+  screenshotBlobUrl String?
+  tags             String[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, provider])
+  @@index([projectId, status])
+}
+
+model ProjectAgentSkill {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  slug        String
+  filePath    String
+  content     String
+  description String?
+  tags        String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([projectId, slug])
+  @@index([projectId])
+}
+
+model ExecutionPlan {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskType      String
+  content       String
+  status        ExecutionPlanStatus @default(PROPOSED)
+  revisionNotes String?
+  approvedAt    DateTime?
+  executedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, status])
+  @@index([projectId, taskType])
+}

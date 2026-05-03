@@ -48,7 +48,6 @@ ADMIN_EMAILS="founder@example.com"
 # Neon Postgres
 DATABASE_URL="postgresql://user:pass@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require"
 DIRECT_URL="postgresql://user:pass@ep-xxx.region.aws.neon.tech/neondb?sslmode=require"
-DATABASE_READ_REPLICA_URL="postgresql://user:pass@ep-replica-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require"
 
 TRIGGER_SECRET_KEY=...
 BLOB_READ_WRITE_TOKEN=...
@@ -240,21 +239,21 @@ export const PLAN_LIMITS = {
     maxDiagramsPerProject: 5,
     maxFeatureSpecs: 10,
     canDownloadZip: true,
-    canUseReadReplica: false,
+    canUseScaling: false,
   },
   PRO: {
     maxProjects: -1,
     maxDiagramsPerProject: -1,
     maxFeatureSpecs: -1,
     canDownloadZip: true,
-    canUseReadReplica: true,
+    canUseScaling: true,
   },
   ENTERPRISE: {
     maxProjects: -1,
     maxDiagramsPerProject: -1,
     maxFeatureSpecs: -1,
     canDownloadZip: true,
-    canUseReadReplica: true,
+    canUseScaling: true,
   },
 } as const;
 ```
@@ -407,7 +406,6 @@ Foundrie AI uses Neon Postgres as the production database. The user supplies the
 ```text
 Runtime app queries: DATABASE_URL, the Neon pooled URL with the `-pooler` endpoint.
 Prisma CLI and migrations: DIRECT_URL, the direct Neon URL without `-pooler`.
-Read-heavy queries: DATABASE_READ_REPLICA_URL when a Neon read replica exists, otherwise fall back to DATABASE_URL.
 ```
 
 Prisma datasource:
@@ -431,10 +429,9 @@ This matches the current Prisma and Neon guidance checked through Context7: use 
 
 ### Read/Write Split
 
-- Use `dbWrite` for all writes and strongly consistent read-after-write operations.
-- Use `dbRead` for dashboard/list queries, ZIP builder reads, artifact listings, and other read-heavy flows.
-- If `DATABASE_READ_REPLICA_URL` is missing, `dbRead` falls back to the pooled primary URL.
-- Reads that immediately follow a write and must reflect it must use `dbWrite`.
+- Use `db` for all writes and strongly consistent read-after-write operations.
+- Use `db` for dashboard/list queries, ZIP builder reads, artifact listings, and other read-heavy flows.
+- Reads that immediately follow a write and must reflect it must use `db`.
 
 ### Required Indexing Strategy
 
@@ -521,7 +518,7 @@ WHERE png_storage_url IS NOT NULL;
 - Foundrie is an ACID-first system.
 - ZIP generation should read from a consistent snapshot. Use `RepeatableRead` for multi-table ZIP collection when possible.
 - Use `Serializable` only for compare-then-write ordering flows such as assigning the next feature-spec order concurrently.
-- Eventual consistency is acceptable only for progress indicators, dashboard freshness, analytics, and read-replica lag.
+- Eventual consistency is acceptable only for progress indicators, dashboard freshness, analytics, and minor delay lag.
 
 ### Vacuum and Table Bloat
 
@@ -554,8 +551,6 @@ Enable `pg_stat_statements` in Neon and track:
 ### Scaling Stages
 
 - Launch to 1,000 users: pooled URL, direct migration URL, all indexes, cursor pagination, query discipline, autovacuum tuning, transaction timeouts, `pg_stat_statements`.
-- 1,000 to 10,000 users: Neon read replica, `dbRead`/`dbWrite` split, Next.js data cache, Upstash Redis for AI rate limiting, denormalized dashboard counters.
-- 10,000+ users: multiple read replicas, archive old completed projects, pre-generate ZIPs after saves, consider partitioning large diagram/event tables only after measured need.
 
 ## API Routes
 
