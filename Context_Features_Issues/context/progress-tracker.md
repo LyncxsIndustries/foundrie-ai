@@ -25,6 +25,9 @@ Update this file whenever the current phase, active feature, or implementation s
 - Removed redundant legacy scaffolding, duplicate context-level agent entrypoint, and empty research asset placeholder folders.
 - Added the plan-before-implementation approval gate to Foundrie and generated project contracts.
 - **Feature 01 - Design System**: Initialized Next.js 16 app with Tailwind CSS v4, shadcn/ui, and base Foundrie visual components. Configured dark mode and CSS design tokens from `ui-context.md`. Built structural shells for dashboard, project workspace, document viewer, and canvas placeholder.
+- **Feature 02 - Auth**: Added Next.js Clerk integration, wrapped app with `ClerkProvider`, created `proxy.ts` to protect routes by default, and scaffolded sign-in/sign-up pages.
+- **Housekeeping**: Added root `LICENSE` (MIT) and `CONTRIBUTING.md` aligned with Artkins engineering standards.
+
 
 ## In Progress
 
@@ -68,3 +71,5 @@ Update this file whenever the current phase, active feature, or implementation s
 - Context7 was checked for Clerk (`/clerk/clerk-docs`) and Svix (`/svix/svix-webhooks`) while refining auth and webhook guidance.
 - Context7 was checked for Tavily (`/tavily-ai/tavily-js`, `/tavily-ai/tavily-mcp`) and GSAP (`/websites/gsap`, `/greensock/react`) while adding the research/visual-motion planning layer.
 - Context7 was checked for Next.js, Tailwind CSS, Vue, and Angular while changing the Artkins guide from fixed web-stack defaults to dynamic, researched, user-approved stack selection.
+- Housekeeping files (`LICENSE`, `CONTRIBUTING.md`) added and force-pushed to `origin/feature/02-auth`.
+
