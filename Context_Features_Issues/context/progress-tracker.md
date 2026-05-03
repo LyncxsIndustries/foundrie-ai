@@ -73,4 +73,6 @@ Update this file whenever the current phase, active feature, or implementation s
 - Context7 was checked for Next.js, Tailwind CSS, Vue, and Angular while changing the Artkins guide from fixed web-stack defaults to dynamic, researched, user-approved stack selection.
 - Housekeeping files (`LICENSE`, `CONTRIBUTING.md`) added and force-pushed to `origin/feature/02-auth`.
 - Integrated Dynamic Agent Skills Architecture: Foundrie now parses `skills-lock.json` and `.agents/skills/` to automatically discover and provision Universal and Stack-Dependent skills without relying on hardcoded whitelists.
+- Baked Branch-First Git Workflow, Context7-Driven Planning, and User-Input-First Philosophy into `ai-workflow-rules.md` and `28-agents-md-gen.md`. Both Foundrie's own development and every generated project now enforce isolated feature branches, prerequisite discovery via Context7 during planning, and always-ask-the-user for credentials and config.
+- Added mandatory unit testing rule: every feature must have unit tests written for core logic, API routes, and critical paths. Tests and build must pass before pushing to GitHub. This applies to Foundrie's own workflow and every generated project.
 
