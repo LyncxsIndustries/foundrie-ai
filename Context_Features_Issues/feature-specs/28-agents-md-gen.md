@@ -37,7 +37,11 @@ npx ctx7 docs <libraryId> "<specific question>"
 - List the provisioned `.agents/skills/` (Universal, Stack-Dependent, and Custom) in the reading order and instruct the downstream agent to actively use them for tasks like code review, document parsing, and tech stack implementation.
 - Explain that research assets are implementation inputs, not decorative extras.
 - Include the planning gate: present a plan, wait for explicit user approval, revise when requested, then execute.
-- Include the incremental feature implementation rule: one spec at a time, implement, test, push, CodeRabbit review, fix until clean, then mark done.
+- Include the incremental feature implementation rule: one spec at a time, implement, write unit tests, ensure all tests and build pass, push, CodeRabbit review, fix until clean, then mark done.
+- Include the mandatory unit testing rule: before pushing any feature branch, write unit tests for core logic, API routes, and critical paths. All tests must pass (`npm run test`) and the build must pass (`npm run build`) before pushing.
+- Include the Branch-First Git Workflow: each feature spec gets its own branch (`feature/<number>-<slug>`), created before any code is written, merged to `master` only after the CodeRabbit review loop is clean.
+- Include Context7-Driven Planning: during the planning phase, use Context7 to read the latest docs for every tool the feature touches, identify all prerequisites and required user inputs, and present them in the plan before asking for approval.
+- Include the User-Input-First Philosophy: never assume credentials, config values, or environment setup. Always ask the user. Surface skill and tool setup steps (install, auth) explicitly in the plan.
 - Include generated project hard rules for auth and authorization:
   - authentication and authorization are separate.
   - user-owned data must be scoped by authenticated local user ID.
@@ -71,5 +75,9 @@ npx ctx7 docs <libraryId> "<specific question>"
 - Generated AGENTS.md explains the generated feature spec structure.
 - Generated AGENTS.md tells agents to read relevant `research/` files/assets referenced by a feature spec before writing code.
 - Generated AGENTS.md tells agents to use project-specific `.agents/skills/` when a feature spec or research file references one.
+- Generated AGENTS.md includes the Branch-First Git Workflow (one branch per feature, create before coding, merge after clean review).
+- Generated AGENTS.md includes Context7-Driven Planning (read latest docs during planning, surface prerequisites and required user inputs).
+- Generated AGENTS.md includes the User-Input-First Philosophy (never assume credentials or config, always ask the user).
+- Generated AGENTS.md requires unit tests for every feature before pushing (core logic, API routes, critical paths must be tested and passing).
 - `context/progress-tracker.md` is updated.
 - `npm run build` passes once application code exists.

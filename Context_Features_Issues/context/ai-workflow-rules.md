@@ -26,6 +26,16 @@ Implementation is strictly one feature spec at a time. Roadmap phase labels are 
 - Apply this gate to architecture proposals, diagram generation, context/spec generation, project-specific skill generation, ZIP packaging, and coding-agent implementation.
 - Passive discovery chat, source collection, upload intake, and research summarization can continue before approval.
 
+### Context7-Driven Planning
+
+During the planning phase, use Context7 to read the latest official documentation for **every** tool, CLI, SDK, library, and cloud service the feature touches. This is mandatory before presenting a plan to the user.
+
+- Identify **prerequisites**: installation steps, authentication steps, CLI setup (e.g., "Install CodeRabbit CLI and authenticate before using the `code-review` skill").
+- Identify **required user inputs**: API keys, config choices, account setup, environment variables.
+- Present all discovered prerequisites and required inputs in the plan **before** asking for approval.
+- If the agent cannot determine a prerequisite from docs, ask the user directly.
+- Never present a plan that assumes the user has already completed undocumented setup steps.
+
 ## Context7 Rules
 
 - Project-local Context7 skills are installed at `.agents/skills/`.
@@ -127,6 +137,13 @@ Split a task if it combines:
 - If the missing decision blocks implementation, ask the user.
 - If a conservative default is obvious and low risk, document it before proceeding.
 
+### User-Input-First Philosophy
+
+- Never assume credentials, config values, environment setup, or account state.
+- Always ask the user for required inputs rather than guessing, skipping, or using placeholder values.
+- If a skill or tool has a setup/auth step (discovered via Context7 docs or the skill's own `SKILL.md`), surface it explicitly in the plan and ask the user to complete it before proceeding.
+- When multiple valid approaches exist, present the options with trade-offs and let the user decide.
+
 ## Protected Foundation Components
 
 Do not modify generated shadcn/ui foundation components unless a feature spec explicitly requires it. Project-specific styling and behavior belongs in app-level components.
@@ -150,9 +167,41 @@ Update the relevant context file whenever implementation changes:
 3. The approved plan was followed, or a revised plan was approved before changes continued.
 4. No invariant in `architecture-context.md` was violated.
 5. `progress-tracker.md` reflects the actual state.
-6. Tests or focused verification were run.
-7. `npm run build` passes when application code exists.
-8. The work was pushed to GitHub.
-9. CodeRabbit reviewed the GitHub changes.
-10. Every CodeRabbit finding was fixed or explicitly resolved.
-11. The feature is marked done only after there are no unresolved CodeRabbit issues.
+6. Unit tests are written for the feature's core logic, API routes, and critical paths.
+7. All unit tests pass: `npm run test`.
+8. `npm run build` passes when application code exists.
+9. The work was pushed to GitHub.
+10. CodeRabbit reviewed the GitHub changes.
+11. Every CodeRabbit finding was fixed or explicitly resolved.
+12. The feature is marked done only after tests pass, build passes, and there are no unresolved CodeRabbit issues.
+
+## Branch-First Git Workflow
+
+Every feature spec is implemented on an isolated Git branch. The branch is created **before** any code is written.
+
+### Creating a Feature Branch
+1. Ensure you are on the latest `master` branch: `git checkout master && git pull origin master`.
+2. Create and switch to a new branch: `git checkout -b feature/<number>-<slug>` (e.g., `feature/03-database-schema`).
+3. All implementation, testing, and review happen exclusively on this branch.
+
+### Completing a Feature Branch
+1. Write unit tests for the feature's core logic, API routes, and critical paths.
+2. Run `npm run test` and ensure all tests pass.
+3. Run `npm run build` and ensure it passes.
+4. Push the branch to GitHub: `git push origin feature/<number>-<slug>`.
+5. Open a Pull Request (or let the push trigger CodeRabbit).
+6. Wait for CodeRabbit review. Fix all findings and push again.
+7. Repeat the review/fix loop until there are no unresolved findings.
+8. Merge the branch into `master`.
+9. Mark the feature as done in `progress-tracker.md`.
+
+### Transitioning to the Next Feature
+1. Switch back to `master` and pull the latest merged code.
+2. Create the next feature branch.
+3. Read the next feature spec and create the mandatory Implementation Plan on this new branch.
+4. Execute only after the user approves the plan.
+
+### Rules
+- Never commit Feature N+1 code on a Feature N branch.
+- Never start coding before the branch exists.
+- If architectural or housekeeping changes happen mid-feature, they are committed on the current feature branch and noted in `progress-tracker.md`.
