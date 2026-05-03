@@ -34,7 +34,7 @@ npx ctx7 docs <libraryId> "<specific question>"
 - Tell downstream agents to use the approved project-specific stack from `context/architecture-context.md`, not Foundrie's own stack.
 - Tell downstream agents to use Context7 and official sources before installing or pinning package versions.
 - Include `research/PROJECT_RESEARCH.md` and the `research/` folder in the reading order before feature implementation starts.
-- Include `.agents/skills/` in the reading order when project-specific skills exist.
+- List the provisioned `.agents/skills/` (Universal, Stack-Dependent, and Custom) in the reading order and instruct the downstream agent to actively use them for tasks like code review, document parsing, and tech stack implementation.
 - Explain that research assets are implementation inputs, not decorative extras.
 - Include the planning gate: present a plan, wait for explicit user approval, revise when requested, then execute.
 - Include the incremental feature implementation rule: one spec at a time, implement, test, push, CodeRabbit review, fix until clean, then mark done.

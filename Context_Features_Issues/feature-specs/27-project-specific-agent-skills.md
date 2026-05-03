@@ -6,7 +6,7 @@ NEW FEATURE
 
 ## Goal
 
-Generate `.agents/skills/` for exported projects when research, architecture, or feature specs reveal repeatable workflows that a coding agent should follow consistently.
+Generate and provision `.agents/skills/` for exported projects. This feature acts as an installer that copies Universal skills, smartly selects Stack-Dependent skills based on the approved architecture, and generates custom skills for project-specific repeatable workflows.
 
 ## Context To Read First
 
@@ -33,21 +33,26 @@ MODIFY: `Context_Features_Issues/feature-specs/30-zip-builder.md` - ensure gener
 
 - Read the project's research corpus, context files, diagrams, and feature specs.
 - Read root `ARTKINS_STYLE_GUIDE.md` and ensure every generated skill enforces it.
-- Detect repeatable workflows that deserve a skill.
-- Generate `.agents/skills/<skill-name>/SKILL.md` files.
-- Always include a baseline `project-research` skill that tells agents how to use `research/`, uploaded assets, documents, frame ZIPs, and Context7 findings.
-- Every generated skill must require a plan, user approval, revision support, and then execution before implementation-impacting work.
-- Generate additional skills only when justified by the project, such as:
-  - frame-sequence animation implementation.
-  - domain-specific API usage.
-  - data import workflow.
-  - design system implementation workflow.
-  - compliance review workflow.
-- Persist generated skill files as Blob-backed artifacts or generated document records so ZIP export can include them.
+- **Dynamic Skill Discovery**: 
+  - Read `skills-lock.json` in the root of the Foundrie project.
+  - Read the `SKILL.md` for each installed skill.
+- **Universal Skills**: Identify skills marked as universal (or matching baseline utility tags like code review, docs) and provision them for every project.
+- **Stack-Dependent Skills**: Parse `context/architecture-context.md` of the generated project to identify the selected stack. Filter the dynamically discovered skills and provision those that match the project's framework/tech stack.
+- **Custom Skills**: Detect repeatable workflows that deserve a custom skill.
+  - Generate `.agents/skills/<skill-name>/SKILL.md` files.
+  - Always include a baseline `project-research` skill that tells agents how to use `research/`, uploaded assets, documents, frame ZIPs, and Context7 findings.
+  - Every generated skill must require a plan, user approval, revision support, and then execution before implementation-impacting work.
+  - Generate additional skills only when justified by the project, such as:
+    - frame-sequence animation implementation.
+    - domain-specific API usage.
+    - data import workflow.
+    - design system implementation workflow.
+    - compliance review workflow.
+- Persist provisioned and generated skill files as Blob-backed artifacts or generated document records so ZIP export can include them.
 
 ## Out of Scope
 
-- Installing global user skills.
+- Installing arbitrary global user skills that are not discovered in `skills-lock.json`.
 - Running external plugin marketplaces.
 - Generating skills that duplicate `AGENTS.md` or context files without adding workflow value.
 - Creating skills for unsupported binary processing.
@@ -60,7 +65,9 @@ MODIFY: `Context_Features_Issues/feature-specs/30-zip-builder.md` - ensure gener
 ## Acceptance Criteria
 
 - [ ] Generated project ZIP includes `.agents/skills/project-research/SKILL.md`.
-- [ ] Additional skills are generated only when research/context/specs justify them.
+- [ ] Generated project ZIP includes all Universal skills.
+- [ ] Generated project ZIP includes dynamically selected Stack-Dependent skills matching the architecture context.
+- [ ] Additional custom skills are generated only when research/context/specs justify them.
 - [ ] Skills require root `ARTKINS_STYLE_GUIDE.md`.
 - [ ] Skills require plan approval before implementation-impacting work.
 - [ ] Skills reference relevant `research/` paths and feature specs.

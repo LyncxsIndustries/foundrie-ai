@@ -42,6 +42,15 @@ npx ctx7 docs <library-id> "<implementation question>"
 - Before committing a framework, SDK, library, or package version, verify the current stable install/version guidance with Context7 and official sources.
 - Generated projects must not default to Foundrie's own stack. Ask the user about preferences, explain trade-offs, and record the approved stack decision.
 
+## Required Skills Workflow
+
+Foundrie AI strictly enforces the use of specialized skills for tasks that go beyond generic text generation:
+
+- **Review and Fix**: Use `code-review` and `autofix` for pre-commit checks and resolving GitHub CodeRabbit findings.
+- **Document Research**: Use `docx`, `pdf`, `pptx`, and `xlsx` skills *exclusively* when parsing uploaded research assets or generating required research deliverables. Do not rely on generic text extraction if a skill is available.
+- **UI and Design**: Use `frontend-design` and `theme-factory` when modifying the Foundrie UI or planning the visual styling for a generated project.
+- **Architecture Validation**: Use stack-specific skills (e.g., `trigger-tasks`, `liveblocks-best-practices`, `clerk-nextjs-patterns`) when implementing foundational architecture components.
+
 ## Scoping Rules
 
 - Work on one feature spec at a time.

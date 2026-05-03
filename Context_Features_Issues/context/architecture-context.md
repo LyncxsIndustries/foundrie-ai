@@ -77,6 +77,21 @@ Agents must verify implementation details with Context7 before coding library-sp
 | GSAP React | `/greensock/react` |
 
 
+## Agent Skills Architecture
+
+Foundrie AI intelligently manages AI agent skills for both its internal execution and generated projects.
+
+### Foundrie's Internal Skills
+Foundrie dynamically parses `skills-lock.json` and `.agents/skills/*/SKILL.md` to identify and utilize available skills.
+- It leverages universal utility skills (e.g., `code-review`, `autofix`, `context7-cli`, document parsers) for its core workflow.
+- It utilizes stack-specific skills matching its own architecture (e.g., `clerk-nextjs-patterns`, `trigger-tasks`) when modifying those subsystems.
+
+### Generated Project Skills
+Foundrie acts as a dynamic skill installer for generated projects. Instead of a hardcoded whitelist, it:
+1. **Parses Installed Skills**: Reads `skills-lock.json` and `.agents/skills/` to discover all locally available skills.
+2. **Provisions Universal Skills**: Automatically installs baseline capabilities (e.g., code review, documentation lookup) into every project.
+3. **Provisions Stack-Dependent Skills**: Evaluates the approved `architecture-context.md` for the generated project and installs relevant skills (e.g., matching `clerk-vue-patterns` if the project uses Vue, or `liveblocks-best-practices` if the project uses realtime features).
+
 ## Artkins Policy and Planning Gate
 
 - Root `ARTKINS_STYLE_GUIDE.md` is the canonical engineering, UX, security, scalability, and no-AI-slope policy.
