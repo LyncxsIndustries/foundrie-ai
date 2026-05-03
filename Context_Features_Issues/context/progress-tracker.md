@@ -26,6 +26,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - Added the plan-before-implementation approval gate to Foundrie and generated project contracts.
 - **Feature 01 - Design System**: Initialized Next.js 16 app with Tailwind CSS v4, shadcn/ui, and base Foundrie visual components. Configured dark mode and CSS design tokens from `ui-context.md`. Built structural shells for dashboard, project workspace, document viewer, and canvas placeholder.
 - **Feature 02 - Auth**: Added Next.js Clerk integration, wrapped app with `ClerkProvider`, created `proxy.ts` to protect routes by default, and scaffolded sign-in/sign-up pages.
+- **Housekeeping**: Added root `LICENSE` (MIT) and `CONTRIBUTING.md` aligned with Artkins engineering standards.
+
 
 ## In Progress
 
