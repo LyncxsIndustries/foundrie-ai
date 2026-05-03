@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Begin implementation from `feature-specs/01-design-system.md`.
+- Begin implementation from `feature-specs/02-auth.md`.
 
 ## Completed
 
@@ -24,14 +24,15 @@ Update this file whenever the current phase, active feature, or implementation s
 - Added the generated project `research/` folder contract and research workspace plan for uploaded image assets, screenshots, frame ZIPs, research documents, pasted notes, Tavily, Obscura, Context7 findings, and synthesized research Markdown.
 - Removed redundant legacy scaffolding, duplicate context-level agent entrypoint, and empty research asset placeholder folders.
 - Added the plan-before-implementation approval gate to Foundrie and generated project contracts.
+- **Feature 01 - Design System**: Initialized Next.js 16 app with Tailwind CSS v4, shadcn/ui, and base Foundrie visual components. Configured dark mode and CSS design tokens from `ui-context.md`. Built structural shells for dashboard, project workspace, document viewer, and canvas placeholder.
 
 ## In Progress
 
-- No application code has been implemented yet.
+- No active feature spec currently.
 
 ## Next Up
 
-- `01-design-system.md` - initialize the application, Tailwind tokens, shadcn/ui, Lucide, and base UI foundations.
+- `02-auth.md` - authentication integration with Clerk and the underlying user/session architecture.
 
 ## Open Questions
 
