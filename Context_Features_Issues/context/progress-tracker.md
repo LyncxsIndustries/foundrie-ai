@@ -71,3 +71,5 @@ Update this file whenever the current phase, active feature, or implementation s
 - Context7 was checked for Clerk (`/clerk/clerk-docs`) and Svix (`/svix/svix-webhooks`) while refining auth and webhook guidance.
 - Context7 was checked for Tavily (`/tavily-ai/tavily-js`, `/tavily-ai/tavily-mcp`) and GSAP (`/websites/gsap`, `/greensock/react`) while adding the research/visual-motion planning layer.
 - Context7 was checked for Next.js, Tailwind CSS, Vue, and Angular while changing the Artkins guide from fixed web-stack defaults to dynamic, researched, user-approved stack selection.
+- Housekeeping files (`LICENSE`, `CONTRIBUTING.md`) added and force-pushed to `origin/feature/02-auth`.
+
