@@ -35,7 +35,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- `03-database-schema.md` - database schema and initial setup.
+- `02-auth.md` - authentication integration with Clerk and the underlying user/session architecture.
 
 ## Open Questions
 
