@@ -13,6 +13,10 @@ Extends all AI generation and content routes to authorize both Owner and Collabo
 - Feature 36 (Authorization Helpers) must be complete before starting.
 - Feature 40 (Member-Aware Canvas Access) must be complete before starting.
 
+## Files Owned
+
+- This is a MODIFICATION of Features 10–13, 18–19, and 22–29. It edits existing project API routes to switch shared operations to `requireProjectMember()`. No new exclusive ownership is claimed; coordinate as a labeled modification.
+
 ## Files
 
 MODIFY: All `app/api/projects/[projectId]/...` routes that serve AI generation, chat, requirements, architecture, context files, feature specs, and ZIP download — replace owner-only auth checks with `requireProjectMember()`.
@@ -32,6 +36,10 @@ MODIFY: `project-kit/context/progress-tracker.md` - Mark feature progress.
 - Per-role generation limits (e.g., Collaborators limited to N generations).
 - Generation activity log visible to Owner.
 - Notification when a Collaborator triggers generation.
+
+## Future Modifications
+
+- None planned. Per-role generation limits and activity logs are explicitly out of scope for v1.
 
 ## Acceptance Criteria
 

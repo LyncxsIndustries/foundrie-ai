@@ -14,6 +14,10 @@ Adds the API endpoint for project owners to invite collaborators by email. The i
 - Feature 35 (Project Member Schema) must be complete before starting.
 - Feature 36 (Authorization Helpers) must be complete before starting.
 
+## Files Owned
+
+- `app/api/projects/[projectId]/members/route.ts`
+
 ## Files
 
 CREATE: `app/api/projects/[projectId]/members/route.ts` - POST handler for inviting.

@@ -14,6 +14,10 @@ Extends Liveblocks room authorization and diagram CRUD routes to authorize both 
 - Feature 33 (Liveblocks Presence) must be complete before starting.
 - Feature 36 (Authorization Helpers) must be complete before starting.
 
+## Files Owned
+
+- This is a MODIFICATION of Features 14 and 33. It edits the Liveblocks auth route and diagram CRUD routes to use `requireProjectMember()`. No new exclusive ownership is claimed; coordinate as a labeled modification.
+
 ## Files
 
 MODIFY: `app/api/liveblocks-auth/route.ts` (or equivalent Liveblocks auth endpoint) - Use `requireProjectMember()`.
@@ -34,6 +38,10 @@ MODIFY: `project-kit/context/progress-tracker.md` - Mark feature progress.
 - Restricting specific diagram operations by role (all canvas operations are equal for both roles).
 - Canvas-level permissions (e.g., locking specific nodes).
 - Notification when a collaborator makes a change.
+
+## Future Modifications
+
+- None planned. Member-aware AI/generation access is handled separately in Feature 41.
 
 ## Acceptance Criteria
 

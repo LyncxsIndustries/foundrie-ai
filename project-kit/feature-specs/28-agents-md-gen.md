@@ -1,14 +1,21 @@
-# 28 - AGENTS.md Generation
+# Feature 28 - AGENTS.md Generation
 
-## Goal
+## Type
 
-Generate the root agent entry point for exported packages.
+NEW FEATURE
+
+## What This Delivers
+
+Generation of the root `AGENTS.md` agent entry point for exported packages, following the seven-section contract: (1) Project Identity, (2) Mandatory Reading Order (diagrams before context files), (3) Init Plan Data, (4) Hard Rules, (5) Feature Order, (6) Stack Reference with Context7 IDs, (7) Research Files. It requires reading root `ARTKINS_STYLE_GUIDE.md` before coding and encodes the planning gate, branch-first workflow, and incremental methodology.
+
+## Dependencies
+
+- Feature 26 (Feature Specs Generation) and Feature 27 (Project-Specific Agent Skills) must be complete.
 
 ## Context To Read First
 
 - `context/project-overview.md`
 - `context/architecture-context.md`
-- `context/ui-context.md`
 - `context/code-standards.md`
 - `context/ai-workflow-rules.md`
 - `context/progress-tracker.md`
@@ -16,69 +23,50 @@ Generate the root agent entry point for exported packages.
 ## Context7 Docs To Check
 
 - Context7 skills docs
-- Prisma `/prisma/web`
-
-Use installed Context7 skills or:
+- Prisma `/prisma/web` (when Prisma is selected)
 
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Use project summary, context files, feature list, and diagrams.
-- Use `callAI('agents_md_generation')`.
-- Include reading order, feature spec order, hard rules, diagrams, current status, and root `ARTKINS_STYLE_GUIDE.md`.
-- Put `ARTKINS_STYLE_GUIDE.md` before context files and feature specs in the generated reading order.
-- Tell downstream agents to use the approved project-specific stack from `context/architecture-context.md`, not Foundrie's own stack.
-- Tell downstream agents to use Context7 and official sources before installing or pinning package versions.
-- Include `research/PROJECT_RESEARCH.md` and the `research/` folder in the reading order before feature implementation starts.
-- List the provisioned `.agents/skills/` (Universal, Stack-Dependent, and Custom) in the reading order and instruct the downstream agent to actively use them for tasks like code review, document parsing, and tech stack implementation.
-- Explain that research assets are implementation inputs, not decorative extras.
-- Include the planning gate: present a plan, wait for explicit user approval, revise when requested, then execute.
-- Include the incremental feature implementation rule: one spec at a time, implement, write unit tests, ensure all tests and build pass, push, CodeRabbit review, fix until clean, then mark done.
-- Include the mandatory unit testing rule: before pushing any feature branch, write unit tests for core logic, API routes, and critical paths. All tests must pass (`npm run test`) and the build must pass (`npm run build`) before pushing.
-- Include the Branch-First Git Workflow: each feature spec gets its own branch (`feature/<number>-<slug>`), created before any code is written, merged to `master` only after the CodeRabbit review loop is clean.
-- Include Context7-Driven Planning: during the planning phase, use Context7 to read the latest docs for every tool the feature touches, identify all prerequisites and required user inputs, and present them in the plan before asking for approval.
-- Include the User-Input-First Philosophy: never assume credentials, config values, or environment setup. Always ask the user. Surface skill and tool setup steps (install, auth) explicitly in the plan.
-- Include generated project hard rules for auth and authorization:
-  - authentication and authorization are separate.
-  - user-owned data must be scoped by authenticated local user ID.
-  - ownership failures return 404.
-  - no team RBAC, custom admin portal, RLS, ABAC, audit logs, or hardware-key admin unless explicitly required.
-- Include generated spec rules: exact dependencies, exact files, Out of Scope, Future Modifications, binary acceptance criteria, and `MODIFICATION` labels for later edits.
-- Persist as ContextFile type `AGENTS_MD`.
-- Use `db` for assembling existing context/spec/diagram metadata where eventual consistency is acceptable.
-- Use `db` for persisting the generated `AGENTS_MD` context file.
-- Fetch feature specs ordered by `[projectId, order]`.
+- `lib/generation/agents-md.ts`
+- `lib/ai/prompts/agents-md.ts`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: `lib/generation/agents-md.ts` and `lib/ai/prompts/agents-md.ts`.
+MODIFY: `app/api/context-files/[projectId]/generate/route.ts` - add the `AGENTS_MD` branch.
 
-## Check When Done
+## Implementation Notes
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- Generated AGENTS.md tells future agents to handle one feature spec at a time, not roadmap batches.
-- Generated AGENTS.md tells future agents to read root `ARTKINS_STYLE_GUIDE.md` before coding.
-- Generated AGENTS.md requires plan approval before implementation-impacting work.
-- Generated AGENTS.md requires latest-version research before dependency installation or version pinning.
-- Generated AGENTS.md makes clear that the project stack is dynamic and project-specific.
-- Generated AGENTS.md preserves the auth/authorization ownership rules when the exported project has user-owned data.
-- Generated AGENTS.md warns against premature RBAC or enterprise security systems.
-- Generated AGENTS.md explains the generated feature spec structure.
-- Generated AGENTS.md tells agents to read relevant `research/` files/assets referenced by a feature spec before writing code.
-- Generated AGENTS.md tells agents to use project-specific `.agents/skills/` when a feature spec or research file references one.
-- Generated AGENTS.md includes the Branch-First Git Workflow (one branch per feature, create before coding, merge after clean review).
-- Generated AGENTS.md includes Context7-Driven Planning (read latest docs during planning, surface prerequisites and required user inputs).
-- Generated AGENTS.md includes the User-Input-First Philosophy (never assume credentials or config, always ask the user).
-- Generated AGENTS.md requires unit tests for every feature before pushing (core logic, API routes, critical paths must be tested and passing).
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- Use project summary, context files, the feature list, the approved diagrams, and provisioned skills. Use `callAI('agents_md_generation')`.
+- Generate the seven sections. The reading order places `ARTKINS_STYLE_GUIDE.md` and `research/PROJECT_RESEARCH.md` first, then the diagrams (System Context, Container, ERD, API Map) before the context files (diagram-first reading order), then the context files, then a scan of feature specs.
+- Section 3 (Init Plan Data) lists every required env var with its exact source location, required CLI tools with install commands, required accounts with setup URLs, and ends with the gate sentence ("Tell me 'ready' when you have completed the above, and I will begin Feature 01.").
+- Tell downstream agents to use the approved project-specific stack (from `context/architecture-context.md`), not Foundrie's own, and to use Context7 and official sources before installing or pinning versions (no `"latest"`).
+- List the provisioned `.agents/skills/` (Universal, Stack-Dependent, Custom) and instruct active use for code review, document parsing, and stack implementation. Explain research assets are implementation inputs.
+- Include hard rules: planning gate (plan → approval → revision → execution); one spec at a time with unit tests, passing build, CodeRabbit pre-push gate, and the GitHub review loop; the Branch-First Git Workflow (one branch per feature, created before coding, merged after the review loop is clean); Context7-Driven Planning (read latest docs, surface prerequisites and required user inputs before approval); the User-Input-First Philosophy (never assume credentials/config; always ask); auth/authorization separation; user-owned data scoped by authenticated local user ID with 404 on ownership failure; no team RBAC/custom admin/RLS/ABAC/audit logs/hardware-key admin unless explicitly required; structured logging (no `console.log`); dependency audit as a hard gate; the diagram-first rule (RUWA reads diagrams before context files and never implements anything absent from a diagram); and the spec rules (exact dependencies, exact files, `Files Owned`, Out of Scope, Future Modifications, binary acceptance criteria, `MODIFICATION` labels).
+- Persist as `ContextFile` type `AGENTS_MD`. Use `db` for assembling metadata where eventual consistency is acceptable and for the final upsert. Fetch feature specs ordered by `[projectId, order]`.
+
+## Out of Scope
+
+- The progress tracker (Feature 29) and ZIP packaging (Feature 30).
+
+## Future Modifications
+
+- Feature 30: AGENTS.md is placed at the ZIP root.
+
+## Acceptance Criteria
+
+- [ ] Generated `AGENTS.md` contains all seven sections.
+- [ ] The reading order places `ARTKINS_STYLE_GUIDE.md` and research before diagrams, and diagrams before context files.
+- [ ] The Init Plan lists every env var with its source, required CLI tools, required accounts, and the gate sentence.
+- [ ] It requires the approved project-specific stack, Context7/official version checks, and one-feature-at-a-time implementation with the branch-first workflow and CodeRabbit gate.
+- [ ] It encodes the diagram-first rule, auth/ownership rules, and the spec structure, and warns against premature RBAC/enterprise security.
+- [ ] It lists the provisioned `.agents/skills/` and instructs active use.
+- [ ] Non-owner access returns 404.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.
