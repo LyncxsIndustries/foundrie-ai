@@ -1,8 +1,17 @@
-# 32 - Download Button
+# Feature 32 - Download Button
 
-## Goal
+## Type
 
-Create the export page and client ZIP download flow.
+NEW FEATURE
+
+## What This Delivers
+
+The export page and client ZIP download flow: a POST route that returns cached metadata or triggers generation, a GET route that polls run status, and `DownloadZipButton` with generating/ready/error/retry states that triggers the browser download when ready. Access is checked before any Blob URL is exposed.
+
+## Dependencies
+
+- Feature 31 (Trigger ZIP Job) must be complete.
+- Feature 06 (Layout Shell) provides the export phase page.
 
 ## Context To Read First
 
@@ -18,37 +27,44 @@ Create the export page and client ZIP download flow.
 - Next.js `/vercel/next.js`
 - Trigger.dev `/triggerdotdev/trigger.dev`
 
-Use installed Context7 skills or:
-
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Create `POST /api/projects/[projectId]/download` to return cached ZIP or trigger generation.
-- Create `GET /api/projects/[projectId]/download?runId=` to poll status.
-- Build `DownloadZipButton` with generating, ready, error, and retry states.
-- Trigger browser download when ready.
-- Show packaging progress messages.
-- The POST route uses `db` for ownership checks that must reflect recent project creation.
-- Polling can use cached task state and must not hammer project tables.
-- Do not expose raw Blob URLs until project ownership is verified.
-- Reuse fresh ZIP metadata when `lastZipGeneratedAt` is within the cache window.
+- `app/api/projects/[projectId]/download/route.ts`
+- `components/project/DownloadZipButton.tsx`
+- `app/(app)/projects/[projectId]/export/page.tsx`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: `app/api/projects/[projectId]/download/route.ts` - POST (return cached or trigger) and GET (poll by `runId`).
+CREATE: `components/project/DownloadZipButton.tsx` - generating/ready/error/retry states.
+MODIFY: `app/(app)/projects/[projectId]/export/page.tsx` - mount the export UI and package checklist.
 
-## Check When Done
+## Implementation Notes
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- POST returns cached ZIP metadata when `lastZipGeneratedAt` is within the 10-minute window; otherwise triggers `generate-project-zip` and returns `runId`. GET polls run status and returns the ZIP URL/file name when complete.
+- Build `DownloadZipButton` with generating, ready, error, and retry states and packaging progress messages; trigger the browser download when ready. Buttons disable immediately on click (idempotency) and re-enable only on error.
+- The POST route uses `db` for ownership checks reflecting recent project creation. Polling uses cached task state and must not hammer project tables. Do not expose raw Blob URLs until project ownership is verified (project membership: Owner or Collaborator).
+
+## Out of Scope
+
+- The ZIP build itself (Features 30–31).
+
+## Future Modifications
+
+- Feature 39+: Collaborators (not just owners) can download via `requireProjectMember`.
+
+## Acceptance Criteria
+
+- [ ] POST returns cached metadata within the cache window or triggers generation and returns `runId`.
+- [ ] GET polls status and returns the ZIP URL/file name when complete.
+- [ ] `DownloadZipButton` shows generating/ready/error/retry states and triggers the download.
+- [ ] Buttons disable on click and re-enable only on error.
+- [ ] Blob URLs are exposed only after an ownership/membership check; non-members get 404.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

@@ -15,6 +15,11 @@ Adds the user-facing sharing interface: a "Share" button in the project header (
 - Feature 38 (List & Remove Collaborators API) must be complete before starting.
 - Feature 39 (Shared Projects Dashboard) must be complete before starting.
 
+## Files Owned
+
+- `components/project/share-modal.tsx`
+- `components/project/member-avatars.tsx`
+
 ## Files
 
 CREATE: `components/project/share-modal.tsx` - Sharing dialog with invite form and member list.
@@ -46,6 +51,10 @@ MODIFY: `project-kit/context/progress-tracker.md` - Mark feature progress.
 - Pending invite states.
 - Role change UI (promoting Collaborator to Owner).
 - Ownership transfer UI.
+
+## Future Modifications
+
+- None planned for v1. Role changes, ownership transfer, invite-by-link, and email notifications are deferred to a later collaboration feature.
 
 ## Acceptance Criteria
 

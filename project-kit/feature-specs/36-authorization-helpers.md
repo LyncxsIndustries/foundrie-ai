@@ -13,6 +13,10 @@ Creates the application-layer authorization helpers that enforce the Owner/Colla
 - Feature 04 (Project CRUD) must be complete before starting.
 - Feature 35 (Project Member Schema) must be complete before starting.
 
+## Files Owned
+
+- `lib/auth/project-access.ts`
+
 ## Files
 
 CREATE: `lib/auth/project-access.ts` - `requireProjectOwner()`, `requireProjectMember()`, `getProjectRole()`.
