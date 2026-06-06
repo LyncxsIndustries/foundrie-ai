@@ -1,8 +1,16 @@
-# 17 - Custom Edge Types
+# Feature 17 - Custom Edge Types
 
-## Goal
+## Type
 
-Implement UML-aware custom edges and markers.
+NEW FEATURE
+
+## What This Delivers
+
+UML-aware custom React Flow edges and markers, registered as memoized `edgeTypes`: association, aggregation, composition, inheritance, dependency, sequence sync/async/return messages, crow's-foot ER relationships, and C4 relationships, with labels, marker styles, click targets, and selection states.
+
+## Dependencies
+
+- Feature 16 (Custom Node Types) must be complete.
 
 ## Context To Read First
 
@@ -17,33 +25,40 @@ Implement UML-aware custom edges and markers.
 
 - React Flow `/xyflow/web`
 
-Use installed Context7 skills or:
-
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Create association, aggregation, composition, inheritance, and dependency edges.
-- Create sequence sync, async, and return message edges.
-- Create crow's-foot ER edges.
-- Create C4 relationship edges.
-- Support labels, marker styles, click targets, and selection states.
+- `components/canvas/edges/**`
+- `lib/diagrams/schemas/edges.ts`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: edge components under `components/canvas/edges/` for each relationship family.
+CREATE: `lib/diagrams/schemas/edges.ts` - Zod schemas for edge data.
 
-## Check When Done
+## Implementation Notes
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- Implement association, aggregation, composition, inheritance, and dependency edges; sequence sync/async/return message edges; crow's-foot ER edges; C4 relationship edges.
+- Support labels, marker styles, click targets, and selection states. Validate edge data with Zod before rendering.
+- Register `edgeTypes` outside render scope or memoized. Follow the diagram visual language in `ui-context.md` (markers must read correctly on the dark canvas and in PNG capture).
+
+## Out of Scope
+
+- Generation (Features 18–19), storage (Feature 20), and PNG capture (Feature 21).
+
+## Future Modifications
+
+- Feature 19: Generated diagrams instantiate these edges from AI output.
+
+## Acceptance Criteria
+
+- [ ] Edge components exist for UML associations/aggregation/composition/inheritance/dependency, sequence messages, crow's-foot ER, and C4 relationships.
+- [ ] Labels, markers, click targets, and selection states work.
+- [ ] Edge data is Zod-validated; `edgeTypes` are defined outside render scope or memoized.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

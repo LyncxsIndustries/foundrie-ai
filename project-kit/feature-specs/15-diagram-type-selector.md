@@ -1,8 +1,16 @@
-# 15 - Diagram Type Selector
+# Feature 15 - Diagram Type Selector
 
-## Goal
+## Type
 
-Add category and diagram type selection with filtered shape libraries.
+NEW FEATURE
+
+## What This Delivers
+
+Category and diagram-type selection with filtered shape libraries: `DIAGRAM_CATEGORIES`, `SHAPE_LIBRARIES`, and a diagram sidebar grouping structural, behavioral, architectural, data, and infrastructure types. The palette filters by the selected type, and the active type persists in diagram state. This is the manual counterpart to the 12-diagram generated suite.
+
+## Dependencies
+
+- Feature 14 (React Flow Canvas) must be complete.
 
 ## Context To Read First
 
@@ -18,33 +26,44 @@ Add category and diagram type selection with filtered shape libraries.
 - React Flow `/xyflow/web`
 - shadcn/ui `/shadcn-ui/ui`
 
-Use installed Context7 skills or:
-
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Create `DIAGRAM_CATEGORIES`.
-- Create `SHAPE_LIBRARIES`.
-- Build diagram sidebar with structural, behavioral, architectural, data, and infrastructure groups.
-- Filter shape palette by selected diagram type.
-- Persist active diagram type in project/diagram state.
+- `lib/diagrams/categories.ts`
+- `lib/diagrams/shape-libraries.ts`
+- `components/canvas/DiagramSidebar.tsx`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: `lib/diagrams/categories.ts` - `DIAGRAM_CATEGORIES`.
+CREATE: `lib/diagrams/shape-libraries.ts` - `SHAPE_LIBRARIES` per diagram type.
+CREATE: `components/canvas/DiagramSidebar.tsx` - grouped category/type selector with filtered palette.
 
-## Check When Done
+## Implementation Notes
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- Categories: structural (class, component, object, deployment, package), behavioral (use case, sequence, activity, state machine), architectural (C4 context, C4 container, C4 component, microservices map, system context), data (DFD L0, DFD L1, ER), infrastructure (AWS architecture, network).
+- Map each diagram type to its shape library exposing node and edge definitions. Filter the palette by the selected type.
+- Persist the active diagram type in project/diagram state. Use tabs or segmented controls for category selection.
+- The selector aligns with the 12 generated diagram types so manual and generated diagrams share shape vocabulary.
+
+## Out of Scope
+
+- The node and edge renderers themselves (Features 16–17) and generation (Features 18–19).
+
+## Future Modifications
+
+- Features 16–17: Selecting a shape places the corresponding custom node/edge.
+- Feature 18: The planner uses these categories/types when planning the diagram suite.
+
+## Acceptance Criteria
+
+- [ ] `DIAGRAM_CATEGORIES` and `SHAPE_LIBRARIES` exist and cover all five categories.
+- [ ] The sidebar groups types by category and filters the palette by the selected type.
+- [ ] The active diagram type persists in diagram state.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

@@ -1,14 +1,22 @@
-# 20 - Diagram Storage
+# Feature 20 - Diagram Storage
 
-## Goal
+## Type
 
-Persist diagram data and generated PNGs.
+NEW FEATURE
+
+## What This Delivers
+
+Persistence for diagram data and generated PNGs: React Flow node/edge JSON on `Diagram` records, PNG upload to Vercel Blob with access-checked retrieval, generated timestamps, error-placeholder behavior for failed captures, and diagram versioning (prior approved versions preserved). Updates `Project.completedDiagramCount` on completion.
+
+## Dependencies
+
+- Feature 19 (Sequential Generation) must be complete.
+- Feature 03 (Database Schema) provides the `Diagram` model and partial indexes.
 
 ## Context To Read First
 
 - `context/project-overview.md`
 - `context/architecture-context.md`
-- `context/ui-context.md`
 - `context/code-standards.md`
 - `context/ai-workflow-rules.md`
 - `context/progress-tracker.md`
@@ -18,37 +26,48 @@ Persist diagram data and generated PNGs.
 - Vercel Storage `/vercel/storage`
 - Prisma `/prisma/web`
 
-Use installed Context7 skills or:
-
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Store React Flow node/edge JSON on Diagram records.
-- Upload PNGs to Vercel Blob.
-- Store PNG URL/path and generated timestamp.
-- Add signed or access-checked retrieval where needed.
-- Add error placeholder behavior for failed captures.
-- Use `db` for diagram status, PNG URL, and generated timestamp mutations.
-- Update Project `completedDiagramCount` when a diagram transitions to `DONE`.
-- Do not fetch `reactFlowNodes` or `reactFlowEdges` in list views. Select those large JSON columns only when editing or generating a specific diagram.
-- Ensure status-list queries benefit from the partial `idx_diagrams_generating` index created in Feature 03.
+- `lib/diagrams/storage.ts`
+- `app/api/diagrams/[projectId]/[diagramId]/route.ts`
+- `lib/storage/diagram-blob.ts`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: `lib/diagrams/storage.ts` - persist JSON, PNG URL, status, version.
+CREATE: `app/api/diagrams/[projectId]/[diagramId]/route.ts` - access-checked retrieval/update.
+CREATE: `lib/storage/diagram-blob.ts` - Blob upload helpers.
 
-## Check When Done
+## Implementation Notes
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- Store React Flow node/edge JSON on `Diagram` records. Upload PNGs to Vercel Blob; store the PNG URL/path and generated timestamp. Provide access-checked retrieval (project membership required; never expose Blob URLs without an ownership check).
+- Error-placeholder behavior for failed captures (record `errorMessage`, mark status `error`).
+- Diagram versioning: when a diagram changes, preserve the prior approved version (export-side `diagrams/vN/`) and record which version is current. `progress-tracker.md` records which version each spec was written from.
+- Use `db` for status, PNG URL, and timestamp mutations. Update `Project.completedDiagramCount` when a diagram transitions to `DONE`.
+- Do not fetch `reactFlowNodes`/`reactFlowEdges` in list views; select those large JSON columns only when editing or generating a specific diagram. Status-list queries benefit from the partial `idx_diagrams_generating` index from Feature 03.
+
+## Out of Scope
+
+- PNG capture rendering (Feature 21) and ZIP packaging (Feature 30).
+
+## Future Modifications
+
+- Feature 21: Provides the PNG buffers this feature stores.
+- Feature 30: The ZIP builder reads stored JSON/PNGs and versioned folders.
+
+## Acceptance Criteria
+
+- [ ] Diagram JSON and PNGs persist with generated timestamps; PNG retrieval is access-checked.
+- [ ] Failed captures record an error placeholder.
+- [ ] Diagram versions are preserved and the current version is recorded.
+- [ ] `Project.completedDiagramCount` updates on `DONE`.
+- [ ] List views do not select large React Flow JSON columns.
+- [ ] Non-owner access returns 404.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

@@ -1,18 +1,23 @@
-# 03 - Database Schema
+# Feature 03 - Database Schema
 
 ## Type
 
 NEW FEATURE
 
-## Goal
+## What This Delivers
 
-Create the production-grade Neon Postgres + Prisma data layer for Foundrie AI: pooled runtime connections, direct migration connections schema models, auth plan/role fields, project-specific agent skills, execution plan approval records, performance indexes, partial indexes, autovacuum tuning, and query-safety foundations.
+The production-grade Neon Postgres + Prisma data layer for Foundrie AI: pooled runtime connections and direct migration connections via `prisma.config.ts` (Prisma 7), all core schema models, auth plan/role fields, Stripe/subscription fields, research models, project-specific agent skills, execution-plan approval records, performance and partial indexes, autovacuum tuning, and query-safety foundations. After this feature, `db` is exported and the schema applies cleanly against Neon.
+
+## Dependencies
+
+- Feature 02 (Auth) must be complete (Clerk session foundation exists).
+- Context7 docs for Prisma and Neon must be checked before implementation.
+- Neon connection URI values must be available in environment variables.
 
 ## Context To Read First
 
 - `context/project-overview.md`
 - `context/architecture-context.md`
-- `context/ui-context.md`
 - `context/code-standards.md`
 - `context/ai-workflow-rules.md`
 - `context/progress-tracker.md`
@@ -22,25 +27,36 @@ Create the production-grade Neon Postgres + Prisma data layer for Foundrie AI: p
 - Prisma `/prisma/web`
 - Neon Postgres `/websites/neon`
 
-Use installed Context7 skills or:
-
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-### Neon Environment
+- `prisma/schema.prisma`
+- `prisma/config.ts` / `prisma.config.ts`
+- `prisma/migrations/**`
+- `prisma/README.md`
+- `lib/db.ts` (or `lib/prisma.ts`)
 
-- Use Neon Postgres as the only supported database provider.
-- Add `.env.example` entries:
-  - `DATABASE_URL`: Neon pooled runtime URL using the `-pooler` endpoint. Used by app runtime.
-  - `DIRECT_URL`: Neon direct URL for Prisma CLI and migrations only.
+## Files
 
-### Prisma Configuration (v7)
+CREATE: `prisma/schema.prisma` - minimalist datasource + all models and enums.
+CREATE: `prisma.config.ts` - environment loading and database URLs (Prisma 7).
+CREATE: `lib/db.ts` - Prisma client singleton exported as `db`.
+CREATE: `prisma/README.md` - query discipline checklist, monitoring SQL, Neon parameter recommendations.
+CREATE: `prisma/migrations/<timestamp>_init/migration.sql` (generated) plus a raw SQL migration for partial indexes and autovacuum tuning.
+MODIFY: `.env.example` - `DATABASE_URL` (pooled `-pooler`) and `DIRECT_URL` (direct).
+MODIFY: `package.json` - `db:generate`, `db:push`, `db:migrate`, `db:studio` scripts.
+RUN: `npm run db:migrate`
+RUN: `npm run db:generate`
 
-- Create `prisma.config.ts` to manage environment loading and database URLs:
+## Implementation Notes
+
+### Neon environment and Prisma 7 configuration
+- Neon Postgres is the only supported provider. `DATABASE_URL` is the pooled `-pooler` runtime URL; `DIRECT_URL` is the direct URL used only by the Prisma CLI/migrations.
+- `prisma.config.ts` manages env loading and URLs; `schema.prisma` datasource is minimalist (`provider = "postgresql"`).
 
 ```typescript
 import { config } from 'dotenv';
@@ -49,42 +65,18 @@ import { defineConfig, env } from 'prisma/config';
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
-  datasource: {
-    url: process.env.DIRECT_URL || env('DATABASE_URL'),
-  },
+  datasource: { url: process.env.DIRECT_URL || env('DATABASE_URL') },
 });
 ```
 
-- Ensure `prisma/schema.prisma` datasource remains minimalist:
+### Models
+- Create: `User`, `Project`, `Conversation`, `Requirements`, `Diagram`, `ContextFile`, `FeatureSpec`, `ResearchDocument`, `ResearchAsset`, `ResearchSource`, `ProjectAgentSkill`, `ExecutionPlan`. (`ProjectMember` is added in Feature 35.)
+- Enums: `UserPlan` (FREE/PRO/ENTERPRISE), `UserRole` (USER/ADMIN), `ProjectStatus`, `ConversationPhase`, `DiagramStatus`, `ContextFileType`, `ResearchAssetType`, `ResearchSourceProvider`, `ResearchSourceStatus`, `ExecutionPlanStatus`.
+- `User`: `clerkId @unique`, `email @unique`, `name?`, `plan @default(FREE)`, `role @default(USER)`, and subscription fields `stripeCustomerId?`, `subscriptionPlan?`, `subscriptionStatus?`, `currentPeriodEnd?`.
+- `Project`: denormalized counters `diagramCount`, `completedDiagramCount`, `featureSpecCount`; ZIP metadata `lastZipUrl`, `lastZipGeneratedAt`, `lastZipFileName`.
+- Use JSON fields only for naturally whole-document data (conversation messages, requirements JSON, React Flow nodes/edges). Comment large JSON fields so list views avoid selecting them.
 
-```prisma
-datasource db {
-  provider = "postgresql"
-}
-```
-
-- Ensure Prisma CLI/migrations use the direct Neon URL and application runtime uses the pooled URL via the driver adapter.
-
-### Prisma Models
-
-- Create models: User, Project, Conversation, Requirements, Diagram, ContextFile, FeatureSpec, ResearchDocument, ResearchAsset, ResearchSource, ProjectAgentSkill, ExecutionPlan.
-- Add enums: UserPlan, UserRole, ProjectStatus, ConversationPhase, DiagramStatus, ContextFileType, ResearchAssetType, ResearchSourceProvider, ResearchSourceStatus, ExecutionPlanStatus.
-- `User` must include:
-  - `clerkId String @unique`
-  - `email String @unique`
-  - `name String?`
-  - `plan UserPlan @default(FREE)`
-  - `role UserRole @default(USER)`
-- Add project status phases from discovery through complete.
-- Add denormalized dashboard counters on Project:
-  - `diagramCount Int @default(0)`
-  - `completedDiagramCount Int @default(0)`
-  - `featureSpecCount Int @default(0)`
-- Use JSON fields only where the data is naturally structured and edited as a whole: conversation messages, requirements JSON, React Flow nodes/edges.
-- Mark large JSON fields in comments so later features avoid selecting them in list views.
-
-### Required Prisma Indexes
-
+### Indexes
 - `Project`: `@@index([userId])`, `@@index([userId, updatedAt(sort: Desc)])`, `@@index([slug])`, `@@index([status])`.
 - `Conversation`: `@@index([projectId, phase])`, `@@index([projectId, updatedAt(sort: Desc)])`.
 - `Diagram`: `@@index([projectId])`, `@@index([projectId, category, orderInCategory])`.
@@ -95,131 +87,53 @@ datasource db {
 - `ResearchSource`: `@@index([projectId])`, `@@index([projectId, provider])`, `@@index([projectId, status])`.
 - `ProjectAgentSkill`: `@@unique([projectId, slug])`, `@@index([projectId])`.
 - `ExecutionPlan`: `@@index([projectId])`, `@@index([projectId, status])`, `@@index([projectId, taskType])`.
-- Rely on `@unique` indexes for `User.clerkId`, `User.email`, and `Requirements.projectId`.
+- Rely on `@unique` for `User.clerkId`, `User.email`, `Requirements.projectId`.
 
-### Research Models
+### Research and execution-plan models
+- `ResearchDocument` stores Markdown research (PROJECT_RESEARCH.md, source summaries, visual analyses, motion plans, comparisons, Context7 findings). `ResearchAsset` stores Blob-backed asset metadata (assetType: image asset, screenshot, inspiration, document, frame ZIP, frame, scrape capture). `ResearchSource` stores URL-based research (provider: manual, Context7, Tavily, Obscura, upload-derived). Do not store raw binary in PostgreSQL.
+- `ProjectAgentSkill` stores `.agents/skills/<slug>/SKILL.md` content for export. `ExecutionPlan` fields: `id`, `projectId`, `taskType`, `content`, `status` (PROPOSED/APPROVED/REVISION_REQUESTED/REJECTED/EXECUTED), `revisionNotes`, `approvedAt`, `executedAt`, timestamps — gating architecture/diagram/context/spec/skill/ZIP/coding work. Passive discovery and research intake do not require an ExecutionPlan.
 
-- `ResearchDocument` stores Markdown research docs such as `PROJECT_RESEARCH.md`, source summaries, visual analyses, animation plans, technical comparisons, and Context7 findings.
-- `ResearchAsset` stores metadata for uploaded/captured assets in Vercel Blob: screenshots, image assets, inspiration images, frame ZIPs, extracted frames, Markdown/PDF/Word/Excel/PowerPoint research files, browser captures, and extracted visual references.
-- `ResearchAssetType` values are image asset, screenshot, inspiration, document, frame ZIP, frame, and scrape capture.
-- `ResearchSource` stores URL-based research from manual links, Context7, Tavily, Obscura, and upload-derived references.
-- `ProjectAgentSkill` stores generated `.agents/skills/<slug>/SKILL.md` content and metadata for export.
-- `ExecutionPlan` stores approval-gated plans for implementation-impacting work.
-- Do not store raw binary content in PostgreSQL.
-- Store Blob URLs/paths, source URLs, provider names, tags, AI summaries, capture status, and timestamps.
-- Research records are owned through `projectId`; all later APIs must check project ownership before read/write.
-
-### Execution Plan Approval Records
-
-- `ExecutionPlan` fields: `id`, `projectId`, `taskType`, `content`, `status`, `revisionNotes`, `approvedAt`, `executedAt`, timestamps.
-- Status values: `PROPOSED`, `APPROVED`, `REVISION_REQUESTED`, `REJECTED`, `EXECUTED`.
-- Use this model for plans that gate architecture generation, diagram generation, context/spec generation, project-specific skill generation, ZIP packaging, and coding-agent implementation.
-- Passive discovery chat and research intake do not require an `ExecutionPlan`.
-
-### Auth and Plan Enums
-
-```prisma
-enum UserPlan {
-  FREE
-  PRO
-  ENTERPRISE
-}
-
-enum UserRole {
-  USER
-  ADMIN
-}
-```
-
-- Do not add team, organization, project-member, owner/editor/viewer, ABAC, or audit-log tables in this feature.
-- Do not enable PostgreSQL Row-Level Security in this feature. Foundrie v1 enforces ownership in the application query layer.
-
-### Raw SQL Migration
-
-Create a migration for PostgreSQL features Prisma cannot express directly:
+### Raw SQL migration (partial indexes + autovacuum)
 
 ```sql
-CREATE INDEX CONCURRENTLY idx_diagrams_generating
-ON diagrams(project_id, updated_at)
-WHERE status IN ('QUEUED', 'GENERATING', 'RENDERING', 'CAPTURING');
-
-CREATE INDEX CONCURRENTLY idx_diagrams_has_png
-ON diagrams(project_id)
-WHERE png_storage_url IS NOT NULL;
-
-ALTER TABLE diagrams SET (
-  autovacuum_vacuum_scale_factor = 0.01,
-  autovacuum_analyze_scale_factor = 0.005,
-  autovacuum_vacuum_cost_delay = 2
-);
-
-ALTER TABLE conversations SET (
-  autovacuum_vacuum_scale_factor = 0.02,
-  autovacuum_analyze_scale_factor = 0.01,
-  autovacuum_vacuum_cost_delay = 2
-);
+CREATE INDEX CONCURRENTLY idx_diagrams_generating ON diagrams(project_id, updated_at)
+  WHERE status IN ('QUEUED', 'GENERATING', 'RENDERING', 'CAPTURING');
+CREATE INDEX CONCURRENTLY idx_diagrams_has_png ON diagrams(project_id)
+  WHERE png_storage_url IS NOT NULL;
+ALTER TABLE diagrams SET (autovacuum_vacuum_scale_factor = 0.01, autovacuum_analyze_scale_factor = 0.005, autovacuum_vacuum_cost_delay = 2);
+ALTER TABLE conversations SET (autovacuum_vacuum_scale_factor = 0.02, autovacuum_analyze_scale_factor = 0.01, autovacuum_vacuum_cost_delay = 2);
 ```
 
-- In production, create indexes with `CONCURRENTLY` to avoid table locks.
-- If the initial local migration cannot run `CONCURRENTLY` inside Prisma's generated transaction, split the production index migration into a manual SQL step and document it in `prisma/README.md`.
+- Create indexes `CONCURRENTLY` in production. If a local migration cannot run `CONCURRENTLY` inside Prisma's transaction, split the production index migration into a manual SQL step documented in `prisma/README.md`.
 
-### Database Scripts
+### Prisma client and query safety
+- Export `db` (pooled `DATABASE_URL`), cached on `globalThis` in development. Dev logs query/error/warn; production logs error only.
+- Document default isolation (read committed for reads, `RepeatableRead` for ZIP multi-table collection, `Serializable` only for compare-then-write order allocation), cursor-pagination requirement, and a query review checklist (no N+1, select only needed columns, no large JSON in lists, EXPLAIN slow queries) in `prisma/README.md`.
+- Document enabling `pg_stat_statements` and Neon parameters (`statement_timeout = 30s`, `idle_in_transaction_session_timeout = 10s`, `lock_timeout = 5s`).
 
-- Ensure `package.json` includes `db:generate`, `db:push`, `db:migrate`, and `db:studio` scripts mapped to Prisma CLI commands.
+## Out of Scope
 
-### Prisma Clients
+- Team, organization, project-member, owner/editor/viewer, ABAC, or audit-log tables (ProjectMember is Feature 35).
+- PostgreSQL Row-Level Security.
+- API routes, AI, canvas, diagram, ZIP, and research ingestion logic.
 
-- Create `lib/db.ts` or `lib/prisma.ts`.
-- Export `db`.
-- `db` uses the pooled `DATABASE_URL`.
-- Cache Prisma clients on `globalThis` in development.
-- Use logging: development can log query/error/warn; production logs error only.
+## Future Modifications
 
-### Transaction and Query Safety
+- Feature 04: Project CRUD adds Clerk webhook sync, `requireAuth()`, and `canCreateProject()`.
+- Feature 35: Adds the `ProjectMember` model and `ProjectMemberRole` enum.
+- Later billing feature: Stripe-backed plan changes use the existing subscription fields.
 
-- Add helper documentation for default isolation:
-  - default read committed for normal API reads.
-  - `RepeatableRead` for ZIP multi-table collection.
-  - `Serializable` only for compare-then-write order allocation.
-- Add comments or helper functions requiring cursor pagination for list endpoints.
-- Add a query review checklist in `prisma/README.md`: no N+1, select only needed columns, no large JSON columns in lists, explain slow queries.
+## Acceptance Criteria
 
-### Monitoring Setup Notes
-
-- Document enabling `pg_stat_statements` in Neon.
-- Add SQL snippets in `prisma/README.md` for active connections, slow queries, cache hit ratio, and dead tuple ratio.
-- Add Neon parameter recommendations:
-  - `statement_timeout = 30s`
-  - `idle_in_transaction_session_timeout = 10s`
-  - `lock_timeout = 5s`
-
-### Migration
-
-- Run the initial migration and generate Prisma Client.
-- Verify the schema applies against Neon using the provided URI values.
-
-## Scope Limits
-
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
-
-## Check When Done
-
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- Neon pooled/direct environment variables are documented.
-- Prisma datasource is configured via `prisma.config.ts` using `DATABASE_URL` and `DIRECT_URL`.
-- `prisma/schema.prisma` datasource is minimalist (provider only).
-- `db` is exported.
-- User schema includes `plan`, `role`, `UserPlan`, and `UserRole`.
-- No team workspace, multi-role project RBAC, RLS, ABAC, or audit-log tables are added.
-- All required indexes exist in Prisma or raw SQL migrations.
-- ProjectAgentSkill and ExecutionPlan models exist with required indexes.
-- Autovacuum tuning and monitoring SQL are documented.
-- The implementation avoids alternate/generic database wording.
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- [ ] Neon pooled/direct env vars are documented.
+- [ ] Prisma datasource is configured via `prisma.config.ts`; `schema.prisma` datasource is minimalist (provider only).
+- [ ] `db` is exported and cached on `globalThis` in development.
+- [ ] User schema includes `plan`, `role`, `UserPlan`, `UserRole`, and subscription fields.
+- [ ] All listed models, enums, and indexes exist in Prisma or raw SQL migrations.
+- [ ] `ProjectAgentSkill` and `ExecutionPlan` models exist with required indexes.
+- [ ] Autovacuum tuning and monitoring SQL are documented.
+- [ ] No team workspace, multi-role project RBAC, RLS, ABAC, or audit-log tables exist.
+- [ ] Migration runs successfully against Neon and `npm run db:generate` produces the client.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

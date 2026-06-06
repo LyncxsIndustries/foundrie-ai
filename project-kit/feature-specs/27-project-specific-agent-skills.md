@@ -4,9 +4,20 @@
 
 NEW FEATURE
 
-## Goal
+## What This Delivers
 
-Generate and provision `.agents/skills/` for exported projects. This feature acts as an installer that copies Universal skills, smartly selects Stack-Dependent skills based on the approved architecture, and generates custom skills for project-specific repeatable workflows.
+Generation and provisioning of `.agents/skills/` for exported projects. This feature acts as an installer that copies Universal skills, smartly selects Stack-Dependent skills based on the approved architecture, and generates custom skills for project-specific repeatable workflows.
+
+## Dependencies
+
+- Feature 26 (Feature Specs Generation) must be complete (specs and architecture context exist to inform skills).
+- Feature 30 (ZIP Builder) consumes the generated skills (this spec modifies the ZIP builder spec accordingly).
+
+## Files Owned
+
+- `lib/skills/generate-project-skills.ts`
+- `app/api/skills/[projectId]/generate/route.ts`
+- `components/project/ProjectSkillsList.tsx`
 
 ## Context To Read First
 

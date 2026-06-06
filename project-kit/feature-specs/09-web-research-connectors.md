@@ -23,6 +23,16 @@ Add optional research connectors for Tavily, Obscura, and Context7 so Foundrie c
 - Context7 skills docs
 - Next.js `/vercel/next.js`
 
+## Files Owned
+
+- `app/api/research/[projectId]/links/route.ts`
+- `app/api/research/[projectId]/synthesize/route.ts`
+- `components/research/ResearchSourceList.tsx`
+- `lib/research/providers/tavily.ts`
+- `lib/research/providers/obscura.ts`
+- `lib/research/providers/context7.ts`
+- `lib/research/synthesize-research.ts`
+
 ## Files
 
 CREATE: `app/api/research/[projectId]/links/route.ts`

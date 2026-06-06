@@ -1,8 +1,17 @@
-# 10 - Discovery Chat
+# Feature 10 - Discovery Chat
 
-## Goal
+## Type
 
-Implement phase-one streaming chat for the Socratic requirements interview.
+NEW FEATURE
+
+## What This Delivers
+
+Phase-1 streaming chat for the Socratic requirements interview: conversation persistence, the discovery API, and the streaming UI. The assistant classifies the opening description (Level 1 vague / 2 partially specified / 3 over-specified), asks one question at a time, surfaces hidden requirements, and discovers stack preferences without committing to a stack yet.
+
+## Dependencies
+
+- Feature 05 (AI Rotation Engine) must be complete (`callAIStream` exists).
+- Feature 06 (Layout Shell) provides the discovery phase page.
 
 ## Context To Read First
 
@@ -18,41 +27,53 @@ Implement phase-one streaming chat for the Socratic requirements interview.
 - Groq/provider docs
 - Next.js `/vercel/next.js`
 
-Use installed Context7 skills or:
-
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Create conversation model helpers.
-- Create `GET/POST /api/conversations/[projectId]/chat`.
-- Use `callAIStream('streaming_chat')` for responsive UI.
-- Use the discovery system prompt: one question at a time.
-- Include stack-preference discovery over the conversation: target platform, preferred languages/frameworks, team experience, deployment target, budget, maintenance expectations, and technologies the user wants to avoid.
-- The assistant should explain trade-offs when stack questions arise, but final stack selection happens later after research and approval.
-- Persist every user and assistant message.
-- Detect when the conversation is ready for synthesis.
-- Use `db` when appending messages.
-- Keep writes bounded; avoid long idle transactions while streaming.
-- Use the `[projectId, phase]` and `[projectId, updatedAt]` conversation indexes from Feature 03.
-- Consider message-size limits before storing conversation JSON so rows do not grow without bounds.
+- `app/api/conversations/[projectId]/chat/route.ts`
+- `components/chat/DiscoveryChat.tsx`
+- `components/chat/ChatMessage.tsx`
+- `lib/ai/prompts/discovery.ts`
+- `lib/conversations/**`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: `app/api/conversations/[projectId]/chat/route.ts` - GET history, POST message (streaming).
+CREATE: `components/chat/DiscoveryChat.tsx` and `components/chat/ChatMessage.tsx`.
+CREATE: conversation model helpers and the discovery system prompt.
+MODIFY: `app/(app)/projects/[projectId]/discovery/page.tsx` - mount the chat.
 
-## Check When Done
+## Implementation Notes
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- Discovery captures user technology preferences without forcing Foundrie's own stack.
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- Use `callAIStream('streaming_chat')` for responsive UI; persist every user and assistant message via the conversation API.
+- Discovery system prompt: classify the opening description as Level 1/2/3 and respond accordingly (elicit for Level 1, surface edge cases for Level 2, push back with sourced evidence for Level 3). Ask exactly one question at a time. Surface hidden requirements from the catalog (auth, database, payments, email, API, performance, security).
+- Cover stack-preference discovery over the conversation: target platform, preferred languages/frameworks, team experience, deployment target, budget, maintenance expectations, technologies to avoid. Explain trade-offs when stack questions arise; final stack selection happens later after research and approval.
+- Use `db` when appending messages. Keep writes bounded; avoid long idle transactions while streaming. Use the `[projectId, phase]` and `[projectId, updatedAt]` indexes. Enforce a message-size limit before storing conversation JSON.
+- The AI input field follows the queue state machine semantics; buttons disable on click (idempotency).
+- Detect when the conversation is ready for synthesis and signal it to the UI.
+
+## Out of Scope
+
+- Requirements synthesis (Feature 11) and the multi-user input queue (Feature 33).
+- Final stack/version decisions and architecture diagrams.
+
+## Future Modifications
+
+- Feature 11: Requirements generation consumes the conversation history.
+- Feature 33: Liveblocks presence adds the collaborative input queue state machine.
+
+## Acceptance Criteria
+
+- [ ] The discovery chat streams responses and persists every message.
+- [ ] The assistant classifies the opening description and asks one question at a time.
+- [ ] Hidden requirements are surfaced during discovery.
+- [ ] Stack preferences are captured without forcing Foundrie's own stack.
+- [ ] Non-owner access to the conversation route returns 404.
+- [ ] Conversation JSON growth is bounded by a message-size limit.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

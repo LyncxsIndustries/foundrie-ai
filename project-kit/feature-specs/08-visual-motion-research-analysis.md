@@ -22,6 +22,13 @@ Analyze uploaded visual and motion references so Foundrie can turn screenshots, 
 - GSAP React `/greensock/react`
 - Vercel Storage / Blob `/vercel/storage`
 
+## Files Owned
+
+- `app/api/research/[projectId]/analyze/route.ts`
+- `components/research/MotionPlanViewer.tsx`
+- `lib/research/visual-analysis.ts`
+- `lib/research/motion-plan.ts`
+
 ## Files
 
 CREATE: `app/api/research/[projectId]/analyze/route.ts`

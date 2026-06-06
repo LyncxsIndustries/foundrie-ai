@@ -1,23 +1,65 @@
 # Architecture Context
 
-## Stack
+Foundrie AI's own stack is fixed by this document. Generated project stacks are dynamic and chosen through research and user approval. Never copy Foundrie's stack into a generated project unless the user chooses it or the research justifies it.
+
+## Four-Layer Polyglot Architecture
+
+Foundrie assigns each concern to the language best suited for it. This replaced the deprecated v1 single-language stack (Python+FastAPI API, TypeScript+JSZip ZIP generation).
+
+```text
+LAYER 3 — WEB APP (TypeScript)
+  Next.js 16 App Router + React 19 + TypeScript strict
+  Liveblocks (realtime canvas) + React Flow / @xyflow (diagram canvas)
+  Tailwind v4 + shadcn/ui + GSAP 3.12 + Framer Motion
+  Trigger.dev v4, Zustand, TanStack Query, Zod
+
+LAYER 2 — AI LAYER (Python)
+  LangGraph + PydanticAI — stateful discovery orchestration
+  Multi-model rotation: Claude Sonnet 4 → Gemini Pro → DeepSeek R1 → Kimi K2 → Qwen Coder
+  RAG: LlamaIndex + ChromaDB over the research corpus
+  LangGraph PostgresSaver checkpointing; Logfire structured logging
+
+LAYER 1 — EXECUTION LAYER (Rust)
+  Axum + Tokio
+  ZIP generation (streaming, no RAM buffering — replaces JSZip)
+  Diagram file processing (Mermaid/SVG/DBML)
+  API key rotation engine (50+ keys, 6 providers)
+  Chunked file ingestion streaming to Vercel Blob
+  WASM sandbox (Wasmtime); PyO3 hot-path extensions; tracing crate logging
+
+LAYER 4 — GO API GATEWAY
+  Gin + gRPC — routes AI → Python, file/ZIP/exec → Rust, web → Next.js
+  Health checks, circuit breakers, per-user rate limiting, NATS JetStream publishing
+```
+
+The layers communicate over gRPC. The Rust ZIP builder streams (never buffers a whole ZIP in RAM), giving ~17× faster ZIP generation and ~13× lower memory than the deprecated JSZip approach. Foundrie's monorepo (Turborepo) places these in `apps/{web,desktop,api-gateway}` and `packages/{foundrie-core,ai-layer,diagram-engine,telemetry,auth,config}`.
+
+## Stack Reference
 
 | Layer | Technology | Role |
 |---|---|---|
-| Framework | Next.js 16 App Router + TypeScript strict mode | Full-stack app, route handlers, server components, and client islands |
+| Web framework | Next.js 16 App Router + React 19 + TypeScript strict | Full-stack app, route handlers, server components, client islands |
 | Auth | Clerk | User identity, sessions, protected routes, webhooks |
-| Database | PostgreSQL on Neon + Prisma | Relational metadata, generated content records, project phases |
-| Realtime | Liveblocks | Presence, live cursors, room auth, collaborative state |
+| Database | PostgreSQL on Neon + Prisma | Relational metadata, generated content, project phases |
+| Realtime | Liveblocks | Presence, live cursors, room auth, collaborative canvas state |
 | Canvas | React Flow (`@xyflow/react`) | Diagram canvas, nodes, edges, viewport, interactions |
-| Background jobs | Trigger.dev v3 | Durable AI workflows, diagram batches, ZIP generation |
-| AI providers | Gemini, OpenRouter, Groq, DeepSeek | Role-based model orchestration with fallbacks |
-| ZIP generation | JSZip | Server-side ZIP packaging |
+| Background jobs | Trigger.dev v4 | Durable AI workflows, diagram batches, ZIP generation |
+| Execution layer | Rust (Axum + Tokio) | ZIP streaming, key rotation, file ingestion, diagram rendering, WASM sandbox |
+| AI layer | Python (LangGraph + PydanticAI) | Discovery orchestration, multi-model rotation, RAG |
+| API gateway | Go (Gin + gRPC) | Inter-service routing, health checks, rate limiting, NATS publishing |
+| AI providers | Gemini, OpenRouter, Groq, DeepSeek, Anthropic, Kimi | Role-based model orchestration with fallbacks |
+| ZIP generation | Rust streaming pipeline | Server-side ZIP packaging (JSZip is the deprecated legacy reference) |
 | Artifact storage | Vercel Blob | ZIPs, diagram PNGs, canvas snapshots, exported artifacts |
-| Web research | Tavily | Search, extract, crawl, and map when API key is configured |
-| Browser scraping | Obscura | JavaScript-rendered capture and screenshots for visual/web research |
-| Diagram capture | html-to-image or Konva | Canvas-to-PNG export |
-| UI | Tailwind CSS v4, shadcn/ui, Lucide React, Framer Motion | Product UI and interaction polish |
-| Deployment | Vercel | Hosting, environment variables, serverless route handlers |
+| Training data | MongoDB Atlas (isolated) | Anonymized session signals only — zero access to Neon |
+| Web research | Tavily | Search, extract, crawl, map when configured |
+| Browser scraping | Obscura | JavaScript-rendered capture and screenshots |
+| Web intelligence | Firecrawl | URL → clean markdown for agent consumption |
+| Memory | Mem0 | Cross-session episodic/semantic/procedural memory |
+| Tool exposure | FastMCP | Python functions exposed as MCP tools |
+| Diagram capture | html-to-image (icons inlined as base64 SVG to avoid CORS) | Canvas-to-PNG export |
+| UI | Tailwind v4, shadcn/ui, Lucide React, GSAP, Framer Motion | Product UI and motion |
+| Desktop | Tauri 2.0 (Rust + TypeScript) | Desktop distribution; never Electron |
+| Deployment | Vercel (web) + AWS ECS Fargate (Rust/Python) | Hosting and serverless route handlers |
 
 ## Required Environment Variables
 
@@ -26,6 +68,7 @@ GEMINI_API_KEY=...
 OPENROUTER_API_KEY=...
 GROQ_API_KEY=...
 DEEPSEEK_API_KEY=...
+ANTHROPIC_API_KEY=...
 
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
 CLERK_SECRET_KEY=...
@@ -34,25 +77,32 @@ ADMIN_EMAILS="founder@example.com"
 
 # Neon pooled runtime URL. Must use the `-pooler` Neon endpoint.
 DATABASE_URL="postgresql://user:pass@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require"
-
 # Neon direct URL. Used only by Prisma CLI and migrations.
 DIRECT_URL="postgresql://user:pass@ep-xxx.region.aws.neon.tech/neondb?sslmode=require"
 
-
 TRIGGER_SECRET_KEY=...
 BLOB_READ_WRITE_TOKEN=...
-
 NEXT_PUBLIC_APP_URL=https://foundrieai.com
 
-# Optional research connectors
+# Scale / training / commercialization
+MONGODB_ATLAS_URI=...
+NATS_URL=...
+STRIPE_SECRET_KEY=...
+STRIPE_WEBHOOK_SECRET=...
+STRIPE_PRICE_PRO=...
+STRIPE_PRICE_TEAM=...
+STRIPE_PRICE_ENTERPRISE=...
+
+# Optional research/agent connectors
 TAVILY_API_KEY=...
 OBSCURA_ENDPOINT=...
+FIRECRAWL_API_KEY=...
+MEM0_API_KEY=...
 ```
 
 ## Context7 Documentation IDs
 
 Agents must verify implementation details with Context7 before coding library-specific behavior.
-
 
 | Technology | Context7 library ID |
 |---|---|
@@ -67,87 +117,70 @@ Agents must verify implementation details with Context7 before coding library-sp
 | Tailwind CSS | `/tailwindlabs/tailwindcss.com` |
 | shadcn/ui | `/shadcn-ui/ui` |
 | Vercel Storage / Blob | `/vercel/storage` |
-| JSZip | `/stuk/jszip` |
+| JSZip (legacy reference) | `/stuk/jszip` |
 | html-to-image | `/bubkoo/html-to-image` |
 | Tavily JS | `/tavily-ai/tavily-js` |
 | Tavily MCP | `/tavily-ai/tavily-mcp` |
 | GSAP | `/websites/gsap` |
 | GSAP React | `/greensock/react` |
 
-
 ## Agent Skills Architecture
 
-Foundrie AI intelligently manages AI agent skills for both its internal execution and generated projects.
-
 ### Foundrie's Internal Skills
-Foundrie dynamically parses `skills-lock.json` and `.agents/skills/*/SKILL.md` to identify and utilize available skills.
-- It leverages universal utility skills (e.g., `code-review`, `autofix`, `context7-cli`, document parsers) for its core workflow.
-- It utilizes stack-specific skills matching its own architecture (e.g., `clerk-nextjs-patterns`, `trigger-tasks`) when modifying those subsystems.
+
+Foundrie dynamically parses `skills-lock.json` and `.agents/skills/*/SKILL.md` to identify available skills. It uses universal utility skills (code review, autofix, Context7 CLI, document parsers) for its core workflow, and stack-specific skills (e.g., `clerk-nextjs-patterns`, `trigger-tasks`, `liveblocks-best-practices`) when modifying those subsystems.
 
 ### Generated Project Skills
-Foundrie acts as a dynamic skill installer for generated projects. Instead of a hardcoded whitelist, it:
-1. **Parses Installed Skills**: Reads `skills-lock.json` and `.agents/skills/` to discover all locally available skills.
-2. **Provisions Universal Skills**: Automatically installs baseline capabilities (e.g., code review, documentation lookup) into every project.
-3. **Provisions Stack-Dependent Skills**: Evaluates the approved `architecture-context.md` for the generated project and installs relevant skills (e.g., matching `clerk-vue-patterns` if the project uses Vue, or `liveblocks-best-practices` if the project uses realtime features).
+
+Foundrie acts as a dynamic skill installer for generated projects: it parses installed skills, provisions universal baseline capabilities into every project, and provisions stack-dependent skills based on the approved generated `architecture-context.md` (e.g., `clerk-vue-patterns` if the project uses Vue). When research reveals a repeatable workflow, Foundrie generates project-specific skills in `.agents/skills/`.
 
 ## Artkins Policy and Planning Gate
 
-- Root `ARTKINS_STYLE_GUIDE.md` is the canonical engineering, UX, security, scalability, and no-AI-slope policy.
-- Foundrie exports `ARTKINS_STYLE_GUIDE.md` into every generated project package.
-- Foundrie AI's own stack is fixed by this architecture context. Generated project stacks are dynamic.
-- Foundrie must discuss stack options with the user, explain trade-offs, research current versions with Context7 and official sources, and record the approved stack before generating implementation specs.
-- Implementation-impacting work must be planned, shown to the user, and explicitly approved before execution.
-- If the user requests revisions, Foundrie updates the plan and presents the revised plan before executing.
-- The planning gate applies to architecture proposals, diagram generation, context/spec generation, project-specific skill generation, ZIP packaging, and coding-agent implementation.
-- Passive discovery chat, upload intake, link collection, and research summarization can run before approval.
+- Root `ARTKINS_STYLE_GUIDE.md` is the canonical engineering, UX, security, scalability, and no-AI-slope policy, exported verbatim into every generated package.
+- Foundrie AI's own stack is fixed by this context; generated stacks are dynamic.
+- Foundrie discusses stack options, explains trade-offs, researches current versions with Context7 and official sources, and records the approved stack (with version evidence and alternatives considered) in an ADR before generating implementation specs.
+- Implementation-impacting work must be planned, shown to the user, and explicitly approved before execution. Revisions are re-presented before executing.
+- The planning gate applies to architecture proposals, diagram generation, context/spec generation, project-specific skill generation, ZIP packaging, and coding-agent implementation. Passive discovery chat, upload intake, link collection, and research summarization run before approval.
 
 ## System Boundaries
 
-- `app` - App Router pages, layouts, route handlers, and server components.
-- `app/api` - Authenticated endpoints, input validation, ownership checks, job triggers, and metadata persistence.
-- `components` - UI composition, canvas components, chat, diagram generation UI, project surfaces, and shadcn wrappers.
-- `lib/ai` - model routing, provider adapters, fallback chains, rotation engine, prompts, and output schemas.
-- `lib/diagrams` - diagram categories, shape libraries, generation planning, sequential runner, layout helpers, and validation.
-- `lib/db` or `lib/prisma.ts` - Prisma client singleton and database helpers.
-- `lib/storage` - Vercel Blob helpers for ZIP, PNG, canvas, and generated Markdown artifacts.
-- `lib/research` - research ingestion, Tavily/Obscura/Context7 source capture, visual asset analysis, research synthesis, and export helpers.
-- `trigger` - durable Trigger.dev jobs: diagram generation, context generation, feature-spec generation, and ZIP generation.
-- `prisma` - schema, migrations, generated client, and seed data.
-- `.agents/skills` - project-local agent skills, including Context7 skills.
-- `research` - Foundrie AI's own research corpus, mirroring the generated project `research/` export contract.
+- `app` — App Router pages, layouts, route handlers, server components.
+- `app/api` — authenticated endpoints, input validation, ownership checks, job triggers, metadata persistence.
+- `components` — UI composition, canvas, chat, diagram-generation UI, project surfaces, shadcn wrappers.
+- `lib/ai` — model routing, provider adapters, fallback chains, rotation engine, prompts, output schemas.
+- `lib/diagrams` — diagram categories, shape libraries, generation planning, sequential runner, layout helpers, validation.
+- `lib/db` or `lib/prisma.ts` — Prisma client singleton and database helpers.
+- `lib/storage` — Vercel Blob helpers for ZIP, PNG, canvas, generated Markdown artifacts.
+- `lib/research` — research ingestion, Tavily/Obscura/Firecrawl/Context7 source capture, visual asset analysis, synthesis, export helpers.
+- `lib/auth` — Clerk session mapping, ownership scoping, plan limits, admin gate, project-access helpers.
+- `trigger` — durable Trigger.dev jobs: diagram generation, context generation, feature-spec generation, ZIP generation.
+- `prisma` — schema, migrations, generated client, seed data.
+- `.agents/skills` — project-local agent skills, including Context7 skills.
+- `research` — Foundrie AI's own research corpus, mirroring the generated `research/` export contract.
+
+In Foundrie's full deployed system, ZIP/key-rotation/file-ingestion/diagram-rendering live in the Rust execution layer, discovery orchestration in the Python AI layer, and routing in the Go gateway. The Next.js app is the user-facing surface and the orchestration entry point.
 
 ## Authentication and Authorization Model
 
-Authentication and authorization are deliberately separate:
-
-- Clerk authenticates users and owns sessions.
-- Foundrie authorization code enforces user ownership, plan limits, and admin access.
+Authentication and authorization are deliberately separate. Clerk authenticates users and owns sessions. Foundrie authorization code enforces ownership, plan limits, and admin access.
 
 Launch scope:
-
-- Root `middleware.ts` protects app and API routes by default with Clerk.
-- Public routes are `/`, `/pricing`, `/sign-in(.*)`, `/sign-up(.*)`, and `/api/webhooks/clerk`.
+- Root `middleware.ts` protects app and API routes by default with `clerkMiddleware` + `createRouteMatcher`.
+- Public routes: `/`, `/pricing`, `/sign-in(.*)`, `/sign-up(.*)`, `/api/webhooks/clerk`.
 - `app/layout.tsx` wraps the app in `ClerkProvider`.
 - `app/api/webhooks/clerk/route.ts` verifies Svix signatures before user sync.
 - `lib/auth/get-auth-user.ts` maps the Clerk session to the local `User`.
-- `lib/auth/require-auth.ts` is required in every route that touches user data.
-- `lib/auth/plan-limits.ts` owns free/pro/enterprise limits.
-- `lib/auth/is-admin.ts` checks `ADMIN_EMAILS` for the tiny internal admin gate.
+- `lib/auth/require-auth.ts` is required in every route touching user data.
+- `lib/auth/plan-limits.ts` owns FREE/PRO/ENTERPRISE limits via `canUseFeature()`.
+- `lib/auth/is-admin.ts` checks `ADMIN_EMAILS`.
 
 ### Collaboration Authorization Model
 
-Foundrie uses a 2-role authorization model enforced at the application layer:
+2-role model enforced at the application layer:
+- **Owner**: created the project; manages settings, members, and deletion; performs all canvas and AI operations.
+- **Collaborator**: invited by the Owner; edits canvas/diagrams, uses AI generation, downloads the ZIP. Cannot modify settings, delete the project, or manage members.
 
-- **Owner**: The user who created the project. Can manage project settings, invite/remove members, delete the project, and perform all canvas and AI operations.
-- **Collaborator**: A user invited by the Owner. Can edit the canvas, create/edit/delete diagrams, use AI generation, and download the ZIP. Cannot modify project settings, delete the project, or manage members.
-
-Authorization helpers in `lib/auth/project-access.ts`:
-
-- `requireProjectOwner(projectId, userId)` — gate for owner-only operations.
-- `requireProjectMember(projectId, userId)` — gate for shared operations (Owner or Collaborator).
-- `getProjectRole(projectId, userId)` — returns `OWNER`, `COLLABORATOR`, or `null` for UI conditional rendering.
-
-#### Permission Matrix
+Helpers in `lib/auth/project-access.ts`: `requireProjectOwner(projectId, userId)`, `requireProjectMember(projectId, userId)`, `getProjectRole(projectId, userId)` returning `OWNER`, `COLLABORATOR`, or `null`.
 
 | Action | Owner | Collaborator |
 |---|---|---|
@@ -167,37 +200,38 @@ Do not build PostgreSQL RLS, ABAC, audit logging, or hardware-key admin controls
 
 ### Ownership Rules
 
-- Every read, update, and delete on user-owned data must include local `user.id` in the Prisma `where` clause.
-- `userId` must come from the authenticated Clerk session mapped through the local `User` table.
+- Every read, update, and delete on user-owned data includes local `user.id` in the Prisma `where` clause.
+- `userId` comes only from the authenticated Clerk session mapped through the local `User` table.
 - Never trust `userId` from body JSON, query params, or route params.
 - Return 404, not 403, when an ownership check fails.
-- Deletes use scoped `deleteMany({ where: { id, userId } })` or equivalent and return 404 when no row is affected.
+- Deletes use scoped `deleteMany({ where: { id, userId } })` and return 404 when no row is affected.
 
 ### Plan and Admin Rules
 
-- `User.plan` gates resource limits.
-- `User.role` exists for internal classification, but v1 admin access is still checked through `ADMIN_EMAILS`.
+- `User.plan` gates resource limits through `canUseFeature()`.
+- Tier drives AI model selection: FREE → DeepSeek R1, PRO/ENTERPRISE → Claude Sonnet 4.
+- `User.role` exists for internal classification; v1 admin access is checked through `ADMIN_EMAILS`.
 - Non-admin API access to admin endpoints returns 404.
 
 ## Application Phases
 
-1. `DISCOVERY` - interview in progress.
-2. `REQUIREMENTS` - requirements are being analyzed.
-3. `ARCHITECTURE` - architecture proposal and critique.
-4. `DIAGRAM_GENERATION` - diagram jobs are planned and generated sequentially.
-5. `SPEC_GENERATION` - context files and feature specs are written.
-6. `COMPLETE` - ZIP package is ready.
+1. `DISCOVERY` — interview in progress.
+2. `REQUIREMENTS` — requirements being analyzed.
+3. `ARCHITECTURE` — architecture proposal and critique.
+4. `DIAGRAM_GENERATION` — diagram jobs planned and generated sequentially; diagram-first gate active.
+5. `SPEC_GENERATION` — context files and feature specs written from approved diagrams.
+6. `COMPLETE` — ZIP package ready.
 
 ## AI Firm Model
 
 | Role | Model key | Primary use |
 |---|---|---|
-| Principal Engineer | `gemini-2.5-pro` | discovery, requirements surfacing, architecture proposal, long-context planning |
-| Staff Reviewer | `deepseek-r1` | critique, scalability review, security review, trade-off analysis |
+| Principal Engineer | `gemini-2.5-pro` | discovery, requirements surfacing, architecture, long-context planning |
+| Staff Reviewer | `deepseek-r1` | critique, scalability/security review, trade-off analysis, feasibility |
 | Tech Writer | `deepseek-v3` | context files, feature specs, RFCs, API docs, AGENTS.md |
-| Senior SWE | `qwen-coder` | Prisma schema, Next.js routes, React Flow nodes, code standards |
+| Senior SWE | `qwen-coder` | schema, routes, React Flow nodes, GSAP/canvas/sequence specs, code standards |
 | Fast Chat | `groq-llama` | quick replies, streaming chat, label suggestions |
-| Research Team | `gemini-2.5-flash`, `kimi-k2` | comparison, synthesis, large document analysis |
+| Research Team | `gemini-2.5-flash`, `kimi-k2` | comparison, synthesis, large-document analysis |
 
 ## Model Task Map
 
@@ -212,7 +246,7 @@ Do not build PostgreSQL RLS, ABAC, audit logging, or hardware-key admin controls
 
 ## Fallback Chains
 
-Every AI call uses `callAI(task, params, overrideModelKey?)`. The engine resolves the task to a model key, reads that key's fallback chain, checks provider availability, calls the provider, logs the attempt, and continues until a response succeeds or every fallback fails.
+Every AI call uses `callAI(task, params, overrideModelKey?)`. The engine resolves the task to a model key, reads that key's fallback chain, checks provider availability, calls the provider via the Rust key rotation engine, logs the attempt, and continues until a response succeeds or every fallback fails. When all providers are rate-limited, the request is queued in NATS JetStream and a queue-position indicator is shown.
 
 | Model key | Fallback chain |
 |---|---|
@@ -224,9 +258,9 @@ Every AI call uses `callAI(task, params, overrideModelKey?)`. The engine resolve
 | `groq-llama` | Groq Llama 70B -> Groq Llama 8B instant -> Groq Gemma2 -> Gemini Flash -> OpenRouter Qwen3 free |
 | `kimi-k2` | OpenRouter Kimi K2 -> OpenRouter Kimi K2 free -> Gemini Pro -> OpenRouter DeepSeek Chat |
 
-## Provider Abstraction
+Production primary chain across providers: Claude Sonnet 4 → Gemini Pro → DeepSeek R1 → Kimi K2 → Qwen Coder. Free-tier primary is DeepSeek R1. Model IDs are pinned to exact versions (never `"latest"`) in `config/model.yaml`.
 
-All providers implement:
+## Provider Abstraction
 
 ```ts
 interface AIProvider {
@@ -234,7 +268,6 @@ interface AIProvider {
   call(params: AICallParams): Promise<AIResponse>;
   isAvailable(): Promise<boolean>;
 }
-
 interface AICallParams {
   model: string;
   systemPrompt: string;
@@ -243,7 +276,6 @@ interface AICallParams {
   temperature?: number;
   stream?: boolean;
 }
-
 interface AIResponse {
   text: string;
   model: string;
@@ -252,380 +284,130 @@ interface AIResponse {
 }
 ```
 
-Provider adapters belong in `lib/ai/providers/`. Direct calls to external AI APIs are not allowed outside those adapters.
+Provider adapters belong in `lib/ai/providers/`. Direct calls to external AI APIs are not allowed outside those adapters. The Rust key rotation engine selects the least-used available key per provider and marks rate-limited keys for 24 hours.
 
-## AI Conversation Flow
+## AI Conversation Flow (8 Phases)
 
-### Phase 1 - Discovery Interview
-
-The discovery assistant acts as a principal engineer. It asks exactly one question at a time and covers: users, scale, read/write patterns, consistency, uptime/SLA, budget, team expertise, infrastructure constraints, security/compliance, and failure modes.
-
-After roughly 8-12 exchanges, it synthesizes:
-
-- Functional requirements.
-- Non-functional requirements.
-- Hidden requirements.
-- Scale estimates.
-- Security and compliance risks.
-
-### Phase 2 - Requirements Surfacing
-
-Deep reasoning extracts requirements, identifies bottlenecks, flags security risks, and proposes architectural approaches with trade-offs.
-
-### Phase 3 - Architecture Proposal
-
-The orchestrator proposes a high-level architecture and creates initial diagram data for review on the canvas.
-
-### Phase 4 - Sequential Diagram Generation
-
-The diagram planner creates an ordered list of diagram jobs. Jobs run one at a time, render to canvas, capture as PNG, and persist output.
-
-### Phase 5 - Context and Feature Specs
-
-Structured document generation writes the six context files, root AGENTS.md, and N ordered feature specs.
-
-### Research Phase - Continuous
-
-Research runs throughout discovery, requirements, architecture, UI planning, and spec generation. It collects uploaded image assets, screenshots, frame ZIPs, extracted frames, Markdown/pasted notes, PDF/Word/Excel/PowerPoint research files, scraped sources, Context7 documentation findings, and AI/engineer notes into the project research corpus. Later generation phases must read the research corpus and cite relevant `research/` paths in generated docs/specs.
+- **Phase 1 — Discovery interview**: principal-engineer persona asks one question at a time, classifying the opening description as Level 1/2/3. Covers users, scale, read/write patterns, consistency, uptime/SLA, budget, team expertise, infrastructure constraints, security/compliance, failure modes. Surfaces hidden requirements from the catalog.
+- **Phase 2 — Requirements surfacing**: deep reasoning extracts functional, non-functional, hidden, scale, and security requirements and proposes approaches with trade-offs.
+- **Phase 3 — Architecture proposal**: orchestrator proposes a high-level architecture, records ADRs, and prepares the System Context Diagram.
+- **Phase 4 — Sequential diagram generation (diagram-first gate)**: the planner creates an ordered job list; jobs run one at a time, render to canvas, capture as PNG, persist, and version. No spec is written until all diagrams are approved.
+- **Phase 5 — Context and feature specs**: structured generation writes the six context files, root AGENTS.md, the Feature Dependency Graph, and N ordered feature specs traced to diagrams, with file ownership and proactive warnings.
+- **Research phase (continuous)**: collects assets, frame ZIPs, extracted frames, documents, scraped sources, Context7 findings, and notes into the research corpus; later phases cite relevant `research/` paths.
 
 ## Diagram System
 
-Diagram categories:
+Categories: `structural` (class, component, object, deployment, package), `behavioral` (use case, sequence, activity, state machine), `architectural` (C4 context, C4 container, C4 component, microservices map, system context), `data` (DFD L0, DFD L1, ER), `infrastructure` (AWS architecture, network).
 
-- `structural`: class, component, object, deployment, package.
-- `behavioral`: use case, sequence, activity, state machine.
-- `architectural`: C4 context, C4 container, C4 component, microservices map, system context.
-- `data`: DFD level 0, DFD level 1, ER diagram.
-- `infrastructure`: AWS architecture, network diagram.
-
-Each diagram type maps to a shape library. Shape libraries must expose both node definitions and edge definitions where relevant.
-
-Examples:
-
-- Class diagrams: class, interface, abstract, association, aggregation, composition, inheritance, dependency.
-- Sequence diagrams: lifeline, actor, activation bar, fragment, sync message, async message, return message.
-- ER diagrams: entity, weak entity, attribute, relationship, one-to-many, many-to-many, one-to-one.
-- C4 diagrams: person, system, container, database, external system, relationship.
-- Microservices maps: service hex, gateway, message bus, database, load balancer, cache.
+The 12 generated diagram types and triggers (System Context always-first, Container always, Component per container > 3 components, ERD if database, Sequence min 3, DFD if user data/payments/AI, State Machine conditional, Deployment if > 1 target, API Map if > 3 endpoints, Feature DAG always, Agent Architecture for agentic, Security Architecture always) are specified in `research/FOUNDRIE_RESEARCH.md` §6. Each type maps to a shape library exposing node and edge definitions.
 
 ## Sequential Diagram Pipeline
 
-Diagram job status values:
-
-- `queued`
-- `generating`
-- `rendering`
-- `capturing`
-- `done`
-- `error`
-
-Required job fields:
-
-- `id`
-- `diagramTypeId`
-- `category`
-- `name`
-- `folderPath`
-- `fileName`
-- `status`
-- `reactFlowData`
-- `pngBuffer`
-- `errorMessage`
-- `startedAt`
-- `completedAt`
-
-The runner must continue after a single diagram fails. Failed jobs must create an error placeholder in the ZIP output.
+Job statuses: `queued`, `generating`, `rendering`, `capturing`, `done`, `error`. Required job fields: `id`, `diagramTypeId`, `category`, `name`, `folderPath`, `fileName`, `status`, `reactFlowData`, `pngBuffer`, `errorMessage`, `startedAt`, `completedAt`. The runner continues after a single diagram fails; failed jobs create an error placeholder in the ZIP. Each generation is a LangGraph checkpoint for power-loss recovery. Diagrams are versioned (`diagrams/vN/`), and `progress-tracker.md` records which version each spec was written from.
 
 ## ZIP Output Contract
 
-ZIP file name:
-
-```text
-{project-slug}_{YYYY-MM-DD_HH-mm-ss}.zip
-```
-
-ZIP structure. `.agents/skills/`, research asset subfolders, and diagram category folders are included only when populated.
+ZIP file name: `{project-slug}_{YYYY-MM-DD_HH-mm-ss}.zip`. Generated by the Rust streaming pipeline through a Trigger.dev task and stored in Vercel Blob. Structure is a product contract; optional directories appear only when populated.
 
 ```text
 {project-slug}_{timestamp}/
 |-- AGENTS.md
 |-- ARTKINS_STYLE_GUIDE.md
-|-- .agents/                     (optional)
-|   `-- skills/
-|       |-- project-research/
-|       |   `-- SKILL.md
-|       `-- ... project-specific skills
-|-- context/
-|   |-- project-overview.md
-|   |-- architecture-context.md
-|   |-- ui-context.md
-|   |-- code-standards.md
-|   |-- ai-workflow-rules.md
-|   `-- progress-tracker.md
+|-- .env.example
+|-- .npmrc
+|-- .github/ (CODEOWNERS, dependabot.yml, workflows/)
+|-- .agents/skills/                  (optional)
+|-- context/ (6 files)
+|-- diagrams/                        (mandatory; 01-12 + versioned vN/)
 |-- feature-specs/
-|   |-- 01-auth.md
-|   |-- 02-database-schema.md
-|   `-- ...
-|-- research/
-|   |-- PROJECT_RESEARCH.md
-|   `-- ... populated research subfolders only
-|-- diagrams/
-|   |-- structural/
-|   |-- behavioral/
-|   |-- architectural/
-|   |-- data/
-|   `-- infrastructure/
-`-- requirements/
-    |-- discovery-notes.md
-    |-- requirements-analysis.md
-    `-- architecture-decisions.md
+|-- research/ (PROJECT_RESEARCH.md + populated subfolders)
+|-- project-management/ (SCOPE, TIMELINE, PRICING, CHANGE_LOG)
+|-- requirements/ (discovery-notes, requirements-analysis, architecture-decisions)
+|-- tools/ (permissions.yaml — agentic)
+|-- evals/ (golden-set.json, run-evals.py — agentic)
+`-- docs/ (PRODUCTION-CHECKLIST, QUALITY-GATE, LOGGING, SECURITY, PRIVACY, TOOLING, CONTRIBUTING, adr/, security/)
 ```
+
+A ZIP without `diagrams/` is invalid. `docs/HANDOFF.md` is generated separately at project close, not in the planning ZIP.
 
 ## Database Schema
 
-Core models:
+Core models: `User`, `Project`, `Conversation`, `Requirements`, `Diagram`, `ContextFile`, `FeatureSpec`, `ResearchDocument`, `ResearchAsset`, `ResearchSource`, `ProjectAgentSkill`, `ExecutionPlan`, `ProjectMember`.
 
-- `User`: Clerk-linked user record.
-- `Project`: owner, name, slug, status, ZIP metadata, phase metadata.
-- `Conversation`: phase-scoped message history.
-- `Requirements`: discovery notes, analysis doc, ADR doc, functional/NFR JSON, hidden requirements, scale estimates.
-- `Diagram`: type, category, React Flow JSON, PNG URL, file name, status.
-- `ContextFile`: generated context files and AGENTS.md content.
-- `FeatureSpec`: ordered feature specs.
-- `ResearchDocument`: project research Markdown and extracted research notes.
-- `ResearchAsset`: Blob-backed research asset metadata.
-- `ResearchSource`: URL/documentation/source capture metadata.
-- `ProjectAgentSkill`: generated project-specific agent skills.
-- `ExecutionPlan`: user-reviewed plans for implementation-impacting work.
-- `ProjectMember`: project membership for Owner/Collaborator authorization.
+`User` adds Stripe/subscription fields (`stripeCustomerId`, `subscriptionPlan`, `subscriptionStatus`, `currentPeriodEnd`) alongside `plan` and `role`.
 
 ## Neon Postgres Architecture
 
-Foundrie AI uses Neon Postgres as the required PostgreSQL provider. The user supplies the Neon connection URI values through environment variables.
-
 ### Connection Rules
 
-Foundrie AI's data layer operates perfectly on a 2-connection architecture:
+- **`DATABASE_URL` (Pooled)**: primary database with `-pooler`. Used by the app at runtime for all queries. Prevents serverless connection exhaustion (PgBouncer in transaction mode).
+- **`DIRECT_URL` (Unpooled)**: primary without the pooler. Used only by the Prisma CLI for `db:migrate`/`db:push`.
+- Runtime code must not use the direct connection.
 
-- **`DATABASE_URL` (Pooled)**: Points to the primary database with `-pooler` in the URL. Used by the application at runtime for all queries. The pooler prevents Next.js serverless functions from exhausting the database's connection limit.
-- **`DIRECT_URL` (Unpooled)**: Points to the primary database without the pooler. Used **only** by the Prisma CLI for `npm run db:migrate` and `npm run db:push`, because altering database schemas requires a persistent, 1-to-1 connection.
-
-- Runtime code must not use the direct connection URL.
-
-Prisma datasource:
-
-```prisma
-datasource db {
-  provider = "postgresql"
-}
-```
-
-URLs are configured in `prisma.config.ts`.
+Prisma datasource is minimalist (`provider = "postgresql"`); URLs are configured in `prisma.config.ts`.
 
 ### Database Scripts
 
-Agents must use the following `package.json` scripts:
-- `npm run db:generate` to generate the client.
-- `npm run db:migrate` to run migrations.
-- `npm run db:push` to sync schema without migrations (if applicable).
-- `npm run db:studio` to open the studio.
+`npm run db:generate`, `npm run db:migrate`, `npm run db:push`, `npm run db:studio`.
 
 ### Prisma Client
 
-- The repository uses one Prisma client instance named `db` (pooled primary connection for both reads and writes, compatible with the Neon free-tier 2-connection strategy).
-- Prisma client instances are cached on `globalThis` in development to avoid hot-reload connection leaks.
+One Prisma client named `db` (pooled, reads and writes — compatible with the Neon free-tier 2-connection strategy), cached on `globalThis` in development. At scale, reads route to Neon read replicas and writes to the primary; reads requiring read-after-write consistency use the primary.
 
 ### Consistency Model
 
-- Foundrie is ACID-first. Relational state must be strongly consistent.
-- Eventual consistency is acceptable only for progress UI, dashboard freshness, analytics, and eventual consistency reads.
-- ZIP generation should use a consistent read snapshot for multi-table reads.
-
-### Model Field Requirements
-
-`User`
-
-- `id`, `clerkId`, `email`, `name`, `plan`, `role`, `createdAt`, `updatedAt`.
-- Unique constraints on `clerkId` and `email`.
-- Relation to owned projects.
-
-`Project`
-
-- `id`, `userId`, `name`, `slug`, optional `description`, `status`.
-- Denormalized counters: `diagramCount`, `completedDiagramCount`, `featureSpecCount`.
-- ZIP metadata: `lastZipUrl`, `lastZipGeneratedAt`, `lastZipFileName`.
-- Timestamps.
-- Relations: conversations, requirements, diagrams, contextFiles, featureSpecs.
-- Indexes on `userId`, `[userId, updatedAt]`, `slug`, and `status`.
-
-`Conversation`
-
-- `id`, `projectId`, `phase`, `messages`, `createdAt`, `updatedAt`.
-- `messages` is JSON containing `{ role, content, timestamp }`.
-- Indexes on `[projectId, phase]` and `[projectId, updatedAt]`.
-
-`Requirements`
-
-- `id`, unique `projectId`.
-- `discoveryNotes`, `analysisDoc`, `adrDoc`.
-- JSON fields: `functional`, `nonFunctional`, `hiddenReqs`, `scaleEstimates`.
-- Timestamps.
-
-`Diagram`
-
-- `id`, `projectId`, `name`, `diagramTypeId`, `category`, `orderInCategory`.
-- React Flow data: `reactFlowNodes`, `reactFlowEdges`.
-- Output data: `pngStorageUrl`, `fileName`.
-- Status data: `status`, `errorMessage`, `generatedAt`.
-- Timestamps and indexes on `projectId` and `[projectId, category, orderInCategory]`.
-- Partial SQL indexes for generating diagrams and diagrams with PNGs.
-
-`ContextFile`
-
-- `id`, `projectId`, `fileName`, `fileType`, `content`, timestamps.
-- Unique constraint on `[projectId, fileType]`.
-
-`FeatureSpec`
-
-- `id`, `projectId`, `order`, `title`, `content`, timestamps.
-- Unique constraint on `[projectId, order]`.
-- Index on `[projectId, order]`.
-
-`ResearchDocument`
-
-- `id`, `projectId`, `title`, `fileName`, `content`, `sourceType`, `tags`, timestamps.
-- Used for `PROJECT_RESEARCH.md`, technical research notes, visual analysis notes, motion plans, source summaries, and Context7 findings.
-
-`ResearchAsset`
-
-- `id`, `projectId`, `assetType`, `originalFileName`, `blobUrl`, optional `sourceUrl`, `mimeType`, `sizeBytes`, optional dimensions metadata, `tags`, `aiSummary`, timestamps.
-- Stores uploaded screenshots, image assets, inspiration images, frame ZIPs, extracted frames, research document files, captured screenshots, and other large research assets in Vercel Blob.
-- Asset types are image asset, screenshot, inspiration, document, frame ZIP, frame, and scrape capture.
-
-`ResearchSource`
-
-- `id`, `projectId`, `url`, `provider`, `status`, `title`, `extractedContent`, `summary`, optional `screenshotBlobUrl`, `tags`, timestamps.
-- Provider values include manual, Context7, Tavily, Obscura, and upload-derived sources.
-
-`ProjectAgentSkill`
-
-- `id`, `projectId`, `slug`, `filePath`, `content`, `description`, `tags`, timestamps.
-- Unique constraint on `[projectId, slug]`.
-- Used to export `.agents/skills/<slug>/SKILL.md` only when project-specific skills exist.
-
-`ExecutionPlan`
-
-- `id`, `projectId`, `taskType`, `content`, `status`, `revisionNotes`, `approvedAt`, `executedAt`, timestamps.
-- Status values: `PROPOSED`, `APPROVED`, `REVISION_REQUESTED`, `REJECTED`, `EXECUTED`.
-- Used to enforce user approval before implementation-impacting generation or coding work.
+ACID-first. Eventual consistency is acceptable only for progress UI, dashboard freshness, and analytics. ZIP generation uses a consistent read snapshot (`RepeatableRead`) for multi-table reads; `Serializable` only for compare-then-write order allocation.
 
 ### Required Indexes
 
 ```prisma
-model Project {
-  @@index([userId])
-  @@index([userId, updatedAt(sort: Desc)])
-  @@index([slug])
-  @@index([status])
-}
-
-model Conversation {
-  @@index([projectId, phase])
-  @@index([projectId, updatedAt(sort: Desc)])
-}
-
-model Diagram {
-  @@index([projectId])
-  @@index([projectId, category, orderInCategory])
-}
-
-model ContextFile {
-  @@unique([projectId, fileType])
-  @@index([projectId, fileType])
-}
-
-model FeatureSpec {
-  @@unique([projectId, order])
-  @@index([projectId, order])
-}
-
-model ResearchDocument {
-  @@index([projectId])
-  @@index([projectId, sourceType])
-}
-
-model ResearchAsset {
-  @@index([projectId])
-  @@index([projectId, assetType])
-}
-
-model ResearchSource {
-  @@index([projectId])
-  @@index([projectId, provider])
-  @@index([projectId, status])
-}
-
-model ProjectAgentSkill {
-  @@unique([projectId, slug])
-  @@index([projectId])
-}
-
-model ExecutionPlan {
-  @@index([projectId])
-  @@index([projectId, status])
-  @@index([projectId, taskType])
-}
+model Project        { @@index([userId]) @@index([userId, updatedAt(sort: Desc)]) @@index([slug]) @@index([status]) }
+model Conversation   { @@index([projectId, phase]) @@index([projectId, updatedAt(sort: Desc)]) }
+model Diagram        { @@index([projectId]) @@index([projectId, category, orderInCategory]) }
+model ContextFile    { @@unique([projectId, fileType]) @@index([projectId, fileType]) }
+model FeatureSpec    { @@unique([projectId, order]) @@index([projectId, order]) }
+model ResearchDocument { @@index([projectId]) @@index([projectId, sourceType]) }
+model ResearchAsset  { @@index([projectId]) @@index([projectId, assetType]) }
+model ResearchSource { @@index([projectId]) @@index([projectId, provider]) @@index([projectId, status]) }
+model ProjectAgentSkill { @@unique([projectId, slug]) @@index([projectId]) }
+model ExecutionPlan  { @@index([projectId]) @@index([projectId, status]) @@index([projectId, taskType]) }
 ```
 
-Raw SQL migration for partial indexes:
-
 ```sql
-CREATE INDEX CONCURRENTLY idx_diagrams_generating
-ON diagrams(project_id, updated_at)
-WHERE status IN ('QUEUED', 'GENERATING', 'RENDERING', 'CAPTURING');
-
-CREATE INDEX CONCURRENTLY idx_diagrams_has_png
-ON diagrams(project_id)
-WHERE png_storage_url IS NOT NULL;
+CREATE INDEX CONCURRENTLY idx_diagrams_generating ON diagrams(project_id, updated_at)
+  WHERE status IN ('QUEUED', 'GENERATING', 'RENDERING', 'CAPTURING');
+CREATE INDEX CONCURRENTLY idx_diagrams_has_png ON diagrams(project_id)
+  WHERE png_storage_url IS NOT NULL;
+ALTER TABLE diagrams SET (autovacuum_vacuum_scale_factor = 0.01, autovacuum_analyze_scale_factor = 0.005, autovacuum_vacuum_cost_delay = 2);
+ALTER TABLE conversations SET (autovacuum_vacuum_scale_factor = 0.02, autovacuum_analyze_scale_factor = 0.01, autovacuum_vacuum_cost_delay = 2);
 ```
 
 ### Database Performance Invariants
 
 1. Every foreign key used in joins or ownership checks is indexed.
-2. Dashboard and list endpoints use cursor pagination, never offset pagination.
-3. List queries use `select` and must not fetch large JSON columns unless needed.
-4. No N+1 Prisma query loops are allowed.
-5. Slow queries over 100ms require `EXPLAIN ANALYZE`.
-6. Read-heavy flows use `db` when they do not require immediate read-after-write consistency.
-7. Write-heavy tables receive autovacuum tuning migrations.
+2. List endpoints use cursor pagination, never offset.
+3. List queries use `select` and avoid large JSON columns unless needed.
+4. No N+1 Prisma query loops.
+5. Slow queries over 100ms require `EXPLAIN ANALYZE`; enable `pg_stat_statements`; target cache hit ratio > 99%.
+6. Write-heavy tables receive autovacuum tuning migrations.
+7. Neon parameters: `statement_timeout = 30s`, `idle_in_transaction_session_timeout = 10s`, `lock_timeout = 5s`.
 
-Project statuses:
+Project statuses: `DISCOVERY`, `REQUIREMENTS`, `ARCHITECTURE`, `DIAGRAM_GENERATION`, `SPEC_GENERATION`, `COMPLETE`. User plans: `FREE`, `PRO`, `ENTERPRISE`. User roles: `USER`, `ADMIN`.
 
-- `DISCOVERY`
-- `REQUIREMENTS`
-- `ARCHITECTURE`
-- `DIAGRAM_GENERATION`
-- `SPEC_GENERATION`
-- `COMPLETE`
+## Scale Architecture
 
-User plans:
-
-- `FREE`
-- `PRO`
-- `ENTERPRISE`
-
-User roles:
-
-- `USER`
-- `ADMIN`
+Cloudflare (DDoS/WAF/CDN) → Vercel Edge (anycast) → Next.js → Rust Axum on ECS Fargate (auto-scale by CPU + queue depth) → Python LangGraph on GPU ECS → Neon (primary + 3 read replicas per region) + Upstash Redis + ChromaDB + Vercel Blob. Three regions (`us-east-1`, `eu-west-1`, `ap-southeast-1`) with data-residency routing. Training data lives in an isolated MongoDB Atlas cluster with zero access to production Neon. Performance targets: discovery P99 < 8 s, diagram generation P99 < 15 s, ZIP P99 < 5 s, 100 MB upload P99 < 30 s.
 
 ## API Route Map
 
 ```text
 /api/webhooks/clerk
+/api/webhooks/stripe
 /api/projects
 /api/projects/[projectId]
 /api/projects/[projectId]/download
+/api/projects/[projectId]/members
+/api/projects/[projectId]/members/[memberId]
 /api/conversations/[projectId]/chat
 /api/requirements/[projectId]
 /api/requirements/[projectId]/generate
@@ -645,33 +427,19 @@ User roles:
 /api/research/[projectId]/links
 /api/research/[projectId]/analyze
 /api/research/[projectId]/synthesize
-/api/projects/[projectId]/members
-/api/projects/[projectId]/members/[memberId]
+/api/billing/portal
 ```
 
 ## Frontend Route Structure
 
 ```text
 app/
-|-- (marketing)/
-|   |-- page.tsx
-|   `-- pricing/page.tsx
-|-- (auth)/
-|   |-- sign-in/[[...sign-in]]/page.tsx
-|   `-- sign-up/[[...sign-up]]/page.tsx
+|-- (marketing)/ (page, pricing)
+|-- (auth)/ (sign-in, sign-up)
 |-- (app)/
-|   |-- layout.tsx
-|   |-- dashboard/page.tsx
-|   |-- projects/new/page.tsx
-|   `-- projects/[projectId]/
-|       |-- page.tsx
-|       |-- discovery/page.tsx
-|       |-- requirements/page.tsx
-|       |-- architecture/page.tsx
-|       |-- diagrams/page.tsx
-|       |-- specs/page.tsx
-|       |-- research/page.tsx
-|       `-- export/page.tsx
+|   |-- dashboard/
+|   |-- projects/new/
+|   `-- projects/[projectId]/ (discovery, requirements, architecture, diagrams, specs, research, export)
 `-- api/
 ```
 
@@ -679,76 +447,48 @@ app/
 
 ```text
 components/
-|-- canvas/
-|   |-- DiagramCanvas.tsx
-|   |-- DiagramSidebar.tsx
-|   |-- nodes/
-|   `-- edges/
-|-- chat/
-|   |-- DiscoveryChat.tsx
-|   |-- ArchitectureChat.tsx
-|   `-- ChatMessage.tsx
-|-- diagram-generation/
-|   |-- GenerationProgress.tsx
-|   |-- DiagramPreview.tsx
-|   `-- GenerationControls.tsx
-|-- project/
-|   |-- DownloadZipButton.tsx
-|   |-- ProjectPhaseNav.tsx
-|   |-- RequirementsReview.tsx
-|   `-- FeatureSpecsList.tsx
-|-- research/
-|   |-- ResearchLibrary.tsx
-|   |-- ResearchUploader.tsx
-|   |-- ResearchSourceList.tsx
-|   |-- VisualReferenceGrid.tsx
-|   `-- MotionPlanViewer.tsx
+|-- canvas/ (DiagramCanvas, DiagramSidebar, nodes/, edges/)
+|-- chat/ (DiscoveryChat, ArchitectureChat, ChatMessage)
+|-- diagram-generation/ (GenerationProgress, DiagramPreview, GenerationControls)
+|-- project/ (DownloadZipButton, ProjectPhaseNav, RequirementsReview, FeatureSpecsList)
+|-- research/ (ResearchLibrary, ResearchUploader, ResearchSourceList, VisualReferenceGrid, MotionPlanViewer)
 `-- ui/
 ```
 
 ## ZIP Generation Behavior
 
-- `POST /api/projects/[projectId]/download` checks auth and project ownership.
+- `POST /api/projects/[projectId]/download` checks auth and project membership.
 - If a ZIP was generated in the last 10 minutes, return cached metadata.
-- Otherwise trigger `generate-project-zip` through Trigger.dev and return `runId`.
+- Otherwise trigger `generate-project-zip` (Rust streaming builder) through Trigger.dev and return `runId`.
 - `GET /api/projects/[projectId]/download?runId=...` polls run status.
-- When complete, return ZIP URL/path and file name.
-- Client `DownloadZipButton` shows packaging messages, polls, and triggers browser download.
+- When complete, return the ZIP URL/path and file name; `DownloadZipButton` polls and triggers the browser download.
 
 ## Prompt Contracts
 
-- Discovery prompt asks one question at a time and synthesizes only after enough context.
+- Discovery prompt classifies Level 1/2/3, asks one question at a time, surfaces hidden requirements, and synthesizes only after enough context.
 - Requirements prompt extracts functional, non-functional, hidden, scale, security, and trade-off information.
-- Diagram prompts return only valid JSON with `nodes` and `edges`.
-- AGENTS.md generation prompt must brief a senior coding agent with reading order, feature order, hard rules, diagrams, and current status.
-- AGENTS.md generation prompt must require reading root `ARTKINS_STYLE_GUIDE.md` before coding.
-- Planning prompts must show a plan, wait for approval, and revise the plan when the user asks for changes before execution.
-- Architecture-context generation prompt must include a researched, user-approved stack decision. It must not copy Foundrie's own stack unless the user chose it or the research justifies it.
-- Version prompts must use Context7 and official release/install sources before writing package versions into generated specs.
-- Feature spec generation prompt must follow the incremental methodology: one feature per spec, exact dependencies, exact files, explicit out of scope, future modifications, and binary acceptance criteria.
-- Research synthesis prompt must produce `research/PROJECT_RESEARCH.md` and supporting research documents that summarize uploaded assets, frame ZIPs, extracted frames, research files, links, scraped data, visual references, motion references, Context7 findings, technical decisions, open questions, and implementation implications.
-- Visual/motion research prompts must identify animation intent, source assets, frame sequence strategy, GSAP/ScrollTrigger implementation notes when relevant, accessibility/performance constraints, and generated asset paths.
-- Project-specific skill generation prompt must turn repeatable research-backed workflows into `.agents/skills/<skill-name>/SKILL.md` files, such as frame-sequence animation implementation, domain-specific API usage, or project-specific research interpretation.
-- All generated output is parsed and validated before persistence.
+- Diagram prompts return only valid JSON with `nodes` and `edges`; the System Context Diagram is generated first and approved before others.
+- AGENTS.md generation prompt briefs a senior coding agent with the reading order (diagrams before context files), feature order, hard rules, diagrams, and current status, and requires reading root `ARTKINS_STYLE_GUIDE.md` before coding.
+- Planning prompts show a plan, wait for approval, and revise before execution.
+- Architecture-context generation prompt includes a researched, user-approved stack decision; it must not copy Foundrie's stack unless chosen or justified.
+- Version prompts use Context7 and official release/install sources before writing package versions; model IDs are pinned.
+- Feature-spec generation prompt follows the incremental methodology: one feature per spec, exact dependencies, exact files, `Files Owned`, explicit Out of Scope, Future Modifications, binary acceptance criteria, traced to the governing diagram.
+- Research synthesis prompt produces `research/PROJECT_RESEARCH.md` and supporting documents summarizing assets, frame ZIPs, extracted frames, research files, links, scraped data, visual/motion references, Context7 findings, technical decisions, open questions, and implementation implications.
+- Visual/motion research prompts identify animation intent, source assets, frame-sequence strategy, GSAP/ScrollTrigger notes, accessibility/performance constraints, and generated asset paths.
+- Project-specific skill generation prompt turns repeatable research-backed workflows into `.agents/skills/<skill-name>/SKILL.md`.
+- Every recommendation cites a source. All generated output is parsed and validated before persistence.
 
 ## Invariants
 
-1. Context7 docs are required before implementing library-specific code.
-2. Route handlers do not perform long-running AI generation.
-3. AI provider calls only happen through provider adapters and the rotation engine.
-4. Database stores metadata and relationships; Vercel Blob stores generated artifacts.
-5. Export ZIP structure is stable and agent-consumable.
-6. Diagram generation is sequential and resumable.
-7. Canvas state and diagram data must validate before persistence.
-8. Project ownership is enforced on every read and mutation.
-9. Generated docs must be editable before export.
-10. Progress state must reflect reality, not intended work.
-11. Clerk handles identity; Foundrie code handles authorization.
-12. Generated feature specs must never reference unavailable dependencies or bundle multiple features.
-13. Research is a first-class export. Generated projects include `research/PROJECT_RESEARCH.md` and any relevant uploaded/captured assets.
-14. External research connectors are optional and must degrade gracefully when credentials are absent.
-15. Generated projects can include `.agents/skills/` for project-specific workflows derived from research, context, and feature specs.
-16. Generated projects include root `ARTKINS_STYLE_GUIDE.md`.
-17. Implementation-impacting work cannot execute until the user approves the current plan.
-18. Generated project stacks are researched and user-approved; Foundrie's own stack is not a default constraint.
-19. Package versions in generated specs require current docs/release research before being committed.
+1. Context files and research are read before implementation; the research corpus is cumulative (higher version wins).
+2. Foundrie's stack is the four-layer polyglot architecture; generated stacks are dynamic and research-driven.
+3. The diagram-first gate holds: no spec or ZIP before all applicable diagrams are approved; every ZIP includes `diagrams/`; the Feature DAG drives ordering.
+4. All AI calls go through the rotation engine; direct provider calls only in adapters; tier drives model selection; model IDs are pinned.
+5. Clerk authenticates; Foundrie authorizes; ownership scoping by local `user.id`; ownership failure returns 404.
+6. Long-running work runs in Trigger.dev tasks with retries and idempotency; route handlers stay thin.
+7. PostgreSQL stores metadata; Vercel Blob stores artifacts; MongoDB Atlas (isolated) stores anonymized training data only.
+8. Structured JSON logging only; no `console.log`; request IDs and `trace_id` correlation; PII scrubbed.
+9. Security (seven-layer), CI/CD (22-step), dependency audit (hard gate), and the file security pipeline (6 steps) are generated into every project.
+10. The ZIP structure is a product contract; required files are never omitted without updating this context.
+11. Every feature spec is one feature with exact dependencies, `Files Owned`, Out of Scope, Future Modifications, and binary acceptance criteria.
+12. Update `progress-tracker.md` after meaningful changes; record missing requirements before inventing behavior.

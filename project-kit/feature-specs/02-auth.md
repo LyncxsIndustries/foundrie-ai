@@ -35,6 +35,11 @@ npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
+## Files Owned
+
+- `middleware.ts`
+- `app/(auth)/**`
+
 ## Files
 
 CREATE: `middleware.ts` - Clerk route protection using `clerkMiddleware` and `createRouteMatcher`.

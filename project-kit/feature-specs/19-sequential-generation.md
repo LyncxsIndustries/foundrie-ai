@@ -1,8 +1,17 @@
-# 19 - Sequential Generation
+# Feature 19 - Sequential Generation
 
-## Goal
+## Type
 
-Run diagram generation jobs one by one with progress UI.
+NEW FEATURE
+
+## What This Delivers
+
+The sequential diagram runner with progress UI: jobs run one at a time through `queued` → `generating` → `rendering` → `capturing` → `done`/`error`, rendering generated React Flow data to the canvas and capturing each diagram. A failed job records an error placeholder and the batch continues. The System Context Diagram is generated and approved first, enforcing the diagram-first gate.
+
+## Dependencies
+
+- Feature 18 (Diagram Planning) must be complete (queued jobs exist).
+- Features 16–17 (custom nodes/edges) and Feature 14 (canvas) must be complete.
 
 ## Context To Read First
 
@@ -18,34 +27,52 @@ Run diagram generation jobs one by one with progress UI.
 - Trigger.dev `/triggerdotdev/trigger.dev`
 - React Flow `/xyflow/web`
 
-Use installed Context7 skills or:
-
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Create sequential runner.
-- Update job statuses: queued, generating, rendering, capturing, done, error.
-- Render generated React Flow data to the canvas.
-- Capture each diagram after render.
-- Continue after per-job failure.
-- Build `GenerationProgress` with category grouping and current job state.
+- `trigger/generate-diagrams.ts`
+- `app/api/diagrams/[projectId]/generate/route.ts`
+- `app/api/diagrams/[projectId]/status/route.ts`
+- `components/diagram-generation/GenerationProgress.tsx`
+- `components/diagram-generation/GenerationControls.tsx`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: `trigger/generate-diagrams.ts` - durable sequential runner.
+CREATE: `app/api/diagrams/[projectId]/generate/route.ts` - thin route triggering the runner.
+CREATE: `app/api/diagrams/[projectId]/status/route.ts` - status polling.
+CREATE: `components/diagram-generation/GenerationProgress.tsx` and `GenerationControls.tsx`.
 
-## Check When Done
+## Implementation Notes
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- Run jobs one at a time. Update job status at each stage (`queued`, `generating`, `rendering`, `capturing`, `done`, `error`). Render generated React Flow data to the canvas and capture each diagram after render (Feature 21 provides the capture).
+- Continue after a per-job failure: record `errorMessage`, create an error placeholder, and proceed. One failed diagram never cancels the batch.
+- The System Context Diagram runs first and must be human-approved before the remaining diagrams generate (diagram-first gate). Surface the approval step in the UI.
+- Each generation step is a checkpoint so power loss resumes from the last completed diagram (LangGraph PostgresSaver semantics in the deployed Python layer; the durable Trigger.dev task provides equivalent recoverability here). The runner is idempotent by job ID.
+- `GenerationProgress` shows category grouping, the current job, and recoverable failure states.
+
+## Out of Scope
+
+- PNG capture implementation details (Feature 21) and diagram persistence specifics (Feature 20).
+- Diagram versioning UI beyond recording (handled with storage).
+
+## Future Modifications
+
+- Feature 20: Diagram storage persists JSON and PNGs the runner produces.
+- Feature 21: Canvas export provides the capture step.
+
+## Acceptance Criteria
+
+- [ ] Jobs run one at a time and transition through all statuses.
+- [ ] A failed job records an error placeholder and the batch continues.
+- [ ] The System Context Diagram generates first and requires approval before the rest.
+- [ ] Generation is recoverable (idempotent by job ID; resumes after interruption).
+- [ ] `GenerationProgress` shows current job, category grouping, and failure states.
+- [ ] Non-owner access returns 404.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.
