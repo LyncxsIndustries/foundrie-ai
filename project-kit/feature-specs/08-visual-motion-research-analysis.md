@@ -4,9 +4,14 @@
 
 NEW FEATURE
 
-## Goal
+## What This Delivers
 
-Analyze uploaded visual and motion references so Foundrie can turn screenshots, inspiration images, frame ZIPs, and extracted frame sequences into implementation-ready design and animation guidance.
+Analysis of uploaded visual and motion references so Foundrie turns screenshots, inspiration images, frame ZIPs, and extracted frame sequences into implementation-ready design and animation guidance, persisted as research documents and asset summaries.
+
+## Dependencies
+
+- Feature 07 (Research Library) must be complete (assets exist to analyze).
+- Feature 05 (AI Rotation Engine) provides vision-capable model routing with graceful fallback.
 
 ## Context To Read First
 

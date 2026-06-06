@@ -4,9 +4,14 @@
 
 NEW FEATURE
 
-## Goal
+## What This Delivers
 
-Create the project research workspace where users can upload and organize screenshots, image assets, frame ZIPs, extracted frames, research documents, pasted notes, and links that influence the generated project.
+The project research workspace where users upload and organize screenshots, image assets, frame ZIPs, extracted frames, research documents, pasted notes, and links that influence the generated project. After this feature, a project owner can build the research corpus that later generation phases cite.
+
+## Dependencies
+
+- Feature 04 (Project CRUD) and Feature 03 (Database Schema) must be complete (research models and ownership exist).
+- Vercel Blob token must be configured.
 
 ## Context To Read First
 

@@ -1,8 +1,16 @@
-# 33 - Liveblocks Presence
+# Feature 33 - Liveblocks Presence
 
-## Goal
+## Type
 
-Add collaborative presence, cursors, and online indicators.
+NEW FEATURE
+
+## What This Delivers
+
+Collaborative presence on the canvas: live cursors, participant avatars and names, AI thinking/generation presence during background work, and the foundation for the multi-user AI input queue state machine. Presence is ephemeral and kept separate from persisted diagram artifacts.
+
+## Dependencies
+
+- Feature 14 (React Flow Canvas) must be complete (Liveblocks rooms exist).
 
 ## Context To Read First
 
@@ -17,38 +25,43 @@ Add collaborative presence, cursors, and online indicators.
 
 - Liveblocks `/liveblocks/liveblocks`
 
-Use installed Context7 skills or:
-
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Define Liveblocks presence schema.
-- Show live cursors on canvas.
-- Show participant avatars and names.
-- Show AI thinking or generation presence during background work.
-- Keep presence separate from persisted diagram artifacts.
+- `components/canvas/PresenceLayer.tsx`
+- `lib/liveblocks/presence.ts`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: `lib/liveblocks/presence.ts` - presence schema and helpers.
+CREATE: `components/canvas/PresenceLayer.tsx` - live cursors, avatars, AI presence.
+
+## Implementation Notes
+
+- Define the Liveblocks presence schema (cursor position, selection, status). Show live cursors on the canvas and participant avatars/names. Show AI thinking/generation presence during background work.
+- Keep presence separate from persisted diagram artifacts (persistent data lives in the database). Presence degrades gracefully when realtime auth/connection fails.
+- Lay the groundwork for the AI input queue state machine (FREE → TYPING → SUBMITTED → RUNNING → BATCH_TAKEN): the first user to focus the input claims it, others see "X is typing" and a queue box, and queued messages are taken as a batch when the AI finishes. Buttons disable on click (idempotency).
+
+## Out of Scope
+
+- Member-aware authorization (Features 40–41) and the sharing UI (Feature 42).
+- Full batch-mode AI processing logic if it depends on collaboration auth (extend later).
 
 ## Future Modifications
 
-- Feature 40: Extends Liveblocks room auth to authorize both Owner and Collaborator roles.
-- Feature 42: Adds member avatars to the project header.
+- Feature 40: Liveblocks room auth authorizes both Owner and Collaborator.
+- Feature 42: Member avatars appear in the project header.
 
-## Check When Done
+## Acceptance Criteria
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- `project-kit/context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- [ ] Live cursors render on the canvas with participant avatars and names.
+- [ ] AI thinking/generation presence is shown during background work.
+- [ ] Presence is separate from persisted diagram data and degrades gracefully on connection failure.
+- [ ] The input field reflects the queue state machine states.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

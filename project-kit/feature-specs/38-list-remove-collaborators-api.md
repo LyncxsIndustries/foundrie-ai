@@ -12,6 +12,11 @@ Adds API endpoints for listing project members and removing collaborators. Owner
 
 - Feature 37 (Invite Collaborator API) must be complete before starting.
 
+## Files Owned
+
+- `app/api/projects/[projectId]/members/[memberId]/route.ts`
+- The GET handler within `app/api/projects/[projectId]/members/route.ts`
+
 ## Files
 
 MODIFY: `app/api/projects/[projectId]/members/route.ts` - Add GET handler for listing.

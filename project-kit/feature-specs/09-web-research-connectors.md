@@ -4,9 +4,14 @@
 
 NEW FEATURE
 
-## Goal
+## What This Delivers
 
-Add optional research connectors for Tavily, Obscura, and Context7 so Foundrie can collect source material from links, rendered pages, and current library documentation during project planning.
+Optional research connectors for Tavily, Obscura, and Context7 so Foundrie collects source material from links, rendered pages, and current library documentation during planning, and synthesizes `research/PROJECT_RESEARCH.md`. Connectors degrade gracefully when unconfigured.
+
+## Dependencies
+
+- Feature 07 (Research Library) must be complete.
+- `TAVILY_API_KEY` and `OBSCURA_ENDPOINT` are optional; the feature must work (in a degraded state) without them.
 
 ## Context To Read First
 

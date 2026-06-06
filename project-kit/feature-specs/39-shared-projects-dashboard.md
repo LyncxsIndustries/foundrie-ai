@@ -15,6 +15,10 @@ Extends the project list API and dashboard UI to show both "My Projects" (owned)
 - Feature 36 (Authorization Helpers) must be complete before starting.
 - Feature 38 (List & Remove Collaborators API) must be complete before starting.
 
+## Files Owned
+
+- This is a MODIFICATION of Feature 04. It edits `app/api/projects/route.ts` (GET) and `app/(app)/dashboard/page.tsx`, both originally owned by Features 04 and 06. Coordinate as a labeled modification; no new exclusive ownership is claimed.
+
 ## Files
 
 MODIFY: `app/api/projects/route.ts` - Extend GET to return owned and shared projects.

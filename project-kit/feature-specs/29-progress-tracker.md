@@ -1,14 +1,21 @@
-# 29 - Progress Tracker Generation
+# Feature 29 - Progress Tracker Generation
 
-## Goal
+## Type
 
-Generate and maintain `context/progress-tracker.md` for exported packages.
+NEW FEATURE
+
+## What This Delivers
+
+Generation and maintenance of `context/progress-tracker.md` for exported packages, seeded so a coding agent can resume: current phase, all features NOT STARTED with Feature 01 next, the diagram version log, open questions, architecture decisions, notable research, and a last-updated timestamp. Persisted as a `ContextFile` of type `PROGRESS_TRACKER`.
+
+## Dependencies
+
+- Feature 28 (AGENTS.md Generation) must be complete (feature order is known).
 
 ## Context To Read First
 
 - `context/project-overview.md`
 - `context/architecture-context.md`
-- `context/ui-context.md`
 - `context/code-standards.md`
 - `context/ai-workflow-rules.md`
 - `context/progress-tracker.md`
@@ -17,36 +24,42 @@ Generate and maintain `context/progress-tracker.md` for exported packages.
 
 - Prisma `/prisma/web`
 
-Use installed Context7 skills or:
-
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Generate tracker from project phase, completed specs, open questions, decisions, and research status.
-- Include notable research documents/assets that are required for implementation.
-- Update tracker when features are generated or reviewed.
-- Include implementation status that a coding agent can resume from.
-- Persist as ContextFile type `PROGRESS_TRACKER`.
-- Use `db` for tracker updates.
-- Use the `[projectId, fileType]` index when reading or updating the progress tracker context file.
-- Avoid rewriting all context files when only progress changes.
+- `lib/generation/progress-tracker.ts`
+- `lib/ai/prompts/progress-tracker.ts`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: `lib/generation/progress-tracker.ts` and `lib/ai/prompts/progress-tracker.ts`.
+MODIFY: `app/api/context-files/[projectId]/generate/route.ts` - add the `PROGRESS_TRACKER` branch.
 
-## Check When Done
+## Implementation Notes
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- Seed the tracker from project phase, the feature list (all NOT STARTED, Feature 01 next), open questions, architecture decisions, research status, and the diagram version log (which diagram version each spec was written from). Include a last-updated ISO timestamp.
+- Provide implementation status a coding agent can resume from. Update the tracker when features are generated or reviewed. Note notable research documents/assets required for implementation.
+- Persist as `ContextFile` type `PROGRESS_TRACKER`. Use `db` for updates via the `[projectId, fileType]` index. Avoid rewriting all context files when only progress changes.
+
+## Out of Scope
+
+- ZIP packaging (Feature 30) and the project-management documents (generated in the ZIP build).
+
+## Future Modifications
+
+- Feature 30: The tracker is included in the ZIP `context/` folder.
+- Scope-change protocol: the tracker records revised specs and the diagram version log on every approved scope change.
+
+## Acceptance Criteria
+
+- [ ] `context/progress-tracker.md` is seeded with the current phase, all features NOT STARTED (Feature 01 next), open questions, architecture decisions, the diagram version log, and a timestamp.
+- [ ] The tracker provides a resumable implementation status.
+- [ ] Updating progress does not rewrite all context files.
+- [ ] Non-owner access returns 404.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

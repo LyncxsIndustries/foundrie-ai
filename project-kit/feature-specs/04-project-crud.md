@@ -61,7 +61,7 @@ MODIFY: `.env.example` - Add `CLERK_WEBHOOK_SECRET` and `ADMIN_EMAILS`.
 MODIFY: `app/(app)/dashboard/page.tsx` - Minimal project list/create wiring if the dashboard shell exists.
 MODIFY: `context/progress-tracker.md` - Mark feature progress after implementation.
 
-## Implementation
+## Implementation Notes
 
 ### Auth Utilities and User Sync
 
@@ -106,7 +106,7 @@ MODIFY: `context/progress-tracker.md` - Mark feature progress after implementati
 - Redirect new projects to the discovery phase.
 - Keep this backend-only. Do not wire the UI yet.
 
-## Scope Limits
+## Out of Scope
 
 - Do not implement later feature specs early.
 - Do not introduce undocumented architecture changes.
@@ -115,7 +115,7 @@ MODIFY: `context/progress-tracker.md` - Mark feature progress after implementati
 - Do not add search, sorting controls, pagination UI, project sharing, project duplication, or delete confirmation polish unless a later spec asks for it.
 - Collaboration (Features 35-42) extends project access to Collaborators but is not part of this spec.
 
-## Check When Done
+## Acceptance Criteria
 
 - The feature works within its defined scope.
 - Relevant library docs were checked with Context7.
