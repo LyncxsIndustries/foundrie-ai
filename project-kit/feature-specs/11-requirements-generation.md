@@ -1,14 +1,22 @@
-# 11 - Requirements Generation
+# Feature 11 - Requirements Generation
 
-## Goal
+## Type
 
-Generate structured requirements analysis from discovery history.
+NEW FEATURE
+
+## What This Delivers
+
+Structured requirements analysis generated from discovery history and the research corpus, run as a durable task: functional and non-functional requirements, hidden requirements, scale estimates, and separation of product requirements from technology preferences and unresolved stack decisions. Advances the project to `REQUIREMENTS`.
+
+## Dependencies
+
+- Feature 10 (Discovery Chat) must be complete (conversation history exists).
+- Feature 07 (Research Library) provides the research corpus to read.
 
 ## Context To Read First
 
 - `context/project-overview.md`
 - `context/architecture-context.md`
-- `context/ui-context.md`
 - `context/code-standards.md`
 - `context/ai-workflow-rules.md`
 - `context/progress-tracker.md`
@@ -17,45 +25,56 @@ Generate structured requirements analysis from discovery history.
 
 - Trigger.dev `/triggerdotdev/trigger.dev`
 - Prisma `/prisma/web`
-- Tavily `/tavily-ai/tavily-js` if web research is used as requirements input
-
-Use installed Context7 skills or:
+- Tavily `/tavily-ai/tavily-js` (if web research feeds requirements)
 
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Create `POST /api/requirements/[projectId]/generate`.
-- Trigger a durable requirements task when generation may exceed route limits.
-- Use `callAI('requirements_surfacing')` or critique tasks as needed.
-- Read the project's research corpus before generation: research documents, source summaries, selected visual references, uploaded asset summaries, and unresolved research questions.
-- Include research evidence in requirements synthesis without copying full scraped/source documents into the requirements record.
-- Extract user technology preferences, target platform constraints, team skill constraints, deployment constraints, and open stack questions.
-- Do not turn preferences into final package versions yet; final stack/version decisions require architecture research and user approval.
-- Link requirements back to relevant `research/` paths when a requirement comes from visual, motion, source, or technical research.
-- Persist discovery notes, analysis document, functional JSON, NFR JSON, hidden requirements, and scale estimates.
-- Use `db` for generation writes.
-- Keep requirements generation atomic: either all generated requirement fields are saved together or the task records a recoverable error.
-- Do not repeatedly rewrite large `Conversation.messages` JSON in tight loops. Append/persist messages through the conversation API first, then read a stable snapshot for generation.
-- For read-heavy generation preparation, use `db` only when stale reads are acceptable; use `db` when the generation immediately follows a new user answer.
-- Advance project status to `REQUIREMENTS`.
+- `app/api/requirements/[projectId]/generate/route.ts`
+- `trigger/generate-requirements.ts`
+- `lib/ai/prompts/requirements.ts`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: `app/api/requirements/[projectId]/generate/route.ts` - thin route triggering the durable task.
+CREATE: `trigger/generate-requirements.ts` - durable requirements generation task.
+CREATE: `lib/ai/prompts/requirements.ts`.
+MODIFY: `context/progress-tracker.md` - mark feature progress.
 
-## Check When Done
+## Implementation Notes
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- Requirements output separates product requirements from technology preferences and unresolved stack decisions.
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- The route stays thin and triggers a durable Trigger.dev task; long-running generation never blocks the response.
+- Use `callAI('requirements_surfacing')` and critique tasks as needed.
+- Read the project's research corpus before generation (research documents, source summaries, selected visual references, asset summaries, unresolved research questions). Include research evidence without copying full scraped/source documents into the requirements record. Link requirements to relevant `research/` paths when they originate from visual, motion, source, or technical research.
+- Extract user technology preferences, target platform constraints, team skill constraints, deployment constraints, and open stack questions. Do not turn preferences into final package versions — final stack/version decisions require architecture research and user approval.
+- Run the hidden-requirements catalog check; surface at minimum one hidden requirement per major area (auth, data, payments, API, performance, security).
+- Persist discovery notes, analysis document, functional JSON, NFR JSON, hidden requirements, and scale estimates atomically (all-or-recoverable-error). Use `db` for writes.
+- Do not rewrite large `Conversation.messages` JSON in tight loops; read a stable snapshot for generation. Use `db` when generation immediately follows a new user answer.
+- Advance project status to `REQUIREMENTS`. The task is idempotent by `projectId` + generation key.
+
+## Out of Scope
+
+- Requirements review UI (Feature 12) and architecture proposal (Feature 13).
+- Final stack/version selection and diagram generation.
+
+## Future Modifications
+
+- Feature 12: Review UI edits the generated requirements.
+- Feature 13: Architecture proposal consumes requirements and scale estimates.
+
+## Acceptance Criteria
+
+- [ ] The route triggers a durable requirements task that does not block the response.
+- [ ] Requirements output separates product requirements from technology preferences and unresolved stack decisions.
+- [ ] At least one hidden requirement is surfaced per major area.
+- [ ] Requirements link back to relevant `research/` paths where applicable.
+- [ ] Generation is atomic or records a recoverable error.
+- [ ] Project status advances to `REQUIREMENTS`.
+- [ ] Non-owner access returns 404.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

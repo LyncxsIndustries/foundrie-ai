@@ -1,8 +1,16 @@
-# 16 - Custom Node Types
+# Feature 16 - Custom Node Types
 
-## Goal
+## Type
 
-Implement type-aware nodes for UML, C4, data, and infrastructure diagrams.
+NEW FEATURE
+
+## What This Delivers
+
+Type-aware React Flow node components for UML, C4, data, and infrastructure diagrams, registered as memoized `nodeTypes` defined outside render scope. Node data is schema-validated before rendering. These nodes back both manual diagramming and the 12 generated diagram types.
+
+## Dependencies
+
+- Feature 15 (Diagram Type Selector) must be complete (shape libraries exist).
 
 ## Context To Read First
 
@@ -17,35 +25,44 @@ Implement type-aware nodes for UML, C4, data, and infrastructure diagrams.
 
 - React Flow `/xyflow/web`
 
-Use installed Context7 skills or:
-
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Create one node component per major shape family.
-- Implement class/interface/abstract compartment nodes.
-- Implement sequence lifeline, actor, activation, and fragment nodes.
-- Implement ER entity, weak entity, attribute, and relationship nodes.
-- Implement C4 person, system, container, database, and external system nodes.
-- Implement microservice, gateway, message bus, database, load balancer, and cache nodes.
-- Validate node data before rendering.
+- `components/canvas/nodes/**`
+- `lib/diagrams/schemas/nodes.ts`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: one node component per major shape family under `components/canvas/nodes/`.
+CREATE: `lib/diagrams/schemas/nodes.ts` - Zod schemas for node data.
 
-## Check When Done
+## Implementation Notes
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- Implement class/interface/abstract compartment nodes; sequence lifeline, actor, activation, and fragment nodes; ER entity, weak entity, attribute, and relationship nodes; C4 person, system, container, database, and external system nodes; microservice, gateway, message bus, database, load balancer, and cache nodes.
+- Validate node data with Zod before rendering. Keep node renderers pure and visual; business logic belongs in hooks/helpers.
+- Register `nodeTypes` outside render scope or memoized.
+- Infrastructure node icons are inlined as base64 SVGs (not external URLs) so html-to-image PNG capture (Feature 21) does not break on CORS.
+- Follow the diagram visual language in `ui-context.md`.
+
+## Out of Scope
+
+- Edge types (Feature 17), generation (Features 18–19), PNG capture (Feature 21).
+
+## Future Modifications
+
+- Feature 19: Generated diagrams instantiate these nodes from AI output.
+- Feature 21: Nodes are captured to PNG; inlined SVG icons ensure clean capture.
+
+## Acceptance Criteria
+
+- [ ] Node components exist for class/interface/abstract, sequence, ER, C4, and microservice/infrastructure families.
+- [ ] Node data is Zod-validated before rendering.
+- [ ] `nodeTypes` are defined outside render scope or memoized.
+- [ ] Infrastructure icons are inlined as base64 SVGs, not external URLs.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

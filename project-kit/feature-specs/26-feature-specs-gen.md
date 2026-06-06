@@ -4,9 +4,20 @@
 
 NEW FEATURE
 
-## Goal
+## What This Delivers
 
-Generate ordered, incremental implementation specs for the exported project. Foundrie must generate specs the same way it expects its own agents to work: one feature at a time, dependency-safe, no batching, no premature RBAC/auth/UI behavior, and every spec testable as a standalone implementation unit.
+Ordered, incremental implementation specs for the exported project, generated from the approved diagrams (the Feature Dependency Graph drives ordering) the same way Foundrie expects its own agents to work: one feature at a time, dependency-safe, no batching, no premature RBAC/auth/UI behavior, each spec testable as a standalone unit with `Files Owned`, Out of Scope, Future Modifications, and binary acceptance criteria.
+
+## Dependencies
+
+- Feature 23 (Architecture Context Generation) must be complete (approved stack recorded).
+- The diagram suite (Features 18–21), especially the Feature DAG, must be approved — specs are written from diagrams, never from conversation order alone.
+
+## Files Owned
+
+- `lib/generation/feature-specs.ts`
+- `app/api/feature-specs/[projectId]/generate/route.ts`
+- `lib/ai/prompts/feature-specs.ts`
 
 ## Context To Read First
 
@@ -53,12 +64,16 @@ NEW FEATURE | MODIFICATION (modifies Feature: ___)
 - Feature [##] ([name]) must be complete before starting.
 - [External service] must have required environment variables configured.
 
+## Files Owned
+[Exact paths this feature exclusively owns. No other active spec may modify these.]
+
 ## Files
 CREATE: path/to/file
 MODIFY: path/to/file - specific change
 RUN: command if needed
 
 ## Implementation Notes
+- The diagram(s) that govern this feature (the diagram is the truth; the spec is derived from it).
 - Security, performance, data, API, UI, and test decisions for this feature only.
 - Research references required for this feature, using `research/...` paths.
 - Plan approval requirements for this feature before implementation.
@@ -78,6 +93,9 @@ RUN: command if needed
 ```
 
 - Apply these generation rules:
+  - Order specs from the approved Feature Dependency Graph (DAG), topologically sorted — never from conversation order alone.
+  - Each spec is traced to the diagram(s) that govern it; never spec a table, route, or component absent from the diagrams.
+  - Each spec declares `Files Owned`; no two active specs own the same file.
   - Never group more than one feature into a spec.
   - Never reference auth before an auth foundation spec exists.
   - Never add logout, user menus, plan gates, admin routes, or ownership checks before the required auth/user data specs exist.

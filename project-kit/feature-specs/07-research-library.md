@@ -22,6 +22,15 @@ Create the project research workspace where users can upload and organize screen
 - Prisma `/prisma/web`
 - Next.js `/vercel/next.js`
 
+## Files Owned
+
+- `app/(app)/projects/[projectId]/research/page.tsx`
+- `components/research/ResearchLibrary.tsx`
+- `components/research/ResearchUploader.tsx`
+- `components/research/VisualReferenceGrid.tsx`
+- `app/api/research/[projectId]/upload/route.ts`
+- `app/api/research/[projectId]/assets/route.ts`
+
 ## Files
 
 CREATE: `app/(app)/projects/[projectId]/research/page.tsx`

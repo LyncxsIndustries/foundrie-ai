@@ -1,8 +1,17 @@
-# 06 - Layout Shell
+# Feature 06 - Layout Shell
 
-## Goal
+## Type
 
-Build the authenticated app shell, dashboard, project phase navigation, and empty phase pages.
+NEW FEATURE
+
+## What This Delivers
+
+The authenticated app shell: a sidebar + top nav layout, the dashboard with project cards and phase statuses, the project route group with empty phase pages (overview, discovery, requirements, architecture, diagrams, specs, research, export), and `ProjectPhaseNav`. After this feature, an authenticated user can navigate the 8-phase project workspace structure.
+
+## Dependencies
+
+- Feature 04 (Project CRUD) must be complete (project APIs and auth helpers exist).
+- Feature 01 (Design System) provides the token system and primitives.
 
 ## Context To Read First
 
@@ -18,36 +27,52 @@ Build the authenticated app shell, dashboard, project phase navigation, and empt
 - Next.js `/vercel/next.js`
 - shadcn/ui `/shadcn-ui/ui`
 
-Use installed Context7 skills or:
-
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
-## Implementation
+## Files Owned
 
-- Create `(app)/layout.tsx` with sidebar and top nav.
-- Create dashboard page with project cards and phase statuses.
-- Create project route group with pages: overview, discovery, requirements, architecture, diagrams, specs, export.
-- Create `ProjectPhaseNav`.
-- Add responsive behavior without turning the app into a landing page.
-- Dashboard data must use the indexed project list path from Feature 03: `userId`, `updatedAt`, and denormalized counters.
-- Use cursor pagination for project lists.
-- Avoid loading heavy child collections on the dashboard; fetch summaries only.
+- `app/(app)/layout.tsx`
+- `app/(app)/dashboard/page.tsx`
+- `app/(app)/projects/[projectId]/page.tsx` and the empty phase pages
+- `components/project/ProjectPhaseNav.tsx`
 
-## Scope Limits
+## Files
 
-- Do not implement later feature specs early.
-- Do not introduce undocumented architecture changes.
-- Do not bypass the storage, auth, AI, or Context7 rules in the context files.
+CREATE: `app/(app)/layout.tsx` - sidebar and top nav shell.
+CREATE: `app/(app)/dashboard/page.tsx` - project cards and phase statuses.
+CREATE: project route group pages: overview, discovery, requirements, architecture, diagrams, specs, research, export.
+CREATE: `components/project/ProjectPhaseNav.tsx` - 8-phase navigation reflecting the discovery protocol.
+MODIFY: `context/progress-tracker.md` - mark feature progress.
 
-## Check When Done
+## Implementation Notes
 
-- The feature works within its defined scope.
-- Relevant library docs were checked with Context7.
-- Types are strict and external input is validated.
-- Access control is enforced where data is read or mutated.
-- `context/progress-tracker.md` is updated.
-- `npm run build` passes once application code exists.
+- Dashboard data uses the indexed project list path from Feature 03 (`userId`, `updatedAt`, denormalized counters). Use cursor pagination; never offset.
+- Fetch summaries only; do not load heavy child collections (diagrams, specs, conversation JSON) on the dashboard.
+- `ProjectPhaseNav` reflects the 8 phases and shows the active phase. The diagram phase is highlighted as the diagram-first gate.
+- Responsive behavior must not turn the app into a landing page. Keep the dark workspace feel.
+- Every async surface has loading, error, and empty states.
+
+## Out of Scope
+
+- Discovery chat, requirements generation, diagram generation, specs, ZIP, and research logic (later features).
+- Collaboration UI and shared-project indicators (Features 39, 42).
+
+## Future Modifications
+
+- Feature 10+: Phase pages gain real content as each phase feature ships.
+- Feature 39: Dashboard adds a shared-projects section.
+- Feature 42: Project shell adds the sharing UI entry point.
+
+## Acceptance Criteria
+
+- [ ] Authenticated users see the app shell with sidebar and top nav.
+- [ ] Dashboard renders project cards with phase statuses using indexed, paginated queries.
+- [ ] The project route group renders all phase pages.
+- [ ] `ProjectPhaseNav` shows all 8 phases and the active phase.
+- [ ] No heavy child collections are loaded on the dashboard.
+- [ ] `context/progress-tracker.md` is updated.
+- [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

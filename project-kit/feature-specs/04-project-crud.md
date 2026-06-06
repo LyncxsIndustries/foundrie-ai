@@ -1,12 +1,28 @@
-# 04 - Project CRUD
+# Feature 04 - Project CRUD
 
 ## Type
 
 NEW FEATURE
 
-## Goal
+## What This Delivers
 
-Build the first user-owned API surface: Clerk webhook user sync, auth helpers, plan/admin helpers, and project create/list/read/update/delete APIs with strict ownership scoping. Dashboard UI is intentionally limited to the smallest wiring needed to prove project data can be created and listed.
+The first user-owned API surface: Clerk webhook user sync, auth helpers, plan/admin helpers, and project create/list/read/update/delete APIs with strict ownership scoping. Dashboard UI is limited to the smallest wiring needed to prove project data can be created and listed.
+
+## Dependencies
+
+- Feature 02 (Auth) and Feature 03 (Database Schema) must be complete.
+- Clerk webhook secret and `ADMIN_EMAILS` must be available in environment variables.
+
+## Files Owned
+
+- `app/api/webhooks/clerk/route.ts`
+- `app/api/projects/route.ts`
+- `app/api/projects/[projectId]/route.ts`
+- `lib/auth/get-auth-user.ts`
+- `lib/auth/require-auth.ts`
+- `lib/auth/plan-limits.ts`
+- `lib/auth/is-admin.ts`
+- `lib/projects/slug.ts`
 
 ## Context To Read First
 
