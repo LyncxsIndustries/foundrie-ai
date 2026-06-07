@@ -42,6 +42,8 @@ npx ctx7 docs <libraryId> "<specific question>"
 - `lib/utils.ts`
 - `components/ui/**`
 - `design-system.ts` (motion/typography/spacing token contract)
+- `vitest.config.mts`, `vitest.setup.ts` (test harness — baked in from the first feature)
+- `**/*.test.ts`, `**/*.test.tsx` for files created by this spec
 
 ## Files
 
@@ -51,8 +53,9 @@ CREATE: `tailwind.config.ts` - map CSS variables to Tailwind tokens; add `min-to
 CREATE: `lib/utils.ts` - `cn()` helper.
 CREATE: `design-system.ts` - typography, spacing, radius, and motion tokens.
 CREATE: base surfaces for dashboard, project shell, document review, and diagram workspace placeholder.
+CREATE: Vitest + React Testing Library test harness (`vitest.config.mts`, `vitest.setup.ts`) and unit/component tests for `cn()`, the design-system token contract, the shell/state components, and a base surface.
 MODIFY: `app/layout.tsx` - load `next/font`, apply base tokens, accept `children`.
-MODIFY: `package.json` - Tailwind v4, shadcn/ui, Lucide React, GSAP, Framer Motion.
+MODIFY: `package.json` - Tailwind v4, shadcn/ui, Lucide React, GSAP, Framer Motion, Vitest test stack, and `test`/`test:watch`/`test:coverage` scripts.
 
 ## Implementation Notes
 
@@ -82,6 +85,7 @@ MODIFY: `package.json` - Tailwind v4, shadcn/ui, Lucide React, GSAP, Framer Moti
 - [ ] `cn()` exists in `lib/utils.ts`.
 - [ ] Base dashboard, project shell, document review, and diagram workspace placeholder render.
 - [ ] No raw hex colors in components outside the token definition.
+- [ ] Vitest + React Testing Library harness is configured; `npm run test` runs non-watch and passes; `cn()`, the design-system tokens, the shell/state components, and a base surface are covered.
 - [ ] `context/progress-tracker.md` is updated.
 - [ ] `npm run build` passes.
 - [ ] No TypeScript errors.
