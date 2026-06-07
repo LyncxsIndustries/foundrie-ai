@@ -1,7 +1,26 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
+/**
+ * Maps Clerk's components onto the Foundrie dark workspace tokens so hosted
+ * sign-in/sign-up surfaces match the rest of the product. Values reference the
+ * design-system CSS variables defined in `globals.css` rather than raw hex.
+ */
+const clerkAppearance = {
+  variables: {
+    colorPrimary: "var(--accent-primary)",
+    colorBackground: "var(--bg-surface)",
+    colorForeground: "var(--text-primary)",
+    colorInputBackground: "var(--bg-elevated)",
+    colorInputForeground: "var(--text-primary)",
+    colorNeutral: "var(--text-secondary)",
+    colorBorder: "var(--border-default)",
+    borderRadius: "var(--radius)",
+  },
+};
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -25,12 +44,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <TooltipProvider>{children}</TooltipProvider>
-      </body>
-    </html>
+    <ClerkProvider appearance={clerkAppearance}>
+      <html lang="en" className="dark">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          <TooltipProvider>{children}</TooltipProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
