@@ -1,0 +1,366 @@
+// Foundrie AI data layer (Feature 03).
+// Prisma 7 uses the Rust-free `prisma-client` generator with a required `output`
+// path; the client is generated outside node_modules and imported from lib/db.ts.
+// Connection URLs live in prisma.config.ts (DIRECT_URL for the CLI/migrations);
+// runtime queries use the pooled DATABASE_URL via the Neon driver adapter.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../lib/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+enum UserPlan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// Application phases (architecture-context.md §Application Phases).
+enum ProjectStatus {
+  DISCOVERY
+  REQUIREMENTS
+  ARCHITECTURE
+  DIAGRAM_GENERATION
+  SPEC_GENERATION
+  COMPLETE
+}
+
+// Discovery is an 8-phase flow; this tracks the conversation's current phase.
+enum ConversationPhase {
+  DISCOVERY
+  REQUIREMENTS
+  ARCHITECTURE
+  DIAGRAM_GENERATION
+  SPEC_GENERATION
+  COMPLETE
+}
+
+// Sequential diagram pipeline job statuses.
+enum DiagramStatus {
+  QUEUED
+  GENERATING
+  RENDERING
+  CAPTURING
+  DONE
+  ERROR
+}
+
+// The six generated context files.
+enum ContextFileType {
+  PROJECT_OVERVIEW
+  ARCHITECTURE_CONTEXT
+  UI_CONTEXT
+  CODE_STANDARDS
+  AI_WORKFLOW_RULES
+  PROGRESS_TRACKER
+}
+
+enum ResearchAssetType {
+  IMAGE_ASSET
+  SCREENSHOT
+  INSPIRATION
+  DOCUMENT
+  FRAME_ZIP
+  FRAME
+  SCRAPE_CAPTURE
+}
+
+enum ResearchSourceProvider {
+  MANUAL
+  CONTEXT7
+  TAVILY
+  OBSCURA
+  UPLOAD_DERIVED
+}
+
+enum ResearchSourceStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ExecutionPlanStatus {
+  PROPOSED
+  APPROVED
+  REVISION_REQUESTED
+  REJECTED
+  EXECUTED
+}
+
+// ----------------------------------------------------------------------------
+// Models
+// ----------------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  plan      UserPlan @default(FREE)
+  role      UserRole @default(USER)
+
+  // Stripe / subscription fields (billing feature reuses these).
+  stripeCustomerId   String?
+  subscriptionPlan   String?
+  subscriptionStatus String?
+  currentPeriodEnd   DateTime?
+
+  projects Project[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  userId      String
+  name        String
+  slug        String
+  description String?
+  status      ProjectStatus @default(DISCOVERY)
+
+  // Denormalized counters to avoid count() queries in list/dashboard views.
+  diagramCount          Int @default(0)
+  completedDiagramCount Int @default(0)
+  featureSpecCount      Int @default(0)
+
+  // ZIP export metadata (last successful package).
+  lastZipUrl         String?
+  lastZipFileName    String?
+  lastZipGeneratedAt DateTime?
+
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation      Conversation?
+  requirements      Requirements?
+  diagrams          Diagram[]
+  contextFiles      ContextFile[]
+  featureSpecs      FeatureSpec[]
+  researchDocuments ResearchDocument[]
+  researchAssets    ResearchAsset[]
+  researchSources   ResearchSource[]
+  agentSkills       ProjectAgentSkill[]
+  executionPlans    ExecutionPlan[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@index([slug])
+  @@index([status])
+}
+
+model Conversation {
+  id        String            @id @default(cuid())
+  projectId String            @unique
+  phase     ConversationPhase @default(DISCOVERY)
+
+  // Whole-document JSON: the ordered message transcript. Never selected in lists.
+  messages Json @default("[]")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, phase])
+  @@index([projectId, updatedAt(sort: Desc)])
+}
+
+model Requirements {
+  id        String @id @default(cuid())
+  projectId String @unique
+
+  // Whole-document JSON: structured functional/non-functional/hidden/scale/security
+  // requirements. Comment-flagged so list views avoid selecting it.
+  content Json @default("{}")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Diagram {
+  id              String        @id @default(cuid())
+  projectId       String
+  diagramTypeId   String
+  category        String
+  name            String
+  folderPath      String
+  fileName        String
+  orderInCategory Int           @default(0)
+  status          DiagramStatus @default(QUEUED)
+  version         Int           @default(1)
+
+  // Whole-document JSON: React Flow nodes/edges. Large; never selected in lists.
+  reactFlowData Json?
+
+  // Blob-backed PNG capture; raw binary is never stored in PostgreSQL.
+  pngStorageUrl String?
+
+  errorMessage String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, category, orderInCategory])
+}
+
+model ContextFile {
+  id        String          @id @default(cuid())
+  projectId String
+  fileType  ContextFileType
+
+  // Whole-document JSON/text: generated Markdown content for the context file.
+  content String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, fileType])
+  @@index([projectId, fileType])
+}
+
+model FeatureSpec {
+  id        String @id @default(cuid())
+  projectId String
+  order     Int
+  title     String
+  slug      String
+
+  // Whole-document text: generated feature-spec Markdown.
+  content String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, order])
+  @@index([projectId, order])
+}
+
+model ResearchDocument {
+  id         String @id @default(cuid())
+  projectId  String
+  sourceType String
+  title      String
+
+  // Whole-document Markdown: PROJECT_RESEARCH.md, source summaries, visual/motion
+  // analyses, comparisons, Context7 findings.
+  content String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, sourceType])
+}
+
+model ResearchAsset {
+  id        String            @id @default(cuid())
+  projectId String
+  assetType ResearchAssetType
+  fileName  String
+
+  // Blob-backed asset metadata only; raw binary lives in Vercel Blob.
+  storageUrl String
+  mimeType   String?
+  fileSize   Int?
+
+  // Whole-document JSON: extracted metadata / AI analysis for the asset.
+  metadata Json?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, assetType])
+}
+
+model ResearchSource {
+  id        String                 @id @default(cuid())
+  projectId String
+  provider  ResearchSourceProvider
+  status    ResearchSourceStatus   @default(PENDING)
+  url       String
+
+  // Whole-document Markdown: extracted/cleaned content for the URL-based source.
+  extractedContent String?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, provider])
+  @@index([projectId, status])
+}
+
+model ProjectAgentSkill {
+  id        String @id @default(cuid())
+  projectId String
+  slug      String
+  name      String
+
+  // Whole-document Markdown: .agents/skills/<slug>/SKILL.md content for export.
+  content String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, slug])
+  @@index([projectId])
+}
+
+model ExecutionPlan {
+  id        String              @id @default(cuid())
+  projectId String
+  taskType  String
+  status    ExecutionPlanStatus @default(PROPOSED)
+
+  // Whole-document Markdown: the proposed plan content shown to the user.
+  content       String
+  revisionNotes String?
+  approvedAt    DateTime?
+  executedAt    DateTime?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, status])
+  @@index([projectId, taskType])
+}
