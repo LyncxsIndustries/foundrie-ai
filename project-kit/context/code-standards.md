@@ -136,10 +136,13 @@ Foundrie's own system spans four languages. When working in the deployed system 
 
 ## Tests and Verification
 
+- **A test harness is mandatory and baked in.** Every Foundrie codebase and every generated project ships with a configured test runner from its first feature — testing is never deferred or treated as optional. For the TypeScript/Next.js layer the baseline is Vitest + React Testing Library + jsdom (`@testing-library/jest-dom`, `@testing-library/user-event`), configured via `vitest.config.mts` and a `vitest.setup.ts` that registers jest-dom matchers and cleans up between tests. Generated projects in other stacks use the idiomatic equivalent for that stack (e.g., `pytest` for Python, `cargo test` for Rust, `go test` for Go), selected through research and recorded in the architecture context — never copy Foundrie's runner into a project that does not use that stack.
+- Required NPM scripts: `test` (single run, CI-safe — `vitest run`), `test:watch`, and `test:coverage`. `npm run test` must be non-watch so it terminates in CI.
+- The first feature spec of every project (Foundrie's `01-design-system` and each generated project's first spec) provisions and verifies the test harness as part of its scope, so no later feature inherits an unconfigured runner.
 - Add unit tests for pure helpers: slugging, fallback chain selection, output parsing, ZIP path generation, diagram job planning.
 - Add integration tests for API auth and ownership boundaries.
 - Add component tests where interaction risk is high. For agentic behavior, use LLM-as-judge plus a behavioral golden set.
-- `npm run build` must pass before moving to the next feature.
+- Every feature is done only when its new logic has tests and `npm run test` passes. `npm run build` must also pass before moving to the next feature.
 - Run `coderabbit review --agent` locally before every push. Fix all critical and warning findings. Re-run until only info-level or no findings remain. This is a mandatory pre-push gate.
 - After pushing, let CodeRabbit review the GitHub PR and fix additional findings before merging.
 
@@ -147,7 +150,7 @@ Foundrie's own system spans four languages. When working in the deployed system 
 
 Every deliverable passes the three-category quality gate before it is considered complete:
 - **Documents**: placeholders populated, internally consistent, legally coherent, consistently formatted, version-accurate, brand-aligned, actionable.
-- **Code/Technical**: structured logging (no `console.log`), dependency audit passes (no critical/high CVEs), complete README, env vars documented, no hardcoded secrets, CI green.
+- **Code/Technical**: test harness configured and `npm run test` green (new logic covered), structured logging (no `console.log`), dependency audit passes (no critical/high CVEs), complete README, env vars documented, no hardcoded secrets, CI green.
 - **Research/Intelligence**: sources cited and accessible, data points dated, recommendations actionable with specific numbers, conflicting sources acknowledged.
 
 Gate failures are logged in `docs/QUALITY-GATE.md`, classified, routed to the correct upstream step, and re-checked through the full gate.

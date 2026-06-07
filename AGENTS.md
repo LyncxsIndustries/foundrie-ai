@@ -81,6 +81,7 @@ Never skip ahead, batch specs, or mark a spec done before the GitHub review loop
 17. Research artifacts are part of the implementation contract. Feature specs reference relevant `research/` files and assets when design, motion, source, or technical decisions depend on them. Foundrie's own features must also use `research/` as input whenever research influenced the architecture or spec.
 18. Every recommendation cites a source (benchmark, case study, documented failure mode, or cited best practice). Foundrie never says "best practice" without a reference.
 19. Update `context/progress-tracker.md` after meaningful implementation changes. If a requirement is missing, record it in `progress-tracker.md` before inventing behavior — do not invent product behavior that is not documented.
+20. A configured test harness is mandatory and baked in from the first feature, in Foundrie and in every generated project. The TypeScript layer uses Vitest + React Testing Library + jsdom with `test`/`test:watch`/`test:coverage` scripts (`npm run test` is a non-watch single run); generated non-TS stacks use the idiomatic equivalent (`pytest`, `cargo test`, `go test`) selected through research and recorded in the architecture context. A feature is done only when its new logic has tests and `npm run test` and `npm run build` both pass. Never copy Foundrie's runner into a project that does not use that stack, and never defer the harness to a later feature.
 
 ## When To Split A Task
 

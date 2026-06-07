@@ -22,7 +22,23 @@
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
+
+# editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# logs
+logs
+*.log
+
+# local CodeRabbit review artifacts
+.cr-review.txt
+coderabbit_report.json
+.coderabbit/
 
 # debug
 npm-debug.log*
@@ -39,4 +55,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-coderabbit_report.json
