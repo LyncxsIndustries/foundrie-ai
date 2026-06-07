@@ -77,6 +77,6 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 - [ ] Existing-project onboarding produces inferred diagrams labeled "INFERRED — verify before proceeding" and requires user approval before spec generation.
 - [ ] Repo reads are scoped to the authenticated user; non-members get 404 on project-scoped routes.
 - [ ] Foundrie does not push code or open PRs.
-- [ ] `context/progress-tracker.md` is updated.
+- [ ] `context/progress-tracker.md` is updated to mark this feature DONE and point Current Goal/Next Up at the next numbered spec, and is committed and pushed on this feature branch (never directly to `master`).
 - [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

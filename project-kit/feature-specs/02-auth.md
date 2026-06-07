@@ -87,6 +87,6 @@ MODIFY: `package.json` - Add Clerk dependency if not already present.
 - [ ] Sign-in and sign-up pages render Clerk components.
 - [ ] No database code, webhook code, local user sync, plan gates, or admin helpers are introduced in this feature.
 - [ ] No custom admin portal, team RBAC, RLS, ABAC, or audit logging exists.
-- [ ] `context/progress-tracker.md` is updated.
+- [ ] `context/progress-tracker.md` is updated to mark this feature DONE and point Current Goal/Next Up at the next numbered spec, and is committed and pushed on this feature branch (never directly to `master`).
 - [ ] `npm run build` passes once application code exists.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

@@ -50,13 +50,14 @@ For every single feature spec:
 3. Present a concrete implementation plan (with Context7-discovered prerequisites and required inputs) and wait for explicit user approval.
 4. Implement that spec within its scope.
 5. Write unit tests for the feature's core logic, API routes, and critical paths. Run `npm run test` and `npm run build`.
-6. Update `project-kit/context/progress-tracker.md`.
-7. Run `coderabbit review --agent` locally. This is a mandatory pre-push gate.
-8. Fix every CodeRabbit finding (critical and warning). Re-run until only info-level or no findings remain.
-9. Push the branch to GitHub.
-10. Let CodeRabbit review the GitHub PR for anything the local review missed.
-11. Fix every GitHub CodeRabbit finding and push again. Repeat until there are no unresolved findings.
-12. Mark the feature done only after tests pass, build passes, and CodeRabbit has no unresolved findings. Merge to `master`, then move to the next spec.
+6. Update `project-kit/context/progress-tracker.md` **on the feature branch**: move the current spec to Completed (mark DONE), clear In Progress, set Current Goal and Next Up to the next numbered spec, and add a session note. The tracker must always end a feature pointing at the next feature to implement.
+7. Commit the implementation together with the progress-tracker update on the feature branch, so the tracker travels with the branch and is current the moment the branch merges. Never commit the tracker update directly to `master`.
+8. Run `coderabbit review --agent` locally. This is a mandatory pre-push gate.
+9. Fix every CodeRabbit finding (critical and warning). Re-run until only info-level or no findings remain.
+10. Push the branch to GitHub.
+11. Let CodeRabbit review the GitHub PR for anything the local review missed.
+12. Fix every GitHub CodeRabbit finding and push again. Repeat until there are no unresolved findings.
+13. Mark the feature done only after tests pass, build passes, and CodeRabbit has no unresolved findings. The user merges the PR to `master` manually; do not merge unless explicitly asked. After the user confirms the merge, sync local `master` (`git checkout master && git pull`) before starting the next spec — the pulled tracker already points to it.
 
 Never skip ahead, batch specs, or mark a spec done before the GitHub review loop is clean unless the user explicitly changes the plan.
 
@@ -80,7 +81,7 @@ Never skip ahead, batch specs, or mark a spec done before the GitHub review loop
 16. The exported ZIP structure is a product contract. Do not rename folders or omit required files without updating the architecture context. Generated packages must include root `AGENTS.md`, root `ARTKINS_STYLE_GUIDE.md`, `context/`, `feature-specs/`, `diagrams/`, `requirements/`, `project-management/`, `docs/`, and `research/PROJECT_RESEARCH.md`. Include `.agents/skills/`, `tools/`, `evals/`, and research subfolders only when populated.
 17. Research artifacts are part of the implementation contract. Feature specs reference relevant `research/` files and assets when design, motion, source, or technical decisions depend on them. Foundrie's own features must also use `research/` as input whenever research influenced the architecture or spec.
 18. Every recommendation cites a source (benchmark, case study, documented failure mode, or cited best practice). Foundrie never says "best practice" without a reference.
-19. Update `context/progress-tracker.md` after meaningful implementation changes. If a requirement is missing, record it in `progress-tracker.md` before inventing behavior — do not invent product behavior that is not documented.
+19. Update `context/progress-tracker.md` after meaningful implementation changes, and at the end of every feature update it to point at the next feature to implement (current spec → Completed/DONE, In Progress cleared, Current Goal and Next Up set to the next spec, session note added). Commit and push this tracker update on the feature branch with the implementation — never directly to `master` — so a merged branch always lands a tracker that already points to the next feature. If a requirement is missing, record it in `progress-tracker.md` before inventing behavior — do not invent product behavior that is not documented.
 20. A configured test harness is mandatory and baked in from the first feature, in Foundrie and in every generated project. The TypeScript layer uses Vitest + React Testing Library + jsdom with `test`/`test:watch`/`test:coverage` scripts (`npm run test` is a non-watch single run); generated non-TS stacks use the idiomatic equivalent (`pytest`, `cargo test`, `go test`) selected through research and recorded in the architecture context. A feature is done only when its new logic has tests and `npm run test` and `npm run build` both pass. Never copy Foundrie's runner into a project that does not use that stack, and never defer the harness to a later feature.
 
 ## When To Split A Task

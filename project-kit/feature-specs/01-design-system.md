@@ -86,7 +86,7 @@ MODIFY: `package.json` - Tailwind v4, shadcn/ui, Lucide React, GSAP, Framer Moti
 - [ ] Base dashboard, project shell, document review, and diagram workspace placeholder render.
 - [ ] No raw hex colors in components outside the token definition.
 - [ ] Vitest + React Testing Library harness is configured; `npm run test` runs non-watch and passes; `cn()`, the design-system tokens, the shell/state components, and a base surface are covered.
-- [ ] `context/progress-tracker.md` is updated.
+- [ ] `context/progress-tracker.md` is updated to mark this feature DONE and point Current Goal/Next Up at the next numbered spec, and is committed and pushed on this feature branch (never directly to `master`).
 - [ ] `npm run build` passes.
 - [ ] No TypeScript errors.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

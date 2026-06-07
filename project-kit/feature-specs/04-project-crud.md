@@ -131,7 +131,7 @@ MODIFY: `context/progress-tracker.md` - Mark feature progress after implementati
 - Project creation enforces `canCreateProject()` before writing.
 - Plan-limit failures return a 403 with `upgradeRequired: true`; ownership failures return 404.
 
-- `project-kit/context/progress-tracker.md` is updated.
+- `project-kit/context/progress-tracker.md` is updated to mark this feature DONE and point Current Goal/Next Up at the next numbered spec, and is committed and pushed on this feature branch (never directly to `master`).
 - `npm run build` passes once application code exists.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.
 

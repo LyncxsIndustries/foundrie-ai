@@ -4,21 +4,21 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** is implemented on branch `feature/01-design-system` and pending review.
+- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** is complete and merged to `master` (PR #12).
 
 ## Current Goal
 
-- Complete the **Feature 01 - Design System** review loop (CodeRabbit local → push → GitHub review), then begin **Feature 02 - Auth**.
+- Begin **Feature 02 - Auth** (Clerk integration) when instructed. Awaiting user go-ahead before starting.
 
 ## Completed
 
 - **Initial Scaffold**: Created the Next.js project. No feature work beyond the base project scaffold has been done.
 - **Documentation Foundation**: Consolidated the full versioned research corpus into the master research files, AGENTS.md, the six context files, and all 52 feature specs.
-- **Feature 01 - Design System** (pending review): Dark workspace token system in `app/globals.css` (Foundrie palette mapped onto shadcn semantic tokens via Tailwind v4 `@theme`), `lib/utils.ts` `cn()`, typed `design-system.ts` (typography/spacing/radius/motion tokens), 14 shadcn primitives in `components/ui/**` themed with Foundrie tokens, workspace shell + loading/error/empty state components, and base surfaces (dashboard, project shell, requirements review, diagram workspace placeholder). Vitest + React Testing Library test harness configured (`vitest.config.mts`, `vitest.setup.ts`, `test`/`test:watch`/`test:coverage` scripts) with 22 passing tests. Next.js patched to 16.2.7 (cleared high-severity CVE); GSAP, `@gsap/react`, and Framer Motion installed. `.npmrc` added (`save-exact`, `engine-strict`). `.gitignore` extended for editor/IDE, logs, and local CodeRabbit artifacts.
+- **Feature 01 - Design System** (DONE — merged to `master`, PR #12): Dark workspace token system in `app/globals.css` (Foundrie palette mapped onto shadcn semantic tokens via Tailwind v4 `@theme`), `lib/utils.ts` `cn()`, typed `design-system.ts` (typography/spacing/radius/motion tokens), 14 shadcn primitives in `components/ui/**` themed with Foundrie tokens, workspace shell + loading/error/empty state components, and base surfaces (dashboard, project shell, requirements review, diagram workspace placeholder). Vitest + React Testing Library test harness configured (`vitest.config.mts`, `vitest.setup.ts`, `test`/`test:watch`/`test:coverage` scripts) with 22 passing tests. Next.js patched to 16.2.7 (cleared high-severity CVE); GSAP, `@gsap/react`, and Framer Motion installed. `.npmrc` added (`save-exact`, `engine-strict`). `.gitignore` extended for editor/IDE, logs, and local CodeRabbit artifacts. Build, tests, lint, and dependency audit (no critical/high) all green; local + GitHub CodeRabbit review loop clean.
 
 ## In Progress
 
-- `[~]` **Feature 01 - Design System**: Implementation complete and build/lint green; running the CodeRabbit review loop before merge.
+- `[ ]` Nothing in progress. Feature 01 is merged; Feature 02 not yet started (awaiting user go-ahead).
 
 ## Next Up
 
@@ -44,3 +44,4 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - **Session 2026-06-07**: Reset the progress tracker to reflect the true state — the Next.js project has been scaffolded and no feature implementation has started. Implementation will begin from Feature 01 in strict numeric order.
 - **Session 2026-06-07 (Feature 01)**: Implemented the design system on `feature/01-design-system`. Patched Next.js 16.2.4 → 16.2.7 to clear a high-severity middleware-bypass CVE (dependency-audit hard gate); 2 moderate transitive advisories remain inside Next's own tree (not fixable without a breaking downgrade). Initialized shadcn/ui (radix base), added 14 primitives, mapped the Foundrie dark palette onto shadcn semantic tokens in `globals.css`, added `design-system.ts`, workspace shell + state components, and four base surfaces. `npm run build` and `npm run lint` pass (0 errors; remaining lint warnings are pre-existing in `.agents/skills/**` templates, out of scope). Context7 was used to verify shadcn init and the `useGSAP` pattern. Next: CodeRabbit review loop.
+- **Session 2026-06-07 (Feature 01 merge)**: Added the Vitest + RTL test harness and baked the test-harness requirement into AGENTS.md (Hard Rule 20) and `code-standards.md` so it applies to Foundrie and every generated project (22 tests passing). Resolved local CodeRabbit findings (dashboard error boundary now shows a generic message, no raw `error.message`; structured logging deferred to the logging feature with a documented hook; the `progress.tsx` `radix-ui` import flagged "critical" was verified a false positive — shadcn 4.x unified package, build passes). Pushed `feature/01-design-system`; user merged PR #12 to `master` manually. GitHub CodeRabbit (Free plan) returned a clean summary-level review with no unresolved findings. Local `master` fast-forwarded to the merge. Feature 01 is DONE. Holding for user go-ahead before starting Feature 02 - Auth.

@@ -69,6 +69,6 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 - [ ] Missing diagram PNGs and unavailable research assets use placeholders without failing the build.
 - [ ] Multi-table reads use a consistent snapshot; list reads avoid large JSON columns.
 - [ ] Feature specs and AGENTS.md can reference research paths that exist in the ZIP.
-- [ ] `context/progress-tracker.md` is updated.
+- [ ] `context/progress-tracker.md` is updated to mark this feature DONE and point Current Goal/Next Up at the next numbered spec, and is committed and pushed on this feature branch (never directly to `master`).
 - [ ] `npm run build` passes.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.

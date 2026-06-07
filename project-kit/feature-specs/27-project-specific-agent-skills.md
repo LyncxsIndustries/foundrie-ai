@@ -84,6 +84,6 @@ MODIFY: `project-kit/feature-specs/30-zip-builder.md` - ensure generated skills 
 - [ ] Skills reference relevant `research/` paths and feature specs.
 - [ ] Skills do not include raw secrets or private credentials.
 - [ ] Skills are editable before ZIP export.
-- [ ] `context/progress-tracker.md` is updated.
+- [ ] `context/progress-tracker.md` is updated to mark this feature DONE and point Current Goal/Next Up at the next numbered spec, and is committed and pushed on this feature branch (never directly to `master`).
 - [ ] `npm run build` passes once application code exists.
 - All CodeRabbit reviews must pass. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.
