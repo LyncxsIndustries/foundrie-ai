@@ -40,6 +40,9 @@ logs
 coderabbit_report.json
 .coderabbit/
 
+# one-time local DB reset helper (destructive; not committed)
+prisma/reset-public.sql
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -55,3 +58,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# prisma generated client (Prisma 7 emits outside node_modules; regenerated via
+# `prisma generate` / postinstall, so it is not committed)
+/lib/generated/
