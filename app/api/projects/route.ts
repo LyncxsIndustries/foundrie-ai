@@ -93,11 +93,47 @@ export async function POST(req: NextRequest): Promise<Response> {
       );
     }
 
-    // Plan gate before any write: count this user's projects and ask the gate.
-    const currentProjectCount = await db.project.count({
-      where: { userId: user.id },
+    // Plan gate is enforced atomically inside the transaction below to avoid a
+    // TOCTOU race; do not pre-count here.
+    const name = parsed.data.name?.length
+      ? parsed.data.name
+      : "Untitled Project";
+
+    // Enforce the plan limit and create atomically. Counting outside a
+    // transaction is a TOCTOU race: two concurrent POSTs could both pass the
+    // gate and exceed the cap. Locking the user row (SELECT ... FOR UPDATE)
+    // serializes a user's concurrent creates so the count reflects committed
+    // rows before the gate decision.
+    const project = await db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`;
+
+      const currentProjectCount = await tx.project.count({
+        where: { userId: user.id },
+      });
+      if (!canCreateProject(user.plan, currentProjectCount)) {
+        return null;
+      }
+
+      // Use the schema's cuid id strategy (no sequential ids). The slug embeds
+      // a suffix from the generated id, so create first, then persist the slug.
+      const created = await tx.project.create({
+        data: {
+          userId: user.id,
+          name,
+          slug: "",
+          description: parsed.data.description || null,
+        },
+        select: { id: true },
+      });
+
+      return tx.project.update({
+        where: { id: created.id, userId: user.id },
+        data: { slug: buildProjectSlug(name, created.id) },
+        select: PROJECT_LIST_SELECT,
+      });
     });
-    if (!canCreateProject(user.plan, currentProjectCount)) {
+
+    if (!project) {
       return NextResponse.json(
         {
           error: "Project limit reached for your plan.",
@@ -106,28 +142,6 @@ export async function POST(req: NextRequest): Promise<Response> {
         { status: 403 },
       );
     }
-
-    const name = parsed.data.name?.length
-      ? parsed.data.name
-      : "Untitled Project";
-
-    // Use the schema's cuid id strategy (no sequential ids). The slug embeds a
-    // suffix from the generated id, so create first, then derive + persist slug.
-    const created = await db.project.create({
-      data: {
-        userId: user.id,
-        name,
-        slug: "",
-        description: parsed.data.description || null,
-      },
-      select: { id: true },
-    });
-
-    const project = await db.project.update({
-      where: { id: created.id, userId: user.id },
-      data: { slug: buildProjectSlug(name, created.id) },
-      select: PROJECT_LIST_SELECT,
-    });
 
     return NextResponse.json({ project }, { status: 201 });
   } catch (error) {

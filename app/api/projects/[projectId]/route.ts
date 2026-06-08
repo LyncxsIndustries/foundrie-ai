@@ -37,10 +37,11 @@ const updateProjectSchema = z
 
 type RouteContext = { params: Promise<{ projectId: string }> };
 
-const NOT_FOUND = NextResponse.json(
-  { error: "Project not found." },
-  { status: 404 },
-);
+// Build a fresh 404 per call: a Response body can only be consumed once, so a
+// shared instance must not be reused across requests/handlers.
+function notFound(): Response {
+  return NextResponse.json({ error: "Project not found." }, { status: 404 });
+}
 
 function unauthorized(message: string): Response {
   return NextResponse.json({ error: message }, { status: 401 });
@@ -62,7 +63,7 @@ export async function GET(
     // findFirst returns null both when the id is unknown and when it belongs to
     // another user; either way the answer is 404.
     if (!project) {
-      return NOT_FOUND;
+      return notFound();
     }
 
     return NextResponse.json({ project });
@@ -98,13 +99,18 @@ export async function PATCH(
       data: parsed.data,
     });
     if (result.count === 0) {
-      return NOT_FOUND;
+      return notFound();
     }
 
     const project = await db.project.findFirst({
       where: { id: projectId, userId: user.id },
       select: PROJECT_DETAIL_SELECT,
     });
+    // A concurrent delete between updateMany and this reload yields null; return
+    // 404 rather than a misleading 200 with project: null.
+    if (!project) {
+      return notFound();
+    }
 
     return NextResponse.json({ project });
   } catch (error) {
@@ -128,7 +134,7 @@ export async function DELETE(
       where: { id: projectId, userId: user.id },
     });
     if (result.count === 0) {
-      return NOT_FOUND;
+      return notFound();
     }
 
     return new NextResponse(null, { status: 204 });
