@@ -1,0 +1,124 @@
+# Foundrie AI - Pinned model identifiers for the rotation engine.
+#
+# This file is the single source of truth for every model id the rotation
+# engine may dispatch. Model ids are PINNED to exact versions/snapshots and are
+# NEVER "latest" (AGENTS.md Hard Rule 5, code-standards.md > AI). Each id was
+# verified against current provider documentation/listings:
+#   - Anthropic   : Context7 /websites/platform_claude_en_api (dated snapshots)
+#   - Gemini      : Context7 /websites/ai_google_dev_api
+#   - DeepSeek    : Context7 /websites/api-docs_deepseek
+#   - Groq        : Context7 /websites/console_groq
+#   - OpenRouter  : live https://openrouter.ai/api/v1/models listing
+#
+# `model_keys` are Foundrie's logical roles (the "AI firm"). The rotation engine
+# resolves a task -> model key -> fallback chain. Each chain entry names a
+# concrete { provider, model } pair the engine will attempt in order.
+#
+# Free-tier note: several free OpenRouter slugs named in architecture-context.md
+# (e.g. "DeepSeek R1 free", "QwQ free", "Llama Maverick free", "Qwen3 free",
+# "Kimi K2 free", "DeepSeek Chat free") have been retired or renamed by
+# OpenRouter. Where a named free model no longer exists, the closest current
+# equivalent is pinned and annotated with `# was: <old name>`. Revisit when
+# OpenRouter republishes the originals.
+
+version: 1
+
+# Tier -> primary model key. The engine derives the primary from the user's
+# subscription plan; it is never hardcoded per endpoint (Hard Rule 7).
+tier_primary:
+  FREE: deepseek-r1
+  PRO: claude-sonnet-4
+  ENTERPRISE: claude-sonnet-4
+
+# Direct-provider model ids referenced by chains. Pinned exact versions.
+models:
+  # Anthropic - dated snapshot, not the "claude-sonnet-4-5" alias.
+  claude_sonnet_4: claude-sonnet-4-5-20250929
+  # Gemini
+  gemini_pro: gemini-2.5-pro
+  gemini_flash: gemini-2.5-flash
+  # DeepSeek direct (V3.2: deepseek-chat=non-thinking, deepseek-reasoner=thinking)
+  deepseek_reasoner: deepseek-reasoner
+  deepseek_chat: deepseek-chat
+  # Groq production models
+  groq_llama_70b: llama-3.3-70b-versatile
+  groq_llama_8b: llama-3.1-8b-instant
+  groq_gemma2: gemma2-9b-it
+  # OpenRouter slugs (provider-prefixed)
+  or_claude_sonnet_4: anthropic/claude-sonnet-4.5
+  or_gemini_pro: google/gemini-2.5-pro
+  or_deepseek_r1: deepseek/deepseek-r1
+  or_deepseek_chat: deepseek/deepseek-chat-v3.1
+  or_qwen_coder: qwen/qwen3-coder
+  or_qwen_coder_free: qwen/qwen3-coder:free
+  or_qwen3_free: qwen/qwen3-next-80b-a3b-instruct:free
+  or_kimi_k2: moonshotai/kimi-k2
+  or_kimi_k2_free: moonshotai/kimi-k2.6:free
+  or_llama_maverick: meta-llama/llama-4-maverick
+
+# Production primary chain across providers, used as the tier-derived head of
+# the resolved chain (architecture-context.md > Fallback Chains):
+#   Claude Sonnet 4 -> Gemini Pro -> DeepSeek R1 -> Kimi K2 -> Qwen Coder
+production_primary_chain:
+  - { provider: anthropic, model: claude-sonnet-4-5-20250929 }
+  - { provider: gemini, model: gemini-2.5-pro }
+  - { provider: deepseek, model: deepseek-reasoner }
+  - { provider: openrouter, model: moonshotai/kimi-k2 }
+  - { provider: openrouter, model: qwen/qwen3-coder }
+
+# Per-model-key fallback chains. Order is significant: the engine attempts each
+# entry until one succeeds or the chain is exhausted.
+chains:
+  claude-sonnet-4:
+    # Production primary for paid tiers. Falls back across providers.
+    - { provider: anthropic, model: claude-sonnet-4-5-20250929 }
+    - { provider: gemini, model: gemini-2.5-pro }
+    - { provider: deepseek, model: deepseek-reasoner }
+    - { provider: openrouter, model: moonshotai/kimi-k2 }
+    - { provider: openrouter, model: qwen/qwen3-coder }
+
+  gemini-2.5-pro:
+    - { provider: gemini, model: gemini-2.5-pro }
+    - { provider: gemini, model: gemini-2.5-flash }
+    - { provider: openrouter, model: deepseek/deepseek-chat-v3.1 }
+    - { provider: openrouter, model: qwen/qwen3-next-80b-a3b-instruct:free } # was: Qwen3 free
+    - { provider: openrouter, model: meta-llama/llama-4-maverick } # was: Llama Maverick free
+
+  gemini-2.5-flash:
+    - { provider: gemini, model: gemini-2.5-flash }
+    - { provider: gemini, model: gemini-2.5-pro }
+    - { provider: groq, model: llama-3.3-70b-versatile }
+    - { provider: openrouter, model: qwen/qwen3-next-80b-a3b-instruct:free } # was: Qwen3 free
+
+  deepseek-r1:
+    # Free-tier primary.
+    - { provider: deepseek, model: deepseek-reasoner }
+    - { provider: openrouter, model: deepseek/deepseek-r1 }
+    - { provider: gemini, model: gemini-2.5-pro }
+    - { provider: openrouter, model: qwen/qwen3-next-80b-a3b-instruct:free } # was: QwQ free
+
+  deepseek-v3:
+    - { provider: deepseek, model: deepseek-chat }
+    - { provider: openrouter, model: deepseek/deepseek-chat-v3.1 }
+    - { provider: gemini, model: gemini-2.5-flash }
+    - { provider: openrouter, model: qwen/qwen3-next-80b-a3b-instruct:free } # was: Qwen3 free
+
+  qwen-coder:
+    - { provider: openrouter, model: qwen/qwen3-coder }
+    - { provider: openrouter, model: qwen/qwen3-coder:free }
+    - { provider: openrouter, model: deepseek/deepseek-chat-v3.1 }
+    - { provider: openrouter, model: qwen/qwen3-next-80b-a3b-instruct:free } # was: Qwen3 free
+    - { provider: groq, model: llama-3.3-70b-versatile }
+
+  groq-llama:
+    - { provider: groq, model: llama-3.3-70b-versatile }
+    - { provider: groq, model: llama-3.1-8b-instant }
+    - { provider: groq, model: gemma2-9b-it }
+    - { provider: gemini, model: gemini-2.5-flash }
+    - { provider: openrouter, model: qwen/qwen3-next-80b-a3b-instruct:free } # was: Qwen3 free
+
+  kimi-k2:
+    - { provider: openrouter, model: moonshotai/kimi-k2 }
+    - { provider: openrouter, model: moonshotai/kimi-k2.6:free } # was: Kimi K2 free
+    - { provider: gemini, model: gemini-2.5-pro }
+    - { provider: openrouter, model: deepseek/deepseek-chat-v3.1 }
