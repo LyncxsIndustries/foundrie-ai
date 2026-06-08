@@ -1,16 +1,16 @@
+// Diagram workspace placeholder (Feature 06).
+// The canvas fills the shell's main region with a flush, infinite dotted
+// background; floating panels overlay it without a card-like wrapper
+// (ui-context.md canvas rules). The project layout supplies the top nav and
+// phase rail, so this fills the remaining main column rather than the whole
+// screen. The real React Flow canvas arrives in Features 16–17.
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Workflow } from "lucide-react";
 
-/**
- * Diagram workspace placeholder. The canvas fills the viewport with a flush,
- * infinite dotted background; floating panels overlay it without a card-like
- * wrapper (ui-context.md canvas rules). The real React Flow canvas arrives in
- * Features 16–17.
- */
 export default function DiagramWorkspacePage() {
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-bg-canvas">
+    <div className="relative flex-1 overflow-hidden bg-bg-canvas">
       {/* Infinite dotted grid, flush with the app background. */}
       <div
         aria-hidden
@@ -23,7 +23,7 @@ export default function DiagramWorkspacePage() {
         <span className="text-sm font-medium text-text-primary">
           Diagram Workspace
         </span>
-        <Badge variant="secondary">Placeholder</Badge>
+        <Badge variant="secondary">Diagram-first gate</Badge>
       </div>
 
       {/* Floating generation/controls panel. */}
