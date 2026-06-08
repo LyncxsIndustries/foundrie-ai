@@ -39,7 +39,9 @@ enum ProjectStatus {
   COMPLETE
 }
 
-// Discovery is an 8-phase flow; this tracks the conversation's current phase.
+// Tracks the conversation's current lifecycle phase. Mirrors the six
+// application phases (see ProjectStatus); distinct from the 8-phase discovery
+// interview flow, which is internal to the AI layer and not modeled here.
 enum ConversationPhase {
   DISCOVERY
   REQUIREMENTS
