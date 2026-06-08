@@ -1,62 +1,84 @@
-import {
-  WorkspaceShell,
-  SurfaceHeader,
-} from "@/components/shells/workspace-shell";
+// Project overview (Feature 06).
+// The project index surface: summary metadata and phase status. Ownership-scoped
+// read; 404 on any ownership failure. Live activity and richer content arrive in
+// later phase features.
+import { notFound, redirect } from "next/navigation";
+
+import { SurfaceHeader } from "@/components/shells/workspace-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  phaseForStatus,
+  phasePosition,
+  statusLabel,
+  PROJECT_PHASE_COUNT,
+} from "@/components/project/project-phases";
+import { getAuthUser } from "@/lib/auth/get-auth-user";
+import { db } from "@/lib/db";
 
-const PHASES = [
-  "Discovery",
-  "Requirements",
-  "Architecture",
-  "Diagram Generation",
-  "Spec Generation",
-  "Complete",
-] as const;
+export const dynamic = "force-dynamic";
 
-/**
- * Project shell: left phase navigation, main content, optional right inspector.
- * Phase data and live content arrive in later features.
- */
-export default function ProjectShellPage() {
+interface ProjectOverviewProps {
+  params: Promise<{ projectId: string }>;
+}
+
+export default async function ProjectOverviewPage({
+  params,
+}: ProjectOverviewProps) {
+  const user = await getAuthUser();
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  const { projectId } = await params;
+  const project = await db.project.findFirst({
+    where: { id: projectId, userId: user.id },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      status: true,
+      diagramCount: true,
+      completedDiagramCount: true,
+      featureSpecCount: true,
+    },
+  });
+  if (!project) {
+    notFound();
+  }
+
+  const position = phasePosition(phaseForStatus(project.status));
+
   return (
-    <WorkspaceShell
-      nav={
-        <nav className="flex flex-col gap-1 p-4">
-          <p className="px-2 pb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
-            Phases
-          </p>
-          {PHASES.map((phase, index) => (
-            <div
-              key={phase}
-              className="flex min-touch items-center justify-between rounded-md px-3 py-2 text-sm text-text-secondary hover:bg-bg-elevated"
-            >
-              <span>{phase}</span>
-              {index === 0 ? <Badge variant="secondary">Active</Badge> : null}
-            </div>
-          ))}
-        </nav>
-      }
-      inspector={
-        <div className="p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
-            Inspector
-          </p>
-          <p className="mt-2 text-sm text-text-secondary">
-            Context-specific details appear here.
-          </p>
-        </div>
-      }
-    >
-      <SurfaceHeader title="Project" description="Phase 1 of 8 — Discovery" />
+    <>
+      <SurfaceHeader
+        title={project.name}
+        description={`Phase ${position} of ${PROJECT_PHASE_COUNT} — ${statusLabel(project.status)}`}
+      />
       <div className="grid gap-4 p-6 sm:grid-cols-2">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Overview</CardTitle>
+            <Badge variant="secondary">{statusLabel(project.status)}</Badge>
           </CardHeader>
-          <CardContent className="text-sm text-text-secondary">
-            Project metadata and phase status render here.
+          <CardContent className="space-y-3 text-sm text-text-secondary">
+            <p>{project.description || "No description yet."}</p>
+            <Separator />
+            <dl className="grid grid-cols-2 gap-2 text-xs text-text-muted">
+              <div>
+                <dt className="text-text-muted">Diagrams</dt>
+                <dd className="text-text-secondary">
+                  {project.completedDiagramCount}/{project.diagramCount}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-text-muted">Feature specs</dt>
+                <dd className="text-text-secondary">
+                  {project.featureSpecCount}
+                </dd>
+              </div>
+            </dl>
           </CardContent>
         </Card>
         <Card>
@@ -70,6 +92,6 @@ export default function ProjectShellPage() {
           </CardContent>
         </Card>
       </div>
-    </WorkspaceShell>
+    </>
   );
 }

@@ -1,12 +1,18 @@
-import {
-  WorkspaceShell,
-  SurfaceHeader,
-} from "@/components/shells/workspace-shell";
+// Requirements phase page (Feature 06).
+// Document review shell: editable sections with status. The project layout
+// provides the workspace shell + phase nav, so this renders only the surface
+// header and main content. Real requirements content and persistence arrive in
+// later features.
+import { SurfaceHeader } from "@/components/shells/workspace-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  phasePosition,
+  PROJECT_PHASE_COUNT,
+} from "@/components/project/project-phases";
 
 const SECTIONS = [
   { title: "Functional Requirements", status: "Draft" },
@@ -14,18 +20,13 @@ const SECTIONS = [
   { title: "Hidden Requirements", status: "Pending" },
 ] as const;
 
-/**
- * Document review shell: editable sections with status. Real requirements
- * content and persistence arrive in later features.
- */
 export default function RequirementsReviewPage() {
+  const prefix = `Phase ${phasePosition("requirements")} of ${PROJECT_PHASE_COUNT}`;
   return (
-    <WorkspaceShell
-      nav={<div className="p-4 text-sm text-text-muted">Navigation</div>}
-    >
+    <>
       <SurfaceHeader
         title="Requirements"
-        description="Review and edit the surfaced requirements before architecture."
+        description={`${prefix} — Review and edit the surfaced requirements before architecture.`}
         actions={
           <Button size="lg" className="min-touch">
             Save changes
@@ -51,6 +52,6 @@ export default function RequirementsReviewPage() {
           ))}
         </div>
       </ScrollArea>
-    </WorkspaceShell>
+    </>
   );
 }
