@@ -3,6 +3,7 @@
 // engine maps task -> model key, then reads that key's fallback chain.
 
 import type { Plan } from "./tier";
+import { tierPrimaryModelKey } from "./fallback-chains";
 
 /** Logical model-key roles. These are the keys used in `config/model.yaml`. */
 export type ModelKey =
@@ -121,6 +122,10 @@ export function modelKeyForTask(task: AITask): ModelKey {
  * `gemini-2.5-pro`) are promoted to the tier primary. Fast-chat, code, and
  * research tasks keep their purpose-built model regardless of tier, because
  * routing a label suggestion to Claude wastes budget for no quality gain.
+ *
+ * The tier primary itself is sourced from `config/model.yaml` via
+ * `tierPrimaryModelKey`, not hardcoded here, so the YAML stays the single
+ * source of truth for tier->model selection.
  */
 const FLAGSHIP_KEYS: ReadonlySet<ModelKey> = new Set(["gemini-2.5-pro"]);
 
@@ -133,7 +138,7 @@ export function resolveModelKey(
 
   const taskKey = modelKeyForTask(task);
   if (FLAGSHIP_KEYS.has(taskKey)) {
-    return plan === "FREE" ? "deepseek-r1" : "claude-sonnet-4";
+    return tierPrimaryModelKey(plan);
   }
   return taskKey;
 }
