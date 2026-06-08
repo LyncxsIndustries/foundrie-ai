@@ -1,19 +1,23 @@
-// Research phase page (Feature 06).
-// Placeholder for the research library (uploads, sources, references, synthesis).
-// The research ingestion surface arrives in Feature 07.
-import { Library } from "lucide-react";
+import { SurfaceHeader } from "@/components/shells/workspace-shell";
+import { ResearchLibrary } from "@/components/research/ResearchLibrary";
+import {
+  phasePosition,
+  PROJECT_PHASE_COUNT,
+} from "@/components/project/project-phases";
 
-import { PhasePlaceholder } from "@/components/project/phase-placeholder";
+type RouteContext = { params: Promise<{ projectId: string }> };
 
-export default function ResearchPage() {
+export default async function ResearchPage({ params }: RouteContext) {
+  const { projectId } = await params;
+  const prefix = `Phase ${phasePosition("research")} of ${PROJECT_PHASE_COUNT}`;
+
   return (
-    <PhasePlaceholder
-      phaseId="research"
-      title="Research"
-      description="Sources, references, and synthesized findings."
-      icon={<Library className="size-8" />}
-      emptyTitle="No research yet"
-      emptyMessage="Uploaded assets, sources, and synthesized research will appear here."
-    />
+    <>
+      <SurfaceHeader 
+        title="Research" 
+        description={`${prefix} — Visual references and domain docs.`} 
+      />
+      <ResearchLibrary projectId={projectId} />
+    </>
   );
 }
