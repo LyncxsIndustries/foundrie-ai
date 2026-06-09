@@ -55,8 +55,12 @@ npx ctx7 docs <library-id> "<implementation question>"
 
 ## Required Skills Workflow
 
-Foundrie enforces specialized skills for tasks beyond generic text generation:
+**CRITICAL RULE: Always check `.agents/skills/` first.**
 
+Foundrie enforces specialized skills for tasks beyond generic text generation. Before starting implementation or documentation, the AI agent MUST check the `.agents/skills/` directory for a relevant skill and read its `SKILL.md` file. Follow the patterns exactly.
+
+Key skill groups include:
+- **Framework & Libraries**: `next-best-practices`, `react-expert`, `shadcn`, `liveblocks-best-practices`, `trigger-tasks`, etc.
 - **Review and Fix**: `code-review` and `autofix` for resolving CodeRabbit findings.
 - **Document Research**: `docx`, `pdf`, `pptx`, `xlsx` exclusively when parsing uploaded research assets or generating research deliverables. Do not rely on generic text extraction when a skill exists.
 - **UI and Design**: `frontend-design` and `theme-factory` when modifying the Foundrie UI or planning a generated project's styling.
