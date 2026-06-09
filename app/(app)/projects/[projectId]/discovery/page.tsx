@@ -1,19 +1,25 @@
-// Discovery phase page (Feature 06).
-// Placeholder surface for the Socratic discovery interview. The streaming chat
-// and structured requirements summary arrive in their own feature.
-import { MessagesSquare } from "lucide-react";
+import { DiscoveryChat } from "@/components/chat/DiscoveryChat";
 
-import { PhasePlaceholder } from "@/components/project/phase-placeholder";
+interface DiscoveryPageProps {
+  params: Promise<{
+    projectId: string;
+  }>;
+}
 
-export default function DiscoveryPage() {
+export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
+  const { projectId } = await params;
+
   return (
-    <PhasePlaceholder
-      phaseId="discovery"
-      title="Discovery"
-      description="Problem, users, and core flows."
-      icon={<MessagesSquare className="size-8" />}
-      emptyTitle="Discovery not started"
-      emptyMessage="The Socratic discovery interview will appear here once it ships."
-    />
+    <div className="flex h-full flex-col">
+      <div className="flex-none p-6 pb-4">
+        <h1 className="text-2xl font-semibold tracking-tight">Discovery</h1>
+        <p className="text-sm text-muted-foreground">
+          Socratic interview to uncover requirements and stack preferences.
+        </p>
+      </div>
+      <div className="flex-1 p-6 pt-0">
+        <DiscoveryChat projectId={projectId} />
+      </div>
+    </div>
   );
 }
