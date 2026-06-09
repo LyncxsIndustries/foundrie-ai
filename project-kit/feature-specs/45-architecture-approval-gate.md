@@ -50,6 +50,11 @@ MODIFY: `context/progress-tracker.md` - mark feature progress, including the dia
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - The gate is a hard stop: feature-spec generation (Feature 26) must check that the architecture is `APPROVED` for the current diagram version set before running. The System Context Diagram is approved first; the remaining diagrams are reviewed together, then the complete architecture is approved.
 - Versioning: when an approved diagram changes, snapshot the prior version (export-side `diagrams/vN/`) and record the current version. Maintain a diagram version log in `progress-tracker.md` (which diagram version each spec was written from). Use `db` for version writes; do not select large React Flow JSON in version-list views.
 - Rollback: restoring a prior diagram version marks feature specs derived from the changed diagram as "needs re-review" and records the change. Conversation-branch exploration ("what if monolith instead of microservices") preserves both branches; the rejected branch is never deleted.

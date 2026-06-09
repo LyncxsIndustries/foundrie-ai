@@ -52,6 +52,11 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - Operate as a GitHub App with fine-grained, installation-level permissions (Contents R/W, Pull requests R/W, Issues R, Metadata R, Workflows R/W) and bot identity. Verify webhooks before processing. Store installation/token references scoped to the authenticated user; never expose another user's repos.
 - Access matrix: own repos (full), collaborator-write (full), collaborator-read (read-only), public (read-only), private-other (no access). Enforce this on every repo read.
 - Reference-repository pattern: a session has one working repo and optional read-only reference repos. When the user references a pattern from a reference repo, read the relevant file, extract the pattern, and record it in `research/reference-patterns.md` (source repo, source file, extracted pattern, which spec uses it) via the Feature 09 research-source store.

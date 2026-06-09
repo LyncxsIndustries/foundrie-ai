@@ -43,6 +43,11 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - `LOGGING.md`: the 7-item logging checklist, the log-level policy (DEBUG/INFO/WARN/ERROR/FATAL/AUDIT), the request-ID and `trace_id` requirement, the chosen centralized destination (from discovery Phase 4: Datadog/Logtail/CloudWatch/Grafana Loki), retention, and the alert rule (ERROR rate > 1% over 5 min). Forbids `console.log` in production paths.
 - `QUALITY-GATE.md`: the three-category gate (Document / Code-Technical / Research) with each checklist, the failure protocol (identify → classify generation vs data failure → route → re-check → log), and the Quality Gate Log table.
 - `SECURITY.md`: the dependency-security three-step protocol (audit today, lock versions, monthly cadence), the seven-layer model mapped to the project, the OWASP mitigations, secrets management, and the SBOM/Dependabot note.

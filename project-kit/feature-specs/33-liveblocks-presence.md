@@ -42,6 +42,11 @@ CREATE: `components/canvas/PresenceLayer.tsx` - live cursors, avatars, AI presen
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - Define the Liveblocks presence schema (cursor position, selection, status). Show live cursors on the canvas and participant avatars/names. Show AI thinking/generation presence during background work.
 - Keep presence separate from persisted diagram artifacts (persistent data lives in the database). Presence degrades gracefully when realtime auth/connection fails.
 - Lay the groundwork for the AI input queue state machine (FREE → TYPING → SUBMITTED → RUNNING → BATCH_TAKEN): the first user to focus the input claims it, others see "X is typing" and a queue box, and queued messages are taken as a batch when the AI finishes. Buttons disable on click (idempotency).

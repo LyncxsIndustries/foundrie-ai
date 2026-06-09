@@ -26,6 +26,7 @@ const PROVIDER_IDS = [
   "deepseek",
   "groq",
   "openrouter",
+  "nvidia",
 ] as const;
 const MODEL_KEYS = [
   "claude-sonnet-4",
@@ -36,6 +37,7 @@ const MODEL_KEYS = [
   "qwen-coder",
   "groq-llama",
   "kimi-k2",
+  "unified-rotation",
 ] as const;
 const PLANS = ["FREE", "PRO", "ENTERPRISE"] as const;
 

@@ -235,7 +235,34 @@ Do not build PostgreSQL RLS, ABAC, audit logging, or hardware-key admin controls
 
 ## Model Task Map
 
-| Task group | Tasks | Model key |
+**UNIFIED ROTATION STRATEGY (v2.0):** As of the optimization update, ALL AI tasks now use a single `unified-rotation` model key that cycles through the best model from each provider. This prevents rate limit exhaustion on specialized providers and ensures maximum system availability.
+
+**Previous architecture (deprecated):** Tasks were assigned to specialized models (e.g., discovery → `gemini-2.5-pro`, fast chat → `groq-llama`), which caused rate limits after ~6 messages in user-facing features.
+
+**Current architecture:** Every task resolves to `unified-rotation`, which implements the following cross-provider fallback chain:
+
+1. Anthropic Claude Sonnet 4 (premium reasoning and architecture)
+2. Google Gemini 2.5 Pro (long context and analysis)
+3. DeepSeek R1 Reasoner (free-tier primary, strong reasoning)
+4. Nvidia Llama 3.1 405B (high-performance inference)
+5. Groq Llama 3.3 70B (fast inference)
+6. OpenRouter Qwen Coder (fallback coding tasks)
+
+The rotation engine walks this chain until a provider succeeds or all are exhausted. Tier-based primary model selection still applies:
+- **FREE tier:** Primary is DeepSeek R1 (position 3 in the chain)
+- **PRO/ENTERPRISE tier:** Primary is Claude Sonnet 4 (position 1 in the chain)
+
+Callers can still override with `overrideModelKey` for specific use cases (e.g., forcing `kimi-k2` for large document analysis), but the default behavior for all tasks is now unified rotation.
+
+| Task group | Example tasks | Model key |
+|---|---|---|
+| **All tasks** | Discovery, requirements, architecture, specs, code, chat, research, visual analysis | `unified-rotation` |
+
+### Legacy Task-to-Model Map (Preserved for Reference)
+
+The following specialized assignments are deprecated but documented here for context:
+
+| Task group | Tasks | Former model key |
 |---|---|---|
 | Discovery and planning | `discovery_interview`, `requirements_surfacing`, `architecture_proposal`, `non_functional_analysis`, `long_context_planning` | `gemini-2.5-pro` |
 | Reasoning and critique | `trade_off_analysis`, `scalability_review`, `security_review`, `architecture_critique`, `infrastructure_decisions`, `hidden_requirement_detect` | `deepseek-r1` |
@@ -246,21 +273,36 @@ Do not build PostgreSQL RLS, ABAC, audit logging, or hardware-key admin controls
 
 ## Fallback Chains
 
-Every AI call uses `callAI(task, params, overrideModelKey?)`. The engine resolves the task to a model key, reads that key's fallback chain, checks provider availability, calls the provider via the Rust key rotation engine, logs the attempt, and continues until a response succeeds or every fallback fails. When all providers are rate-limited, the request is queued in NATS JetStream and a queue-position indicator is shown.
+Every AI call uses `callAI(task, params, overrideModelKey?)`. The engine resolves the task to a model key, reads that key's fallback chain, checks provider availability, calls the provider via the application-layer rotation engine (future: Rust key rotation engine over gRPC), logs the attempt, and continues until a response succeeds or every fallback fails. When all providers are rate-limited, the request returns a recoverable "queued" state (future: NATS JetStream queue with position indicator).
+
+**Primary Chain (unified-rotation):** All tasks now default to this chain unless explicitly overridden.
 
 | Model key | Fallback chain |
 |---|---|
-| `gemini-2.5-pro` | Gemini Pro -> Gemini Flash -> OpenRouter DeepSeek Chat -> OpenRouter Qwen3 free -> OpenRouter Llama Maverick free |
-| `gemini-2.5-flash` | Gemini Flash -> Gemini Pro -> Groq Llama 70B -> OpenRouter Qwen3 free |
-| `deepseek-r1` | DeepSeek Reasoner -> OpenRouter DeepSeek R1 -> OpenRouter DeepSeek R1 free -> Gemini Pro -> OpenRouter QwQ free |
-| `deepseek-v3` | DeepSeek Chat -> OpenRouter DeepSeek Chat -> OpenRouter DeepSeek Chat free -> Gemini Flash -> OpenRouter Qwen3 free |
-| `qwen-coder` | OpenRouter Qwen Coder -> OpenRouter Qwen Coder free -> OpenRouter DeepSeek Chat -> OpenRouter Qwen3 free -> Groq Llama 70B |
-| `groq-llama` | Groq Llama 70B -> Groq Llama 8B instant -> Groq Gemma2 -> Gemini Flash -> OpenRouter Qwen3 free |
-| `kimi-k2` | OpenRouter Kimi K2 -> OpenRouter Kimi K2 free -> Gemini Pro -> OpenRouter DeepSeek Chat |
+| `unified-rotation` | Anthropic Claude Sonnet 4 → Google Gemini Pro → DeepSeek R1 → Nvidia Llama 405B → Groq Llama 70B → OpenRouter Qwen Coder |
 
-Production primary chain across providers: Claude Sonnet 4 → Gemini Pro → DeepSeek R1 → Kimi K2 → Qwen Coder. Free-tier primary is DeepSeek R1. Model IDs are pinned to exact versions (never `"latest"`) in `config/model.yaml`.
+**Legacy Specialized Chains (Deprecated):** These chains are preserved for reference but no longer used by default.
+
+| Model key | Fallback chain |
+|---|---|
+| `claude-sonnet-4` | Claude Sonnet 4 → Gemini Pro → DeepSeek R1 → Kimi K2 → Qwen Coder |
+| `gemini-2.5-pro` | Gemini Pro → Gemini Flash → OpenRouter DeepSeek Chat → OpenRouter Qwen3 free → OpenRouter Llama Maverick |
+| `gemini-2.5-flash` | Gemini Flash → Gemini Pro → Groq Llama 70B → OpenRouter Qwen3 free |
+| `deepseek-r1` | DeepSeek Reasoner → OpenRouter DeepSeek R1 → Gemini Pro → OpenRouter Qwen3 free |
+| `deepseek-v3` | DeepSeek Chat → OpenRouter DeepSeek Chat → Gemini Flash → OpenRouter Qwen3 free |
+| `qwen-coder` | OpenRouter Qwen Coder → OpenRouter Qwen Coder free → OpenRouter DeepSeek Chat → OpenRouter Qwen3 free → Groq Llama 70B |
+| `groq-llama` | Groq Llama 70B → Groq Llama 8B instant → Groq Gemma2 → Gemini Flash → OpenRouter Qwen3 free |
+| `kimi-k2` | OpenRouter Kimi K2 → OpenRouter Kimi K2 free → Gemini Pro → OpenRouter DeepSeek Chat |
+
+**Tier-based Primary Model Selection:**
+- **FREE tier:** Primary entry point is DeepSeek R1 Reasoner (position 3 in unified-rotation chain)
+- **PRO/ENTERPRISE tier:** Primary entry point is Claude Sonnet 4 (position 1 in unified-rotation chain)
+
+Model IDs are pinned to exact versions (never `"latest"`) in `config/model.yaml`.
 
 ## Provider Abstraction
+
+Supported providers: Anthropic (Claude), Google (Gemini), DeepSeek (R1 Reasoner & V3 Chat), Groq (Llama/Gemma fast inference), OpenRouter (unified access to 200+ models), and Nvidia NIM (high-performance inference).
 
 ```ts
 interface AIProvider {
@@ -284,7 +326,7 @@ interface AIResponse {
 }
 ```
 
-Provider adapters belong in `lib/ai/providers/`. Direct calls to external AI APIs are not allowed outside those adapters. The Rust key rotation engine selects the least-used available key per provider and marks rate-limited keys for 24 hours.
+Provider adapters belong in `lib/ai/providers/`. Direct calls to external AI APIs are not allowed outside those adapters. The application-layer rotation engine selects from available providers based on the fallback chain. In the future deployed architecture, the Rust key rotation engine will select the least-used available key per provider and mark rate-limited keys for 24 hours.
 
 ## AI Conversation Flow (8 Phases)
 

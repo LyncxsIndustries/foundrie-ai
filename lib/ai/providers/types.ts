@@ -17,7 +17,8 @@ export type ProviderId =
   | "gemini"
   | "deepseek"
   | "groq"
-  | "openrouter";
+  | "openrouter"
+  | "nvidia";
 
 /** Parameters passed to a provider for a single completion. */
 export interface AIMediaAttachment {

@@ -25,6 +25,11 @@ MODIFY: `project-kit/context/progress-tracker.md` - Mark feature progress.
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - `requireProjectOwner(projectId, userId)`: Looks up the project where `id = projectId AND userId = userId`. Returns the project or throws a 404 response. This is the gate for project settings, delete, and member management.
 - `requireProjectMember(projectId, userId)`: Looks up the project where `id = projectId AND (userId = userId OR ProjectMember.userId = userId)`. Returns the project and the user's role (`OWNER` or `COLLABORATOR`) or throws 404. This is the gate for canvas, diagram, AI, and ZIP operations.
 - `getProjectRole(projectId, userId)`: Returns `OWNER`, `COLLABORATOR`, or `null`. Used for UI conditional rendering (show/hide share button, settings).

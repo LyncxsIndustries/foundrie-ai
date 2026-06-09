@@ -45,6 +45,11 @@ MODIFY: `app/api/context-files/[projectId]/generate/route.ts` - add the `UI_CONT
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - Use project type and target audience as input, plus any visual analysis and motion plans from research (cite `research/` paths). Use `callAI('ui_component_specs')` or a dedicated UI task.
 - Include color tokens, typography, layout patterns, components, accessibility rules (44×44px touch targets, ARIA, keyboard), Core Web Vitals targets, and interaction rules. When the project uses GSAP, include the GSAP rules (module-level registration, `useLayoutEffect`, `gsap.context()`, `ctx.revert()`, transform/opacity + `force3D`). When Figma research exists, derive tokens from it and note the bidirectional sync expectation.
 - Do not assume the project is web unless the architecture context says so; adapt to mobile/desktop/etc.
