@@ -7,14 +7,14 @@ import {
 } from "./model-routing";
 
 describe("model-routing task map", () => {
-  it("routes each task group to its documented model key", () => {
-    expect(modelKeyForTask("discovery_interview")).toBe("gemini-2.5-pro");
-    expect(modelKeyForTask("architecture_proposal")).toBe("gemini-2.5-pro");
-    expect(modelKeyForTask("security_review")).toBe("deepseek-r1");
-    expect(modelKeyForTask("feature_spec_generation")).toBe("deepseek-v3");
-    expect(modelKeyForTask("nextjs_route_gen")).toBe("qwen-coder");
-    expect(modelKeyForTask("chat_quick_reply")).toBe("groq-llama");
-    expect(modelKeyForTask("tech_comparison")).toBe("gemini-2.5-flash");
+  it("routes each task group to unified-rotation", () => {
+    expect(modelKeyForTask("discovery_interview")).toBe("unified-rotation");
+    expect(modelKeyForTask("architecture_proposal")).toBe("unified-rotation");
+    expect(modelKeyForTask("security_review")).toBe("unified-rotation");
+    expect(modelKeyForTask("feature_spec_generation")).toBe("unified-rotation");
+    expect(modelKeyForTask("nextjs_route_gen")).toBe("unified-rotation");
+    expect(modelKeyForTask("chat_quick_reply")).toBe("unified-rotation");
+    expect(modelKeyForTask("tech_comparison")).toBe("unified-rotation");
   });
 
   it("maps every declared task to a model key", () => {
@@ -27,31 +27,31 @@ describe("model-routing task map", () => {
 });
 
 describe("resolveModelKey tier-based primary selection", () => {
-  it("promotes flagship planning tasks to deepseek-r1 for FREE plan", () => {
+  it("promotes all tasks to deepseek-r1 for FREE plan", () => {
     expect(resolveModelKey("architecture_proposal", "FREE")).toBe(
       "deepseek-r1",
     );
     expect(resolveModelKey("discovery_interview", "FREE")).toBe("deepseek-r1");
+    expect(resolveModelKey("chat_quick_reply", "FREE")).toBe("deepseek-r1");
   });
 
-  it("promotes flagship planning tasks to claude-sonnet-4 for paid plans", () => {
+  it("promotes all tasks to claude-sonnet-4 for paid plans", () => {
     expect(resolveModelKey("architecture_proposal", "PRO")).toBe(
       "claude-sonnet-4",
     );
     expect(resolveModelKey("discovery_interview", "ENTERPRISE")).toBe(
       "claude-sonnet-4",
     );
+    expect(resolveModelKey("chat_quick_reply", "PRO")).toBe("claude-sonnet-4");
   });
 
-  it("keeps non-flagship tasks on their purpose-built model regardless of tier", () => {
-    expect(resolveModelKey("chat_quick_reply", "FREE")).toBe("groq-llama");
-    expect(resolveModelKey("chat_quick_reply", "ENTERPRISE")).toBe(
-      "groq-llama",
-    );
-    expect(resolveModelKey("nextjs_route_gen", "PRO")).toBe("qwen-coder");
+  it("applies unified rotation to all tasks regardless of type", () => {
+    // All tasks now route through tier primary for unified rotation
+    expect(resolveModelKey("nextjs_route_gen", "PRO")).toBe("claude-sonnet-4");
     expect(resolveModelKey("security_review", "ENTERPRISE")).toBe(
-      "deepseek-r1",
+      "claude-sonnet-4",
     );
+    expect(resolveModelKey("tech_comparison", "FREE")).toBe("deepseek-r1");
   });
 
   it("honours an explicit override above tier and task defaults", () => {
