@@ -23,6 +23,7 @@
     "@prisma/adapter-neon": "7.8.0",
     "@prisma/client": "7.8.0",
     "@tavily/core": "0.7.5",
+    "@trigger.dev/sdk": "4.4.6",
     "@vercel/blob": "2.4.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
