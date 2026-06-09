@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { LiveblocksReactProvider } from "@/lib/liveblocks/provider";
 
 /**
  * Maps Clerk's components onto the Foundrie dark workspace tokens so hosted
@@ -49,7 +50,9 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <TooltipProvider>{children}</TooltipProvider>
+          <LiveblocksReactProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+          </LiveblocksReactProvider>
         </body>
       </html>
     </ClerkProvider>
