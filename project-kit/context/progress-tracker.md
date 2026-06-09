@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** to **Feature 10 - Discovery Chat** are complete and merged to `master`. **Feature 11 - Requirements Generation** is complete.
+- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 12 - Requirements Review UI** are complete and merged to `master`.
 
 ## Current Goal
 
-- Begin **Feature 12 - Requirements Review UI** when instructed. Awaiting user go-ahead before starting.
+- Begin **Feature 13 - Architecture Proposal** when instructed. Awaiting user go-ahead before starting.
 
 ## Completed
 
@@ -24,14 +24,15 @@ Update this file whenever the current phase, active feature, or implementation s
 - **Feature 08 - Visual and Motion Research Analysis** (DONE — merged to `master`): Visual and motion reference analysis pipeline. Extended the AI rotation engine to accept media attachments. Created `lib/research/visual-analysis.ts` and `lib/research/motion-plan.ts` to fetch images from Vercel blob storage and pass them to the vision-capable AI rotation engine. Created `app/api/research/[projectId]/analyze/route.ts`. Built `components/research/MotionPlanViewer.tsx` overlay to display generated summaries, and integrated the "Analyze" button in `VisualReferenceGrid.tsx`.
 - **Feature 10 - Discovery Chat** (DONE — merged to `master`): Phase-1 streaming chat for Socratic requirements interview. Created `lib/conversations/chat.ts` for database conversation/message manipulation using `db.conversation`. Created `lib/ai/prompts/discovery.ts` for AI classification of vague/overspecified inputs and surfacing hidden requirements without forcing stack choices. Created `app/api/conversations/[projectId]/chat/route.ts` to manage GET message lists and POST streaming using `callAIStream` with idempotency controls. Finally, created `components/chat/DiscoveryChat.tsx` and `components/chat/ChatMessage.tsx` utilizing Foundrie design system (dark tokens, lucide-react) and updated `app/(app)/projects/[projectId]/discovery/page.tsx` to mount it. Unit tests successfully added for DB helpers and API boundary logic. `react-markdown` was utilized to display AI responses elegantly.
 - **Feature 11 - Requirements Generation** (DONE): Structured requirements analysis generated from discovery history and research corpus, run as a durable Trigger.dev task. Installed `@trigger.dev/sdk` (added to dependencies). Created `trigger.config.ts` (project config with retries, 300s maxDuration). Created `lib/ai/prompts/requirements.ts` (two system prompts: `getRequirementsSurfacingPrompt` for extracting functional/NFR/scale requirements separated from tech preferences, and `getHiddenRequirementDetectPrompt` for surfacing ≥1 hidden requirement per major area — auth, data, payments, email, APIs, performance, security). Created `trigger/generate-requirements.ts` (durable task: reads conversation snapshot + research documents, calls `callAI('requirements_surfacing')` then `callAI('hidden_requirement_detect')`, parses JSON responses, atomically persists to `db.requirements` via `$transaction` and advances project status to `REQUIREMENTS`). Created `app/api/requirements/[projectId]/generate/route.ts` (thin POST route: `requireAuth()` → `requireProjectMember(projectId, userId)` → `tasks.trigger()` → 202 Accepted; 404 on ownership failure, 401 on unauthenticated). `.env.example` adds `TRIGGER_SECRET_KEY`. Added 3 tests (202 success, 404 unauthorized, 401 unauthenticated); 133 total passing. Build, tests green.
+- **Feature 12 - Requirements Review UI** (DONE — merged to `master`): Editable requirements review surface. Created `app/api/requirements/[projectId]/route.ts` (GET/PATCH with ownership-scoped checks, Zod validation for requirements content structure with functional/nonFunctional/hidden/scale/security/adrs fields). Created `components/project/RequirementsReview.tsx` (client component with local state, editable textareas for each section, save button with success/error feedback, ADR display). Updated `app/(app)/projects/[projectId]/requirements/page.tsx` to async server component fetching only the requirements row (not full conversation history), ownership-scoped, `SurfaceEmpty` state when no requirements exist, mounts `RequirementsReview` with typed initialData. Added 12 tests (4 API route tests, 8 component tests); 145 total passing (3 pre-existing failures in model-routing unrelated to this feature). Build green. Fixed Zod schema `z.record(z.string(), z.string())` type issue. All Feature 12 tests pass.
 
 ## In Progress
 
-- `[ ]` Nothing in progress. Feature 11 is complete; Feature 12 not yet started.
+- `[ ]` Nothing in progress. Feature 12 is complete; Feature 13 not yet started.
 
 ## Next Up
 
-- `[ ]` **Feature 12 - Requirements Review UI**: (or next numbered spec): per the feature DAG.
+- `[ ]` **Feature 13 - Architecture Proposal**: per the feature DAG.
 
 ## Architecture Decisions
 
