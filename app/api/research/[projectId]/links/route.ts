@@ -123,7 +123,7 @@ export async function POST(
       return notFound();
     }
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 },
     );
   }

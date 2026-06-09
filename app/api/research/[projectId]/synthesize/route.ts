@@ -34,7 +34,7 @@ export async function POST(
     const doc = await synthesizeResearch(projectId, user.plan);
 
     return NextResponse.json({ doc });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AuthError) {
       return unauthorized(error.message);
     }
@@ -42,7 +42,7 @@ export async function POST(
       return notFound();
     }
     return NextResponse.json(
-      { error: error.message || "Synthesis failed" },
+      { error: error instanceof Error ? error.message : "Synthesis failed" },
       { status: 500 },
     );
   }

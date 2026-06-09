@@ -18,7 +18,7 @@ interface ResearchSource {
   provider: string;
   status: string;
   extractedContent?: string | null;
-  createdAt: string;
+  createdAt: Date;
 }
 
 interface ResearchSourceListProps {
