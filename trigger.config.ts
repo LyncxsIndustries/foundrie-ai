@@ -1,7 +1,7 @@
 import { defineConfig } from "@trigger.dev/sdk";
 
 export default defineConfig({
-  project: "proj_foundrie_ai",
+  project: "proj_rfntzniuotazsdtgwkli",
   runtime: "node",
   retries: {
     enabledInDev: true,
