@@ -49,6 +49,11 @@ MODIFY: `app/(app)/projects/[projectId]/discovery/page.tsx` - mount the chat.
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - Use `callAIStream('streaming_chat')` for responsive UI; persist every user and assistant message via the conversation API.
 - Discovery system prompt: classify the opening description as Level 1/2/3 and respond accordingly (elicit for Level 1, surface edge cases for Level 2, push back with sourced evidence for Level 3). Ask exactly one question at a time. Surface hidden requirements from the catalog (auth, database, payments, email, API, performance, security).
 - Cover stack-preference discovery over the conversation: target platform, preferred languages/frameworks, team experience, deployment target, budget, maintenance expectations, technologies to avoid. Explain trade-offs when stack questions arise; final stack selection happens later after research and approval.

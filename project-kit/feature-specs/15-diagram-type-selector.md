@@ -45,6 +45,11 @@ CREATE: `components/canvas/DiagramSidebar.tsx` - grouped category/type selector 
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - Categories: structural (class, component, object, deployment, package), behavioral (use case, sequence, activity, state machine), architectural (C4 context, C4 container, C4 component, microservices map, system context), data (DFD L0, DFD L1, ER), infrastructure (AWS architecture, network).
 - Map each diagram type to its shape library exposing node and edge definitions. Filter the palette by the selected type.
 - Persist the active diagram type in project/diagram state. Use tabs or segmented controls for category selection.

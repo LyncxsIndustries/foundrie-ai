@@ -62,3 +62,7 @@ next-env.d.ts
 # prisma generated client (Prisma 7 emits outside node_modules; regenerated via
 # `prisma generate` / postinstall, so it is not committed)
 /lib/generated/
+
+# hidden folders
+.agents
+.github

@@ -69,8 +69,9 @@ export async function POST(
 
     const updatedMessages = await appendConversationMessage(projectId, userMessage);
 
-    // Format conversation history for the AI
-    const historyText = updatedMessages.map(m => {
+    // Format conversation history for the AI. Truncate to the last 6 messages to avoid context window limit exhaustion.
+    const recentMessages = updatedMessages.slice(-6);
+    const historyText = recentMessages.map(m => {
       const roleName = m.role === "user" ? "User" : "Assistant";
       return `${roleName}:\n${m.content}`;
     }).join("\n\n");

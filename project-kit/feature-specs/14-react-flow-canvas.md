@@ -47,6 +47,11 @@ MODIFY: `app/(app)/projects/[projectId]/architecture/page.tsx` and `.../diagrams
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - Configure the Liveblocks client and an auth route using project-scoped room IDs; verify project membership before granting room access.
 - Store collaborative nodes and edges in the room; persistent diagram data still lives in the database (presence is for cursors/selections only) and degrades gracefully when realtime auth/connection fails.
 - Use React Flow state helpers rather than ad hoc mutation. Keep the canvas full-viewport and flush with the app background; floating panels overlay, never shrink it. Viewport changes are intentional (no surprise zoom).

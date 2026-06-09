@@ -55,6 +55,8 @@ models:
   or_kimi_k2: moonshotai/kimi-k2
   or_kimi_k2_free: moonshotai/kimi-k2.6:free
   or_llama_maverick: meta-llama/llama-4-maverick
+  # Nvidia models
+  nvidia_llama: meta/llama-3.1-405b-instruct
 
 # Production primary chain across providers, used as the tier-derived head of
 # the resolved chain (architecture-context.md > Fallback Chains):
@@ -69,6 +71,13 @@ production_primary_chain:
 # Per-model-key fallback chains. Order is significant: the engine attempts each
 # entry until one succeeds or the chain is exhausted.
 chains:
+  unified-rotation:
+    - { provider: anthropic, model: claude-sonnet-4-5-20250929 }
+    - { provider: gemini, model: gemini-2.5-pro }
+    - { provider: deepseek, model: deepseek-reasoner }
+    - { provider: nvidia, model: meta/llama-3.1-405b-instruct }
+    - { provider: groq, model: llama-3.3-70b-versatile }
+    - { provider: openrouter, model: qwen/qwen3-coder }
   claude-sonnet-4:
     # Production primary for paid tiers. Falls back across providers.
     - { provider: anthropic, model: claude-sonnet-4-5-20250929 }

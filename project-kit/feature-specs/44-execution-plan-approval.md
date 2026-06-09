@@ -49,6 +49,11 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - An `ExecutionPlan` carries `taskType`, plan Markdown `content`, `status` (PROPOSED/APPROVED/REVISION_REQUESTED/REJECTED/EXECUTED), `revisionNotes`, `approvedAt`, `executedAt`. The flow is: generate a concrete plan (with Context7-discovered prerequisites and required inputs) → user reviews → approve, or request revision (which produces a new revised plan) → execute only after `APPROVED` → mark `EXECUTED` on completion.
 - `requireApprovedPlan(projectId, taskType)` is the gate the implementation-impacting features call before running: architecture generation (13), diagram generation (18–21), context/spec generation (22–29), project-specific skill generation (27), and ZIP packaging (30–31). Passive discovery chat, upload intake, link collection, and research summarization do not require a plan.
 - All routes use `requireProjectMember()` once Feature 36 exists (until then, owner-scoped). Validate input with Zod. Use `db` for writes; the approve/execute transition uses strong read-after-write.

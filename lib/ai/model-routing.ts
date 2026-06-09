@@ -14,24 +14,25 @@ export type ModelKey =
   | "deepseek-v3"
   | "qwen-coder"
   | "groq-llama"
-  | "kimi-k2";
+  | "kimi-k2"
+  | "unified-rotation";
 
 /** Every task Foundrie can dispatch through the rotation engine. */
 export type AITask =
-  // Discovery and planning -> gemini-2.5-pro
+  // Discovery and planning -> unified-rotation
   | "discovery_interview"
   | "requirements_surfacing"
   | "architecture_proposal"
   | "non_functional_analysis"
   | "long_context_planning"
-  // Reasoning and critique -> deepseek-r1
+  // Reasoning and critique -> unified-rotation
   | "trade_off_analysis"
   | "scalability_review"
   | "security_review"
   | "architecture_critique"
   | "infrastructure_decisions"
   | "hidden_requirement_detect"
-  // Structured writing -> deepseek-v3
+  // Structured writing -> unified-rotation
   | "feature_spec_generation"
   | "project_overview_md"
   | "architecture_context_md"
@@ -40,75 +41,74 @@ export type AITask =
   | "rfc_generation"
   | "progress_tracker_md"
   | "ai_workflow_rules_md"
-  // Code and implementation specs -> qwen-coder
+  // Code and implementation specs -> unified-rotation
   | "prisma_schema_gen"
   | "react_flow_node_gen"
   | "nextjs_route_gen"
   | "ui_component_specs"
   | "code_standards_md"
   | "typescript_patterns"
-  // Fast conversation -> groq-llama
+  // Fast conversation -> unified-rotation
   | "chat_quick_reply"
   | "streaming_chat"
   | "diagram_label_suggestions"
-  // Research and synthesis -> gemini-2.5-flash (or kimi-k2)
+  // Research and synthesis -> unified-rotation
   | "tech_comparison"
   | "pattern_research"
   | "large_doc_analysis"
-  // Visual and motion analysis -> gemini-2.5-flash (vision-capable, Feature 08)
+  // Visual and motion analysis -> unified-rotation
   | "visual_asset_analysis"
   | "motion_analysis"
-  // Research synthesis -> gemini-2.5-flash (Feature 09)
+  // Research synthesis -> unified-rotation
   | "research_synthesis";
 
 /**
  * Task -> model key. This is the canonical routing table; do not select models
- * per call site. Research tasks default to `gemini-2.5-flash`; callers needing
- * the long-context `kimi-k2` alternative pass an explicit override to `callAI`.
+ * per call site. All tasks now point to a unified model rotation chain.
  */
 export const TASK_MODEL_MAP: Record<AITask, ModelKey> = {
   // Discovery and planning
-  discovery_interview: "gemini-2.5-pro",
-  requirements_surfacing: "gemini-2.5-pro",
-  architecture_proposal: "gemini-2.5-pro",
-  non_functional_analysis: "gemini-2.5-pro",
-  long_context_planning: "gemini-2.5-pro",
+  discovery_interview: "unified-rotation",
+  requirements_surfacing: "unified-rotation",
+  architecture_proposal: "unified-rotation",
+  non_functional_analysis: "unified-rotation",
+  long_context_planning: "unified-rotation",
   // Reasoning and critique
-  trade_off_analysis: "deepseek-r1",
-  scalability_review: "deepseek-r1",
-  security_review: "deepseek-r1",
-  architecture_critique: "deepseek-r1",
-  infrastructure_decisions: "deepseek-r1",
-  hidden_requirement_detect: "deepseek-r1",
+  trade_off_analysis: "unified-rotation",
+  scalability_review: "unified-rotation",
+  security_review: "unified-rotation",
+  architecture_critique: "unified-rotation",
+  infrastructure_decisions: "unified-rotation",
+  hidden_requirement_detect: "unified-rotation",
   // Structured writing
-  feature_spec_generation: "deepseek-v3",
-  project_overview_md: "deepseek-v3",
-  architecture_context_md: "deepseek-v3",
-  agents_md_generation: "deepseek-v3",
-  api_contract_docs: "deepseek-v3",
-  rfc_generation: "deepseek-v3",
-  progress_tracker_md: "deepseek-v3",
-  ai_workflow_rules_md: "deepseek-v3",
+  feature_spec_generation: "unified-rotation",
+  project_overview_md: "unified-rotation",
+  architecture_context_md: "unified-rotation",
+  agents_md_generation: "unified-rotation",
+  api_contract_docs: "unified-rotation",
+  rfc_generation: "unified-rotation",
+  progress_tracker_md: "unified-rotation",
+  ai_workflow_rules_md: "unified-rotation",
   // Code and implementation specs
-  prisma_schema_gen: "qwen-coder",
-  react_flow_node_gen: "qwen-coder",
-  nextjs_route_gen: "qwen-coder",
-  ui_component_specs: "qwen-coder",
-  code_standards_md: "qwen-coder",
-  typescript_patterns: "qwen-coder",
+  prisma_schema_gen: "unified-rotation",
+  react_flow_node_gen: "unified-rotation",
+  nextjs_route_gen: "unified-rotation",
+  ui_component_specs: "unified-rotation",
+  code_standards_md: "unified-rotation",
+  typescript_patterns: "unified-rotation",
   // Fast conversation
-  chat_quick_reply: "groq-llama",
-  streaming_chat: "groq-llama",
-  diagram_label_suggestions: "groq-llama",
+  chat_quick_reply: "unified-rotation",
+  streaming_chat: "unified-rotation",
+  diagram_label_suggestions: "unified-rotation",
   // Research and synthesis
-  tech_comparison: "gemini-2.5-flash",
-  pattern_research: "gemini-2.5-flash",
-  large_doc_analysis: "gemini-2.5-flash",
+  tech_comparison: "unified-rotation",
+  pattern_research: "unified-rotation",
+  large_doc_analysis: "unified-rotation",
   // Visual and motion analysis (Feature 08)
-  visual_asset_analysis: "gemini-2.5-flash",
-  motion_analysis: "gemini-2.5-flash",
+  visual_asset_analysis: "unified-rotation",
+  motion_analysis: "unified-rotation",
   // Research synthesis (Feature 09)
-  research_synthesis: "gemini-2.5-flash",
+  research_synthesis: "unified-rotation",
 };
 
 /** Resolve a task to its default model key. */
@@ -146,9 +146,9 @@ export function resolveModelKey(
 ): ModelKey {
   if (overrideModelKey) return overrideModelKey;
 
-  const taskKey = modelKeyForTask(task);
-  if (FLAGSHIP_KEYS.has(taskKey)) {
-    return tierPrimaryModelKey(plan);
-  }
-  return taskKey;
+  // Per user request, ALL tasks now use model rotation across the best models
+  // to avoid hitting rate limits on specialized purpose-built models.
+  // The tier primary (which maps to a massive cross-provider fallback chain)
+  // is now used for all tasks, overriding the specialized TASK_MODEL_MAP.
+  return tierPrimaryModelKey(plan);
 }

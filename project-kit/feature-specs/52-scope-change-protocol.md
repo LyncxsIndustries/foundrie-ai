@@ -46,6 +46,11 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - A scope change is one of: addition, removal, or redesign. Impact Analysis produces: completed features affected, in-progress features affected, pending features affected, new features needed, diagrams needing updates, timeline delta, and cost delta — shown to the user before anything is regenerated.
 - On approval (via a Feature 44 `ExecutionPlan` with `taskType: SCOPE_CHANGE`, with the impact report as its context): update affected diagrams as new versions (Feature 45), regenerate affected feature specs, generate any new specs, append a `CHANGE_LOG.md` entry (date, requester, impact summary, feature delta, timeline delta, cost delta), generate an ADR recording the decision, and flag revised specs as "re-review required" in `progress-tracker.md`.
 - Feature removal: a NOT STARTED feature is marked CANCELLED; an IN PROGRESS feature pauses for the user's choice; a COMPLETE (merged) feature generates a new `REMOVAL` feature spec (delete files, remove references, clean migrations, grep for residual references) so dead code is never left behind.

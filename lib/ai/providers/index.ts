@@ -10,6 +10,7 @@ import { geminiProvider } from "./gemini";
 import { deepSeekProvider } from "./deepseek";
 import { groqProvider } from "./groq";
 import { openRouterProvider } from "./openrouter";
+import { nvidiaProvider } from "./nvidia";
 
 export const providers: Record<ProviderId, AIProvider> = {
   anthropic: anthropicProvider,
@@ -17,6 +18,7 @@ export const providers: Record<ProviderId, AIProvider> = {
   deepseek: deepSeekProvider,
   groq: groqProvider,
   openrouter: openRouterProvider,
+  nvidia: nvidiaProvider,
 };
 
 export function getProvider(id: ProviderId): AIProvider {

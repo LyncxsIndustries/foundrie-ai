@@ -46,6 +46,11 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 
 ## Implementation Notes
 
+- **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
+- **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+
+
 - Generate `.github/workflows/ci.yml` and `cd.yml` implementing the 22-step pipeline adapted to the selected stack: CI (lint/format, type check, unit, integration, SAST, dependency audit, secret detection, build/containerize, container scan, agent evals, publish immutable artifact `<semver>-<git-sha>`); CD (deploy dev, smoke, deploy staging, E2E, load, DAST, manual gate, canary or blue-green, feature-flag check, observability verify, auto-rollback watch). Choose canary vs blue-green from the discovery Phase 4 decision and record it in an ADR.
 - Generate `.github/dependabot.yml` (weekly, major bumps excluded for manual review), `.github/CODEOWNERS` (protect at minimum `src/lib/auth/` and `src/lib/db/` equivalents), branch protection for `main` (required PR, required CodeRabbit review, required status checks, no force pushes/deletions), `.env.example` (every var with source location), `.npmrc` (`save-exact`, `engine-strict`), and the `security:all` package scripts. The dependency audit is a hard gate — fail on critical/high CVEs. Add SBOM generation to the release workflow.
 - For agentic projects only: generate `tools/permissions.yaml` (allowed roles, allowed/denied paths, denied commands, sandbox, timeout, `requires_human_approval`, `audit`) and `evals/golden-set.json` (pass threshold 0.95) + `evals/run-evals.py` wired as CI step 10.
