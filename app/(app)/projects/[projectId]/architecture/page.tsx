@@ -1,19 +1,20 @@
-// Architecture phase page (Feature 06).
-// Placeholder for the architecture proposal and ADRs. The full-viewport canvas
-// and approval surface arrive in the diagram features.
-import { Boxes } from "lucide-react";
+import { LiveblocksRoomProvider } from "@/lib/liveblocks/room-provider";
+import { DiagramCanvas } from "@/components/canvas/DiagramCanvas";
 
-import { PhasePlaceholder } from "@/components/project/phase-placeholder";
+interface ArchitecturePageProps {
+  params: Promise<{ projectId: string }>;
+}
 
-export default function ArchitecturePage() {
+export default async function ArchitecturePage({
+  params,
+}: ArchitecturePageProps) {
+  const { projectId } = await params;
+
   return (
-    <PhasePlaceholder
-      phaseId="architecture"
-      title="Architecture"
-      description="Proposed stack and trade-offs."
-      icon={<Boxes className="size-8" />}
-      emptyTitle="No architecture yet"
-      emptyMessage="The architecture proposal and decision records will appear here once they ship."
-    />
+    <div className="flex h-full w-full">
+      <LiveblocksRoomProvider projectId={projectId}>
+        <DiagramCanvas />
+      </LiveblocksRoomProvider>
+    </div>
   );
 }

@@ -19,6 +19,11 @@
   "dependencies": {
     "@clerk/nextjs": "7.4.3",
     "@gsap/react": "2.1.2",
+    "@liveblocks/client": "3.19.5",
+    "@liveblocks/node": "3.19.5",
+    "@liveblocks/react": "3.19.5",
+    "@liveblocks/react-flow": "3.19.5",
+    "@liveblocks/react-ui": "3.19.5",
     "@neondatabase/serverless": "1.1.0",
     "@prisma/adapter-neon": "7.8.0",
     "@prisma/client": "7.8.0",
