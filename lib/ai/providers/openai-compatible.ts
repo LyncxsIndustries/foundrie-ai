@@ -76,11 +76,27 @@ export class OpenAICompatibleProvider implements AIProvider {
   }
 
   private body(params: AICallParams, stream: boolean): string {
+    // Build the user message content. When media attachments are present,
+    // use the OpenAI vision format: an array of {type:"text"} and
+    // {type:"image_url"} blocks (supported by OpenRouter and gpt-4-vision).
+    const userContent: unknown =
+      params.media && params.media.length > 0
+        ? [
+            { type: "text", text: params.userPrompt },
+            ...params.media.map((m) => ({
+              type: "image_url",
+              image_url: {
+                url: `data:${m.mimeType};base64,${m.base64Data}`,
+              },
+            })),
+          ]
+        : params.userPrompt;
+
     return JSON.stringify({
       model: params.model,
       messages: [
         { role: "system", content: params.systemPrompt },
-        { role: "user", content: params.userPrompt },
+        { role: "user", content: userContent },
       ],
       max_tokens: params.maxTokens ?? DEFAULT_MAX_TOKENS,
       temperature: params.temperature ?? 0.7,

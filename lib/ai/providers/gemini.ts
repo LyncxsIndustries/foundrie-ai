@@ -27,11 +27,23 @@ interface GenerateContentResponse {
 }
 
 function requestBody(params: AICallParams) {
+  const parts: any[] = [{ text: params.userPrompt }];
+  if (params.media) {
+    for (const attachment of params.media) {
+      parts.push({
+        inlineData: {
+          mimeType: attachment.mimeType,
+          data: attachment.base64Data,
+        },
+      });
+    }
+  }
+
   return {
     systemInstruction: params.systemPrompt
       ? { parts: [{ text: params.systemPrompt }] }
       : undefined,
-    contents: [{ role: "user", parts: [{ text: params.userPrompt }] }],
+    contents: [{ role: "user", parts }],
     generationConfig: {
       maxOutputTokens: params.maxTokens ?? DEFAULT_MAX_TOKENS,
       temperature: params.temperature ?? 0.7,

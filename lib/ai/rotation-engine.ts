@@ -13,6 +13,7 @@
 import { getProvider } from "./providers";
 import {
   type AICallParams,
+  type AIMediaAttachment,
   type AIResponse,
   ProviderCallError,
 } from "./providers/types";
@@ -33,6 +34,8 @@ export interface CallOptions {
   overrideModelKey?: ModelKey;
   /** Cancellation signal forwarded to the provider fetch. */
   signal?: AbortSignal;
+  /** Optional media attachments for vision-capable providers (Feature 08). */
+  media?: AIMediaAttachment[];
 }
 
 /** Successful resolution of a `callAI` request. */
@@ -79,6 +82,7 @@ function toCallParams(
     temperature: options.temperature,
     stream,
     signal: options.signal,
+    media: options.media,
   };
 }
 
