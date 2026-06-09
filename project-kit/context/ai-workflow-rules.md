@@ -4,7 +4,7 @@
 
 Build Foundrie AI incrementally from the feature specs. Context files define what to build, why it exists, how the system is structured, and the current state. Feature specs define the implementation order. Agents must not jump from a vague goal to code.
 
-Implementation is strictly one feature spec at a time. Roadmap phase labels are organizational only; they are not permission to batch work. A feature is not complete until it is implemented, tested, pushed to GitHub, reviewed by CodeRabbit, fixed, re-reviewed as needed, and left with no unresolved findings.
+Implementation is strictly one feature spec at a time. Roadmap phase labels are organizational only; they are not permission to batch work. A feature is not complete until it is implemented, tested, pushed to GitHub, and the GitHub review loop is clean (if the user chose to use CodeRabbit).
 
 ## Mandatory Startup Routine
 
@@ -57,7 +57,7 @@ npx ctx7 docs <library-id> "<implementation question>"
 
 Foundrie enforces specialized skills for tasks beyond generic text generation:
 
-- **Review and Fix**: `code-review` and `autofix` for pre-commit checks and resolving CodeRabbit findings.
+- **Review and Fix**: `code-review` and `autofix` for resolving CodeRabbit findings.
 - **Document Research**: `docx`, `pdf`, `pptx`, `xlsx` exclusively when parsing uploaded research assets or generating research deliverables. Do not rely on generic text extraction when a skill exists.
 - **UI and Design**: `frontend-design` and `theme-factory` when modifying the Foundrie UI or planning a generated project's styling.
 - **Architecture Validation**: stack-specific skills (e.g., `trigger-tasks`, `liveblocks-best-practices`, `clerk-nextjs-patterns`) when implementing foundational architecture.
@@ -65,7 +65,7 @@ Foundrie enforces specialized skills for tasks beyond generic text generation:
 ## Scoping Rules
 
 - Work on one feature spec at a time. Do not combine multiple numbered specs in one pass.
-- Do not open or continue the next spec until the current one is fully done (tests/build pass and the GitHub CodeRabbit loop is clean).
+- Do not open or continue the next spec until the current one is fully done (tests/build pass and the GitHub review loop is clean).
 - Treat roadmap phase names as labels only; they do not authorize batching.
 - Build exactly what the current spec requires. Do not prebuild future behavior.
 - Keep UI, API, background task, database, and AI-provider work separated unless the spec explicitly combines them.
@@ -168,11 +168,10 @@ Update the relevant context file whenever implementation changes: architecture o
 7. All unit tests pass: `npm run test`.
 8. `npm run build` passes when application code exists.
 9. `security:all` passes (SAST, dependency audit with no critical/high CVEs, secret detection).
-10. Run `coderabbit review --agent` locally. Fix all critical and warning findings. Re-run until only info-level or no findings remain. Mandatory pre-push gate.
-11. Push the branch to GitHub.
-12. Let CodeRabbit review the GitHub PR for anything the local review missed.
-13. Fix every GitHub CodeRabbit finding and push again. Repeat until there are no unresolved findings.
-14. The feature is marked done only after tests pass, build passes, the quality gate passes, and CodeRabbit has no unresolved findings locally or on GitHub.
+10. Push the branch to GitHub.
+11. We wait for the user to do CodeRabbit review in GitHub. While not mandatory, it is highly recommended as a quality gate to catch issues early.
+12. Fix every GitHub CodeRabbit finding and push again. Repeat until there are no unresolved findings (if the user chose to use it).
+13. The feature is marked done only after tests pass, build passes, the quality gate passes, and all required gates pass.
 
 ## Branch-First Git Workflow
 
@@ -187,11 +186,11 @@ Every feature spec is implemented on an isolated Git branch, created before any 
 1. Write unit tests for core logic, API routes, and critical paths.
 2. Run `npm run test` and `npm run build`; ensure both pass.
 3. Run `security:all`; resolve all critical/high findings.
-4. Run `coderabbit review --agent` locally. Fix all critical and warning findings. Re-run until clean.
-5. Push: `git push origin feature/<number>-<slug>`.
-6. Open a PR (or let the push trigger CodeRabbit).
-7. Let CodeRabbit review the GitHub PR. Fix additional findings and push again.
-8. Repeat the GitHub review/fix loop until clean.
+4. Push: `git push origin feature/<number>-<slug>`.
+5. Open a PR.
+6. We wait for the user to do CodeRabbit review in GitHub (recommended but optional).
+7. Fix additional findings and push again.
+8. Repeat the GitHub review/fix loop until clean (if used).
 9. Merge into `master`.
 10. Mark the feature done in `progress-tracker.md`.
 

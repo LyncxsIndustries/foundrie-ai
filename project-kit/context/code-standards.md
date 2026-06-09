@@ -143,8 +143,7 @@ Foundrie's own system spans four languages. When working in the deployed system 
 - Add integration tests for API auth and ownership boundaries.
 - Add component tests where interaction risk is high. For agentic behavior, use LLM-as-judge plus a behavioral golden set.
 - Every feature is done only when its new logic has tests and `npm run test` passes. `npm run build` must also pass before moving to the next feature.
-- Run `coderabbit review --agent` locally before every push. Fix all critical and warning findings. Re-run until only info-level or no findings remain. This is a mandatory pre-push gate.
-- After pushing, let CodeRabbit review the GitHub PR and fix additional findings before merging.
+- After pushing, wait for the user to do CodeRabbit review on the GitHub PR (recommended but optional) and fix any findings before merging.
 
 ## Quality Gate
 
