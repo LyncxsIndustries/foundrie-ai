@@ -52,14 +52,12 @@ For every single feature spec:
 5. Write unit tests for the feature's core logic, API routes, and critical paths. Run `npm run test` and `npm run build`.
 6. Update `project-kit/context/progress-tracker.md` **on the feature branch**: move the current spec to Completed (mark DONE), clear In Progress, set Current Goal and Next Up to the next numbered spec, and add a session note. The tracker must always end a feature pointing at the next feature to implement.
 7. Commit the implementation together with the progress-tracker update on the feature branch, so the tracker travels with the branch and is current the moment the branch merges. Never commit the tracker update directly to `master`.
-8. Run `coderabbit review --agent` locally. This is a mandatory pre-push gate.
-9. Fix every CodeRabbit finding (critical and warning). Re-run until only info-level or no findings remain.
-10. Push the branch to GitHub.
-11. Let CodeRabbit review the GitHub PR for anything the local review missed.
-12. Fix every GitHub CodeRabbit finding and push again. Repeat until there are no unresolved findings.
-13. Mark the feature done only after tests pass, build passes, and CodeRabbit has no unresolved findings. The user merges the PR to `master` manually; do not merge unless explicitly asked. After the user confirms the merge, sync local `master` (`git checkout master && git pull`) before starting the next spec — the pulled tracker already points to it.
+8. Push the branch to GitHub.
+9. We wait for the user to do CodeRabbit review in GitHub. While not mandatory, it is highly recommended as a quality gate to catch issues early.
+10. Fix every GitHub CodeRabbit finding and push again. Repeat until there are no unresolved findings (if the user chose to use it).
+11. Mark the feature done only after tests pass, build passes, and all required gates pass. The user merges the PR to `master` manually; do not merge unless explicitly asked. After the user confirms the merge, sync local `master` (`git checkout master && git pull`) before starting the next spec — the pulled tracker already points to it.
 
-Never skip ahead, batch specs, or mark a spec done before the GitHub review loop is clean unless the user explicitly changes the plan.
+Never skip ahead, batch specs, or mark a spec done before the GitHub review loop is clean (if used) unless the user explicitly changes the plan.
 
 ## Hard Rules
 
