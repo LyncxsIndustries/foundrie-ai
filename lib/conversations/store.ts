@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { type Message, conversationSchema } from "./types";
-import { ConversationPhase } from "@prisma/client";
+import { ConversationPhase } from "../generated/prisma/client";
 
 const MAX_MESSAGES = 200;
 const MAX_CONTENT_LENGTH = 12000; // Limit single message size to prevent bloat
