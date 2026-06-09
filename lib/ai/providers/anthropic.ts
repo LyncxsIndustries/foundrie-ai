@@ -9,6 +9,7 @@
 
 import {
   type AICallParams,
+  type AIMediaAttachment,
   type AIProvider,
   type AIResponse,
   ProviderCallError,
@@ -31,11 +32,34 @@ interface MessagesStreamEvent {
   delta?: { type?: string; text?: string };
 }
 
+function buildUserContent(
+  text: string,
+  media?: AIMediaAttachment[],
+): string | Array<unknown> {
+  if (!media || media.length === 0) return text;
+  // Anthropic Messages API: content is an array of content blocks.
+  // Image blocks use base64 source type with media_type and data.
+  const blocks: Array<unknown> = [
+    { type: "text", text },
+    ...media.map((m) => ({
+      type: "image",
+      source: {
+        type: "base64",
+        media_type: m.mimeType,
+        data: m.base64Data,
+      },
+    })),
+  ];
+  return blocks;
+}
+
 function requestBody(params: AICallParams, stream: boolean) {
   return {
     model: params.model,
     system: params.systemPrompt || undefined,
-    messages: [{ role: "user", content: params.userPrompt }],
+    messages: [
+      { role: "user", content: buildUserContent(params.userPrompt, params.media) },
+    ],
     max_tokens: params.maxTokens ?? DEFAULT_MAX_TOKENS,
     temperature: params.temperature ?? 0.7,
     stream,

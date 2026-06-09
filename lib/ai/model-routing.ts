@@ -54,7 +54,10 @@ export type AITask =
   // Research and synthesis -> gemini-2.5-flash (or kimi-k2)
   | "tech_comparison"
   | "pattern_research"
-  | "large_doc_analysis";
+  | "large_doc_analysis"
+  // Visual and motion analysis -> gemini-2.5-flash (vision-capable, Feature 08)
+  | "visual_asset_analysis"
+  | "motion_analysis";
 
 /**
  * Task -> model key. This is the canonical routing table; do not select models
@@ -99,6 +102,9 @@ export const TASK_MODEL_MAP: Record<AITask, ModelKey> = {
   tech_comparison: "gemini-2.5-flash",
   pattern_research: "gemini-2.5-flash",
   large_doc_analysis: "gemini-2.5-flash",
+  // Visual and motion analysis (Feature 08)
+  visual_asset_analysis: "gemini-2.5-flash",
+  motion_analysis: "gemini-2.5-flash",
 };
 
 /** Resolve a task to its default model key. */

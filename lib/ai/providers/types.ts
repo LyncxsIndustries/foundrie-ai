@@ -20,6 +20,13 @@ export type ProviderId =
   | "openrouter";
 
 /** Parameters passed to a provider for a single completion. */
+export interface AIMediaAttachment {
+  /** The MIME type of the media (e.g. image/png, image/jpeg, application/pdf). */
+  mimeType: string;
+  /** The base64-encoded data string (WITHOUT data URL prefix like "data:image/png;base64,"). */
+  base64Data: string;
+}
+
 export interface AICallParams {
   /** Provider-specific model identifier, pinned in `config/model.yaml`. */
   model: string;
@@ -31,6 +38,8 @@ export interface AICallParams {
   stream?: boolean;
   /** Optional cancellation/timeout signal forwarded to the underlying fetch. */
   signal?: AbortSignal;
+  /** Optional media attachments (images/documents) for vision-capable models. */
+  media?: AIMediaAttachment[];
 }
 
 /** Normalized successful completion returned by every adapter. */
