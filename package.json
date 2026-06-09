@@ -25,6 +25,7 @@
     "@tavily/core": "0.7.5",
     "@trigger.dev/sdk": "4.4.6",
     "@vercel/blob": "2.4.0",
+    "@xyflow/react": "12.4.4",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "framer-motion": "12.40.0",
