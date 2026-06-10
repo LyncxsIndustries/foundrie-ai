@@ -10,6 +10,7 @@ import { AuthError, requireAuth } from "@/lib/auth/require-auth";
 import { ProjectAuthError, requireProjectMember } from "@/lib/projects/auth";
 import { generateProjectOverview } from "@/lib/generation/project-overview";
 import { generateArchitectureContext } from "@/lib/generation/architecture-context";
+import { generateUIContext } from "@/lib/generation/ui-context";
 import { ContextFileType } from "@/lib/generated/prisma/enums";
 
 export async function POST(
@@ -51,6 +52,9 @@ export async function POST(
         break;
       case "ARCHITECTURE_CONTEXT":
         content = await generateArchitectureContext(projectId);
+        break;
+      case "UI_CONTEXT":
+        content = await generateUIContext(projectId);
         break;
       default:
         return NextResponse.json(

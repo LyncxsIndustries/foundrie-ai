@@ -9,11 +9,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 23 - Architecture Context Generation** are complete and merged to `master`.
+- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 24 - UI Context Generation** are complete and merged to `master`.
 
 ## Current Goal
 
-- Begin **Feature 24 - UI Context Generation** when instructed. Awaiting user go-ahead before starting.
+- Begin **Feature 25 - Code Standards Generation** when instructed. Awaiting user go-ahead before starting.
 
 ## Completed
 
@@ -46,13 +46,15 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - **Feature 23 - Architecture Context Generation** (DONE — merged to `master`): Context file generator for `context/architecture-context.md`. Created `lib/ai/prompts/architecture-context.ts` (comprehensive system prompt covering stack decision with version research and rejected alternatives, system boundaries, database/storage, auth/authorization when relevant, API architecture from OpenAPI exports, seven-layer security mapping, core invariants, architectural risks, and research basis; **CRITICAL directives:** never assumes Foundrie's stack/web/React/Next.js, includes auth sections only when project needs them, does not over-engineer RBAC/RLS without explicit requirements, cites sources for all recommendations). Created `lib/generation/architecture-context.ts` (reads project with requirements, executionPlans APPROVED, diagrams with reactFlowData for API Map, researchDocuments; generates OpenAPI export from API Map diagram's reactFlowData via `exportToOpenAPI` when available with proper error handling; calls `callAI('architecture_context_md')` with 6000 max tokens). Modified `app/api/context-files/[projectId]/generate/route.ts` to add `ARCHITECTURE_CONTEXT` case in switch statement. Added 1 test for ARCHITECTURE_CONTEXT generation (401/404/200); **271 total passing**. Build green, TypeScript clean (0 errors). The `architecture_context_md` task was already defined in model-routing routing to `unified-rotation`. Generated architecture context records researched, user-approved, project-specific stack with version evidence and rejected alternatives, never defaulting to Foundrie's own polyglot architecture unless explicitly chosen or justified. Tracker flipped to final end-of-feature state on-branch before the implementation commit.
 
+- **Feature 24 - UI Context Generation** (DONE): Context file generator for `context/ui-context.md`. Created `lib/ai/prompts/ui-context.ts` (comprehensive system prompt covering design tokens, typography, layout patterns, component architecture, accessibility with 44×44px touch targets/WCAG AA/ARIA/keyboard nav, motion & animation with easing/duration scales, interaction rules for buttons/forms/loading/errors, Core Web Vitals targets; **platform-adaptive** doesn't assume web, adapts to mobile/desktop/CLI; includes GSAP rules when project uses GSAP with module registration/useLayoutEffect/gsap.context()/ctx.revert()/transform+opacity+force3D guidance; Figma token derivation when visual research exists; cites research file paths for design decisions). Created `lib/generation/ui-context.ts` (reads project with Requirements content JSON, ExecutionPlan APPROVED with content field, ResearchDocuments with title/sourceType/content, ResearchAssets with metadata JSON for analysis; extracts visual research context from VISUAL/DESIGN_SYSTEM sources and asset analysis; calls `callAI('ui_context_md')` with 6000 max tokens; handles queued status). Modified `app/api/context-files/[projectId]/generate/route.ts` to add `UI_CONTEXT` case. Added `ui_context_md` task to `lib/ai/model-routing.ts` AITask type and TASK_MODEL_MAP routing to unified-rotation. Added 1 test for UI_CONTEXT generation; **272 total passing**. Build green, TypeScript clean (0 errors). Generated UI context provides design system guidance adaptive to project platform with accessibility, motion, and performance targets baked in. Tracker flipped to final end-of-feature state on-branch before the implementation commit.
+
 ## In Progress
 
-- `[ ]` Nothing in progress. Feature 23 is complete; Feature 24 not yet started.
+- `[ ]` Nothing in progress. Feature 24 is complete; Feature 25 not yet started.
 
 ## Next Up
 
-- `[ ]` **Feature 24 - UI Context Generation**: per the feature DAG.
+- `[ ]` **Feature 25 - Code Standards Generation**: per the feature DAG.
 
 ## Architecture Decisions
 

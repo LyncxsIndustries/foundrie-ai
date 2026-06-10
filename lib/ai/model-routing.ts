@@ -36,6 +36,7 @@ export type AITask =
   | "feature_spec_generation"
   | "project_overview_md"
   | "architecture_context_md"
+  | "ui_context_md"
   | "agents_md_generation"
   | "api_contract_docs"
   | "rfc_generation"
@@ -88,6 +89,7 @@ export const TASK_MODEL_MAP: Record<AITask, ModelKey> = {
   feature_spec_generation: "unified-rotation",
   project_overview_md: "unified-rotation",
   architecture_context_md: "unified-rotation",
+  ui_context_md: "unified-rotation",
   agents_md_generation: "unified-rotation",
   api_contract_docs: "unified-rotation",
   rfc_generation: "unified-rotation",

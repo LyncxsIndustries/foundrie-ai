@@ -33,8 +33,8 @@ vi.mock("@/lib/generation/project-overview", () => ({
 vi.mock("@/lib/generation/architecture-context", () => ({
   generateArchitectureContext: vi.fn(),
 }));
-vi.mock("@/lib/generation/architecture-context", () => ({
-  generateArchitectureContext: vi.fn(),
+vi.mock("@/lib/generation/ui-context", () => ({
+  generateUIContext: vi.fn(),
 }));
 
 describe("POST /api/context-files/[projectId]/generate", () => {
@@ -247,5 +247,50 @@ describe("POST /api/context-files/[projectId]/generate", () => {
     expect(data.fileType).toBe("ARCHITECTURE_CONTEXT");
     expect(data.content).toContain("Architecture Context");
     expect(vi.mocked(generateArchitectureContext)).toHaveBeenCalledWith("proj1");
+  });
+
+  it("generates and upserts UI_CONTEXT successfully", async () => {
+    const { POST } = await import("./route");
+    const { requireAuth } = await import("@/lib/auth/require-auth");
+    const { requireProjectMember } = await import("@/lib/projects/auth");
+    const { generateUIContext } = await import("@/lib/generation/ui-context");
+    const { db } = await import("@/lib/db");
+
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user1",
+      clerkId: "clerk1",
+      email: "user@test.com",
+      plan: "FREE",
+      role: "USER",
+    });
+    vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj1" });
+    vi.mocked(generateUIContext).mockResolvedValue("# UI Context\n\nDesign tokens and patterns");
+
+    const mockContextFile = {
+      id: "ctx3",
+      projectId: "proj1",
+      fileType: "UI_CONTEXT" as const,
+      content: "# UI Context\n\nDesign tokens and patterns",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    vi.mocked(db.contextFile.upsert).mockResolvedValue(mockContextFile);
+
+    const request = new Request("http://localhost/api/context-files/proj1/generate", {
+      method: "POST",
+      body: JSON.stringify({ fileType: "UI_CONTEXT" }),
+    });
+
+    const response = await POST(request, {
+      params: Promise.resolve({ projectId: "proj1" }),
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.id).toBe("ctx3");
+    expect(data.fileType).toBe("UI_CONTEXT");
+    expect(data.content).toContain("UI Context");
+    expect(vi.mocked(generateUIContext)).toHaveBeenCalledWith("proj1");
   });
 });
