@@ -36,6 +36,9 @@ vi.mock("@/lib/generation/architecture-context", () => ({
 vi.mock("@/lib/generation/ui-context", () => ({
   generateUIContext: vi.fn(),
 }));
+vi.mock("@/lib/generation/code-standards", () => ({
+  generateCodeStandards: vi.fn(),
+}));
 
 describe("POST /api/context-files/[projectId]/generate", () => {
   beforeEach(() => {
@@ -292,5 +295,50 @@ describe("POST /api/context-files/[projectId]/generate", () => {
     expect(data.fileType).toBe("UI_CONTEXT");
     expect(data.content).toContain("UI Context");
     expect(vi.mocked(generateUIContext)).toHaveBeenCalledWith("proj1");
+  });
+
+  it("generates and upserts CODE_STANDARDS successfully", async () => {
+    const { POST } = await import("./route");
+    const { requireAuth } = await import("@/lib/auth/require-auth");
+    const { requireProjectMember } = await import("@/lib/projects/auth");
+    const { generateCodeStandards } = await import("@/lib/generation/code-standards");
+    const { db } = await import("@/lib/db");
+
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user1",
+      clerkId: "clerk1",
+      email: "user@test.com",
+      plan: "FREE",
+      role: "USER",
+    });
+    vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj1" });
+    vi.mocked(generateCodeStandards).mockResolvedValue("# Code Standards\n\nExtends ARTKINS_STYLE_GUIDE.md");
+
+    const mockContextFile = {
+      id: "ctx4",
+      projectId: "proj1",
+      fileType: "CODE_STANDARDS" as const,
+      content: "# Code Standards\n\nExtends ARTKINS_STYLE_GUIDE.md",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    vi.mocked(db.contextFile.upsert).mockResolvedValue(mockContextFile);
+
+    const request = new Request("http://localhost/api/context-files/proj1/generate", {
+      method: "POST",
+      body: JSON.stringify({ fileType: "CODE_STANDARDS" }),
+    });
+
+    const response = await POST(request, {
+      params: Promise.resolve({ projectId: "proj1" }),
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.id).toBe("ctx4");
+    expect(data.fileType).toBe("CODE_STANDARDS");
+    expect(data.content).toContain("Code Standards");
+    expect(vi.mocked(generateCodeStandards)).toHaveBeenCalledWith("proj1");
   });
 });

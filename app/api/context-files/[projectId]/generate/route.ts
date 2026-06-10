@@ -11,6 +11,7 @@ import { ProjectAuthError, requireProjectMember } from "@/lib/projects/auth";
 import { generateProjectOverview } from "@/lib/generation/project-overview";
 import { generateArchitectureContext } from "@/lib/generation/architecture-context";
 import { generateUIContext } from "@/lib/generation/ui-context";
+import { generateCodeStandards } from "@/lib/generation/code-standards";
 import { ContextFileType } from "@/lib/generated/prisma/enums";
 
 export async function POST(
@@ -55,6 +56,9 @@ export async function POST(
         break;
       case "UI_CONTEXT":
         content = await generateUIContext(projectId);
+        break;
+      case "CODE_STANDARDS":
+        content = await generateCodeStandards(projectId);
         break;
       default:
         return NextResponse.json(

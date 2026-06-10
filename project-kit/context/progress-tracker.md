@@ -9,11 +9,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 24 - UI Context Generation** are complete and merged to `master`.
+- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 25 - Code Standards Generation** are complete and merged to `master`.
 
 ## Current Goal
 
-- Begin **Feature 25 - Code Standards Generation** when instructed. Awaiting user go-ahead before starting.
+- Begin **Feature 26 - Feature Specs Generation** when instructed. Awaiting user go-ahead before starting.
 
 ## Completed
 
@@ -50,11 +50,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## In Progress
 
-- `[ ]` Nothing in progress. Feature 24 is complete; Feature 25 not yet started.
+- `[ ]` Nothing in progress. Feature 25 is complete; Feature 26 not yet started.
 
 ## Next Up
 
-- `[ ]` **Feature 25 - Code Standards Generation**: per the feature DAG.
+- `[ ]` **Feature 26 - Feature Specs Generation**: per the feature DAG.
 
 ## Architecture Decisions
 
@@ -78,6 +78,9 @@ Update this file whenever the current phase, active feature, or implementation s
 - **App shell adds top nav only; surfaces own their left rail (Feature 06)**: the Feature 01 `WorkspaceShell` already renders a contextual left rail per surface (dashboard list nav, project phase nav). Adding a second persistent global desktop sidebar in `app/(app)/layout.tsx` would double the rails on project pages. The shell layout therefore renders only the `TopNav` (brand + mobile workspace-nav drawer + Clerk `UserButton`); the global workspace nav appears in the desktop dashboard rail and the mobile `Sheet` drawer. `WorkspaceShell`'s hardcoded `min-h-screen` (Feature 01-owned, not modified) is overridden to `min-h-[calc(100svh-3.5rem)]` via its `className` prop (twMerge) so surfaces fit below the 3.5rem top nav.
 - **Dashboard fetches server-side via a shared helper (Feature 06)**: the dashboard is an async server component reading directly through `lib/projects/list.ts` `listDashboardProjects()` rather than calling its own `GET /api/projects` over HTTP. The helper mirrors the Feature 04 route's query shape (ownership scope, cursor pagination, `select`-only denormalized counters, no child collections) and adds `id desc` as a deterministic tiebreaker after `updatedAt desc` so cursor pagination remains stable when timestamps tie. Clerk `@clerk/nextjs@7.4.3` exposes `Show when="signed-in"`/`UserButton` (not `SignedIn`); since `proxy.ts` already protects the `(app)` group, the shell renders `UserButton` directly and the server components guard with `getAuthUser()` → redirect-to-`/sign-in` when the local row hasn't synced.
 - **Test harness is baked in (project-wide standard, 2026-06-07)**: A configured test runner ships from the first feature in Foundrie and in every generated project — testing is never deferred. The TypeScript layer uses Vitest + React Testing Library + jsdom with `test`/`test:watch`/`test:coverage` scripts (`npm run test` is non-watch). Generated non-TS stacks use the idiomatic equivalent (`pytest`, `cargo test`, `go test`) chosen through research. Captured in AGENTS.md (Hard Rule 20) and `code-standards.md` (Tests and Verification + Quality Gate).
+- **Trigger.dev transitive dependency vulnerabilities (Feature 14, 2026-06-10)**: High-severity command injection vulnerabilities exist in `systeminformation` (≤5.31.5), a transitive dependency from `@trigger.dev/sdk` → `@trigger.dev/core` → `@opentelemetry/host-metrics`. These affect OpenTelemetry's build-time telemetry collection, not direct runtime code paths. The vulnerabilities (GHSA-wphj-fx3q-84ch, GHSA-5vv4-hvf7-2h46, GHSA-9c88-49p5-5ggf, GHSA-hvx9-hwr7-wjj9) involve command injection via unsanitized OS-specific operations (Windows `fsSize()`, Linux `locate`/WiFi interface/NetworkManager profile names) that are not triggered in our build/deployment context. Accepted as a controlled risk: we do not directly control Trigger.dev's dependency tree, the package is essential for durable task execution, and the exposure surface is minimal (build-time metrics collection, not user-facing runtime). Monitor for Trigger.dev updates; revisit if deployment context changes or if Trigger.dev releases a patched version.
+
+- **Feature 25 - Code Standards Generation** (DONE): Context file generator for `context/code-standards.md`. Created `lib/ai/prompts/code-standards.ts` (comprehensive system prompt that references root `ARTKINS_STYLE_GUIDE.md` as authoritative full policy, adapts to approved stack without assuming Foundrie's Next.js/TypeScript/Tailwind stack, includes auth/ownership rules when hasAuth/hasUserOwnedData detected, Neon database rules when usesNeon detected, structured JSON logging, dependency security gates, idempotency patterns, planning+approval gate, CodeRabbit pre-push gate with Context7/official docs, forbids premature enterprise RBAC/RLS/ABAC unless explicitly required, enforces no-AI-slope quality standards). Created `lib/generation/code-standards.ts` (fetches project with requirements content JSON, executionPlans APPROVED with content/revisionNotes, researchDocuments; detects project characteristics from architecture content—hasAuth/hasUserOwnedData/hasCollaboration/usesNeon; calls `callAI('code_standards_md')` with 6000 max tokens). Modified `app/api/context-files/[projectId]/generate/route.ts` to add `CODE_STANDARDS` case in switch statement. The `code_standards_md` task was already defined in `lib/ai/model-routing.ts` routing to `unified-rotation`. Added 1 test for CODE_STANDARDS generation (mock + 200 success); **273 total passing**. Build green, TypeScript clean (0 errors). Generated code standards extend (never summarize) the root style guide, adapt to project's actual stack, include contextual security/auth/database rules, enforce version research via Context7, and forbid premature enterprise patterns unless requirements demand them. Tracker flipped to final end-of-feature state on-branch before the implementation commit.
 - **Trigger.dev transitive dependency vulnerabilities (Feature 14, 2026-06-10)**: High-severity command injection vulnerabilities exist in `systeminformation` (≤5.31.5), a transitive dependency from `@trigger.dev/sdk` → `@trigger.dev/core` → `@opentelemetry/host-metrics`. These affect OpenTelemetry's build-time telemetry collection, not direct runtime code paths. The vulnerabilities (GHSA-wphj-fx3q-84ch, GHSA-5vv4-hvf7-2h46, GHSA-9c88-49p5-5ggf, GHSA-hvx9-hwr7-wjj9) involve command injection via unsanitized OS-specific operations (Windows `fsSize()`, Linux `locate`/WiFi interface/NetworkManager profile names) that are not triggered in our build/deployment context. Accepted as a controlled risk: we do not directly control Trigger.dev's dependency tree, the package is essential for durable task execution, and the exposure surface is minimal (build-time metrics collection, not user-facing runtime). Monitor for Trigger.dev updates; revisit if deployment context changes or if Trigger.dev releases a patched version.
 
 ## Open Questions
