@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { AuthError, requireAuth } from "@/lib/auth/require-auth";
 import { ProjectAuthError, requireProjectMember } from "@/lib/projects/auth";
 import { generateProjectOverview } from "@/lib/generation/project-overview";
+import { generateArchitectureContext } from "@/lib/generation/architecture-context";
 import { ContextFileType } from "@/lib/generated/prisma/enums";
 
 export async function POST(
@@ -47,6 +48,9 @@ export async function POST(
     switch (fileType) {
       case "PROJECT_OVERVIEW":
         content = await generateProjectOverview(projectId);
+        break;
+      case "ARCHITECTURE_CONTEXT":
+        content = await generateArchitectureContext(projectId);
         break;
       default:
         return NextResponse.json(
