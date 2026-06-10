@@ -1,5 +1,10 @@
 # Development Workflow
 
+## Contract Synchronization Gate
+
+Any implementation change that corrects or changes a contract must be reflected in the same branch across the affected feature spec, dependent future specs, relevant context files, root AGENTS.md, and progress-tracker.md. Contracts include Prisma fields and relations, route signatures, auth helper signatures, AI task names and callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, and file ownership. A feature is not ready for review while later specs or context still describe stale fields, old API shapes, or invalid contracts.
+
+
 ## Approach
 
 Build Foundrie AI incrementally from the feature specs. Context files define what to build, why it exists, how the system is structured, and the current state. Feature specs define the implementation order. Agents must not jump from a vague goal to code.

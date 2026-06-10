@@ -1,5 +1,10 @@
 # Foundrie AI
 
+## Contract Synchronization Gate
+
+Any implementation change that corrects or changes a contract must be reflected in the same branch across the affected feature spec, dependent future specs, relevant context files, root AGENTS.md, and progress-tracker.md. Contracts include Prisma fields and relations, route signatures, auth helper signatures, AI task names and callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, and file ownership. A feature is not ready for review while later specs or context still describe stale fields, old API shapes, or invalid contracts.
+
+
 ## Overview
 
 Foundrie AI is a pre-IDE architectural workspace for AI-assisted engineering. It helps engineers move from a raw product idea to a complete, machine-readable implementation package before writing code. The workspace combines Socratic discovery, architecture critique, collaborative diagramming, a diagram-first generation gate, sequential UML/C4/data/infrastructure generation, context-file generation, feature-spec generation, and ZIP export.

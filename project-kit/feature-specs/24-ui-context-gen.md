@@ -45,12 +45,16 @@ MODIFY: `app/api/context-files/[projectId]/generate/route.ts` - add the `UI_CONT
 
 ## Implementation Notes
 
+**CRITICAL CONTRACT SYNCHRONIZATION GATE**: Before implementation and before marking this feature done, compare this spec against the current codebase, Prisma schema, context files, AGENTS.md, and every dependent future spec. If the implementation changes or corrects any contract (schema fields or relations, route signatures, helper signatures, AI task names or callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, or file ownership), update this spec, all affected later specs, relevant context files, AGENTS.md, and progress-tracker.md in the same branch. Do not leave future specs with stale names, old API shapes, or invalid fields.
+
+
 - **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
 - **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
 - **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
 
 
-- Use project type and target audience as input, plus any visual analysis and motion plans from research (cite `research/` paths). Use `callAI('ui_component_specs')` or a dedicated UI task.
+- Use project type and target audience as input, plus any visual analysis and motion plans from research (cite `research/` paths). Use the current AI rotation contract: `callAI('ui_component_specs', { systemPrompt, userPrompt, plan, maxTokens })`; success is `status: "ok"` with `text`, and exhaustion is `status: "queued"`.
+- Use the current Prisma schema for research inputs: `ResearchDocument` has `title`, `sourceType`, and `content`; `ResearchAsset` stores Blob metadata and analysis previews in `metadata`, not custom scalar summary fields.
 - Include color tokens, typography, layout patterns, components, accessibility rules (44×44px touch targets, ARIA, keyboard), Core Web Vitals targets, and interaction rules. When the project uses GSAP, include the GSAP rules (module-level registration, `useLayoutEffect`, `gsap.context()`, `ctx.revert()`, transform/opacity + `force3D`). When Figma research exists, derive tokens from it and note the bidirectional sync expectation.
 - Do not assume the project is web unless the architecture context says so; adapt to mobile/desktop/etc.
 - Persist as `ContextFile` type `UI_CONTEXT`. Use `db` for the upsert via the `[projectId, fileType]` index.

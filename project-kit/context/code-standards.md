@@ -1,5 +1,10 @@
 # Code Standards
 
+## Contract Synchronization Gate
+
+Any implementation change that corrects or changes a contract must be reflected in the same branch across the affected feature spec, dependent future specs, relevant context files, root AGENTS.md, and progress-tracker.md. Contracts include Prisma fields and relations, route signatures, auth helper signatures, AI task names and callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, and file ownership. A feature is not ready for review while later specs or context still describe stale fields, old API shapes, or invalid contracts.
+
+
 ## General
 
 - Root `ARTKINS_STYLE_GUIDE.md` is the authoritative code, UX, security, scalability, agent, and no-AI-slope policy. This file only adds Foundrie-specific constraints.
@@ -70,6 +75,7 @@ Foundrie's own system spans four languages. When working in the deployed system 
 ## AI
 
 - Every AI call goes through `callAI` or `callAIStream`. Provider adapters live in `lib/ai/providers`; no direct external AI calls elsewhere.
+- Use the current AI engine shape: `callAI(task, { systemPrompt, userPrompt, plan, maxTokens, ... })`; success is `status: "ok"` with `text`; exhaustion is `status: "queued"`. Do not use old chat-message-array inputs, `status: "success"`, or `response.content`.
 - Fallback chains are configuration, not ad hoc try/catch in product code.
 - Log provider, model, task, duration, and success/failure.
 - Keep prompts in `lib/ai/prompts` and output schemas in `lib/ai/schemas` or `lib/diagrams/schemas`.
@@ -81,6 +87,7 @@ Foundrie's own system spans four languages. When working in the deployed system 
 ## Database and Storage
 
 - Neon Postgres is the required relational database. PostgreSQL stores metadata, ownership, relationships, statuses, and generated text records.
+- Query only fields that exist in `prisma/schema.prisma`. Current contract examples: `Project.executionPlans` is a list relation; `ExecutionPlan` stores Markdown in `content` with optional `revisionNotes`; `ResearchDocument` uses `title`, `sourceType`, and `content`; `ResearchAsset` uses `metadata` for AI previews/details. Do not select unsupported fields such as `executionPlan`, `critiqueContent`, `metadata` on `ExecutionPlan`, `ResearchDocument.summary`, `ResearchDocument.category`, or `ResearchAsset.aiSummary`.
 - Runtime queries use pooled `DATABASE_URL` (`-pooler`); Prisma migrations/CLI use `DIRECT_URL`. Runtime code never uses the direct connection.
 - One Prisma client `db` (pooled), cached on `globalThis` in development. Logging: dev logs query/error/warn, production logs error only.
 - Vercel Blob stores large artifacts (ZIPs, PNGs, canvas snapshots, export assets). Store Blob URLs/paths in Prisma, not raw binary.

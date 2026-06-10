@@ -68,6 +68,8 @@ Never skip ahead, batch specs, or mark a spec done before the GitHub review loop
 
 ## Hard Rules
 
+0. **Contract synchronization is a hard gate.** Whenever an implementation changes or corrects any project contract — database schema fields/relations, route signatures, authorization helper signatures, AI task names or `callAI`/`callAIStream` request/response shapes, status enums, storage paths, ZIP structure, generated file contents, package versions, environment variables, or ownership/file boundaries — update the same branch's affected feature spec, every later feature spec that depends on that contract, all relevant context files, this `AGENTS.md`, and `progress-tracker.md` before tests/build/review. Do not leave future specs with stale names, old API shapes, or invalid fields. If a needed contract is missing or ambiguous, record the correction instead of inventing behavior silently.
+
 1. Root `AGENTS.md` is the only active agent entry point. Do not create duplicate context-level AGENTS files.
 2. `ARTKINS_STYLE_GUIDE.md` is mandatory and must be preserved verbatim in Foundrie and every generated project export — never summarized.
 3. Plan before implementation. Show the user a concrete plan before architecture generation, diagram generation, context/spec generation, skill generation, ZIP packaging, or coding-agent implementation. Execute implementation-impacting work only after explicit approval; if the user revises the plan, update and re-present it before executing. Passive discovery chat, upload intake, link collection, and research summarization may continue before approval.

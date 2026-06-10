@@ -1,5 +1,10 @@
 # UI Context
 
+## Contract Synchronization Gate
+
+Any implementation change that corrects or changes a contract must be reflected in the same branch across the affected feature spec, dependent future specs, relevant context files, root AGENTS.md, and progress-tracker.md. Contracts include Prisma fields and relations, route signatures, auth helper signatures, AI task names and callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, and file ownership. A feature is not ready for review while later specs or context still describe stale fields, old API shapes, or invalid contracts.
+
+
 ## Theme
 
 Foundrie AI uses a dark, technical, diagram-first workspace. The product should feel like a professional engineering surface: dense enough for real planning, calm enough for long sessions, and visually structured enough for complex diagrams.
