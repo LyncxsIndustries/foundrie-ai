@@ -1,10 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { POST } from "./route";
 import { NextRequest } from "next/server";
 
-vi.mock("@/lib/auth/require-auth");
-vi.mock("@/lib/projects/auth");
-vi.mock("@trigger.dev/sdk/v3");
+vi.mock("@/lib/auth/require-auth", () => ({
+  requireAuth: vi.fn(),
+}));
+vi.mock("@/lib/projects/auth", () => ({
+  requireProjectMember: vi.fn(),
+}));
+vi.mock("@trigger.dev/sdk/v3", () => ({
+  tasks: {
+    trigger: vi.fn(),
+  },
+}));
 
 describe("POST /api/diagrams/[projectId]/generate", () => {
   beforeEach(() => {
@@ -12,6 +19,7 @@ describe("POST /api/diagrams/[projectId]/generate", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
+    const { POST } = await import("./route");
     const { requireAuth } = await import("@/lib/auth/require-auth");
     vi.mocked(requireAuth).mockRejectedValue(new Error("Unauthorized"));
 
@@ -28,6 +36,7 @@ describe("POST /api/diagrams/[projectId]/generate", () => {
   });
 
   it("returns 404 when project not found", async () => {
+    const { POST } = await import("./route");
     const { requireAuth } = await import("@/lib/auth/require-auth");
     const { requireProjectMember } = await import("@/lib/projects/auth");
     vi.mocked(requireAuth).mockResolvedValue({
@@ -52,6 +61,7 @@ describe("POST /api/diagrams/[projectId]/generate", () => {
   });
 
   it("returns 202 and triggers task on success", async () => {
+    const { POST } = await import("./route");
     const { requireAuth } = await import("@/lib/auth/require-auth");
     const { requireProjectMember } = await import("@/lib/projects/auth");
     const { tasks } = await import("@trigger.dev/sdk/v3");

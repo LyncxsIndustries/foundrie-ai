@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { POST } from "./route";
 import { NextRequest } from "next/server";
 
-vi.mock("@/lib/auth/require-auth");
-vi.mock("@/lib/projects/auth");
+vi.mock("@/lib/auth/require-auth", () => ({
+  requireAuth: vi.fn(),
+}));
+vi.mock("@/lib/projects/auth", () => ({
+  requireProjectMember: vi.fn(),
+}));
 vi.mock("@trigger.dev/sdk", () => ({
   tasks: {
     trigger: vi.fn(),
@@ -20,6 +23,7 @@ describe("POST /api/architecture/[projectId]/generate", () => {
   });
 
   it("returns 202 when architecture generation starts successfully", async () => {
+    const { POST } = await import("./route");
     vi.mocked(requireAuth).mockResolvedValue({
       id: "user-1",
       clerkId: "clerk-1",
@@ -46,6 +50,7 @@ describe("POST /api/architecture/[projectId]/generate", () => {
   });
 
   it("returns 404 when user is not a project member", async () => {
+    const { POST } = await import("./route");
     vi.mocked(requireAuth).mockResolvedValue({
       id: "user-1",
       clerkId: "clerk-1",
@@ -68,6 +73,7 @@ describe("POST /api/architecture/[projectId]/generate", () => {
   });
 
   it("returns 401 when user is not authenticated", async () => {
+    const { POST } = await import("./route");
     vi.mocked(requireAuth).mockRejectedValue(new Error("Unauthorized"));
 
     const req = new NextRequest("http://localhost/api/architecture/project-1/generate", {
