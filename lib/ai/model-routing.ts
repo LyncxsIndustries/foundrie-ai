@@ -60,7 +60,9 @@ export type AITask =
   | "visual_asset_analysis"
   | "motion_analysis"
   // Research synthesis -> unified-rotation
-  | "research_synthesis";
+  | "research_synthesis"
+  // Diagram planning -> unified-rotation
+  | "diagram_planning";
 
 /**
  * Task -> model key. This is the canonical routing table; do not select models
@@ -109,6 +111,8 @@ export const TASK_MODEL_MAP: Record<AITask, ModelKey> = {
   motion_analysis: "unified-rotation",
   // Research synthesis (Feature 09)
   research_synthesis: "unified-rotation",
+  // Diagram planning (Feature 18)
+  diagram_planning: "unified-rotation",
 };
 
 /** Resolve a task to its default model key. */
