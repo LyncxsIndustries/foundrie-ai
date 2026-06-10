@@ -56,7 +56,7 @@ MODIFY: `components/research/ResearchLibrary.tsx` - show sources and synthesis a
 - Use Tavily for search/extract/crawl/map when `TAVILY_API_KEY` is configured.
 - Use Obscura for JavaScript-rendered page scraping and screenshots when `OBSCURA_ENDPOINT` is configured.
 - Store Context7 documentation findings as `ResearchSource` and `ResearchDocument` records.
-- Persist source URL, provider, status, extracted title/content summary, screenshot Blob URL when captured, tags, and timestamps.
+- Persist source URL, provider, status, and extracted content in `ResearchSource`; store synthesized/summary Markdown in `ResearchDocument`; store captured screenshots as `ResearchAsset` rows with Blob URLs and metadata. Do not invent unsupported `ResearchSource` fields such as tags or screenshot URLs.
 - Synthesize `research/PROJECT_RESEARCH.md` from conversation notes, uploaded assets, analyses, links, scraped summaries, and Context7 findings.
 - Degrade gracefully when Tavily or Obscura is not configured.
 - Preserve source attribution and avoid copying full copyrighted pages into generated specs.
@@ -88,6 +88,9 @@ MODIFY: `components/research/ResearchLibrary.tsx` - show sources and synthesis a
 - We wait for the user to do CodeRabbit review in GitHub. While it's not mandatory, it is highly recommended because it catches issues early and acts as a quality gate. Ensure all other gates pass as indicated in the feature spec files. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.
 
 ## Implementation Notes
+
+**CRITICAL CONTRACT SYNCHRONIZATION GATE**: Before implementation and before marking this feature done, compare this spec against the current codebase, Prisma schema, context files, AGENTS.md, and every dependent future spec. If the implementation changes or corrects any contract (schema fields or relations, route signatures, helper signatures, AI task names or callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, or file ownership), update this spec, all affected later specs, relevant context files, AGENTS.md, and progress-tracker.md in the same branch. Do not leave future specs with stale names, old API shapes, or invalid fields.
+
 
 - **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
 - **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.

@@ -48,7 +48,7 @@ MODIFY: `components/research/ResearchLibrary.tsx` - show analysis status and sum
 - Use vision-capable model routing where available and fall back gracefully when not configured.
 - For screenshots/images, summarize layout, hierarchy, typography, color, interaction intent, implementation risk, and asset paths.
 - For frame ZIPs and extracted frame sequences, create a motion implementation plan: timeline, GSAP/ScrollTrigger scenes when relevant, frame preloading strategy, pinned sections, responsive fallbacks, accessibility notes, and performance budget.
-- Persist analysis as `ResearchDocument` and update `ResearchAsset.aiSummary`.
+- Persist analysis as `ResearchDocument` and store asset-level AI preview/details in `ResearchAsset.metadata`; the Prisma schema has no `ResearchAsset.aiSummary` scalar.
 - Keep source asset paths in every generated analysis so feature specs can reference them.
 
 ## Out of Scope
@@ -76,6 +76,9 @@ MODIFY: `components/research/ResearchLibrary.tsx` - show analysis status and sum
 - We wait for the user to do CodeRabbit review in GitHub. While it's not mandatory, it is highly recommended because it catches issues early and acts as a quality gate. Ensure all other gates pass as indicated in the feature spec files. In case of errors, iterate and fix by checking official documentation from Context7 and all available skills. Do not rely on personal AI training data as it might be outdated. For every feature, always check documentation, skills, and research for all implementations.
 
 ## Implementation Notes
+
+**CRITICAL CONTRACT SYNCHRONIZATION GATE**: Before implementation and before marking this feature done, compare this spec against the current codebase, Prisma schema, context files, AGENTS.md, and every dependent future spec. If the implementation changes or corrects any contract (schema fields or relations, route signatures, helper signatures, AI task names or callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, or file ownership), update this spec, all affected later specs, relevant context files, AGENTS.md, and progress-tracker.md in the same branch. Do not leave future specs with stale names, old API shapes, or invalid fields.
+
 
 - **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
 - **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.

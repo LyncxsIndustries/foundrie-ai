@@ -1,5 +1,10 @@
 # Architecture Context
 
+## Contract Synchronization Gate
+
+Any implementation change that corrects or changes a contract must be reflected in the same branch across the affected feature spec, dependent future specs, relevant context files, root AGENTS.md, and progress-tracker.md. Contracts include Prisma fields and relations, route signatures, auth helper signatures, AI task names and callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, and file ownership. A feature is not ready for review while later specs or context still describe stale fields, old API shapes, or invalid contracts.
+
+
 Foundrie AI's own stack is fixed by this document. Generated project stacks are dynamic and chosen through research and user approval. Never copy Foundrie's stack into a generated project unless the user chooses it or the research justifies it.
 
 ## Four-Layer Polyglot Architecture
@@ -273,7 +278,7 @@ The following specialized assignments are deprecated but documented here for con
 
 ## Fallback Chains
 
-Every AI call uses `callAI(task, params, overrideModelKey?)`. The engine resolves the task to a model key, reads that key's fallback chain, checks provider availability, calls the provider via the application-layer rotation engine (future: Rust key rotation engine over gRPC), logs the attempt, and continues until a response succeeds or every fallback fails. When all providers are rate-limited, the request returns a recoverable "queued" state (future: NATS JetStream queue with position indicator).
+Every AI call uses `callAI(task, { systemPrompt, userPrompt, plan, maxTokens, temperature?, overrideModelKey?, signal?, media? })` or `callAIStream` with the same option shape. The engine resolves the task to a model key, reads that key's fallback chain, checks provider availability, calls the provider via the application-layer rotation engine (future: Rust key rotation engine over gRPC), logs the attempt, and continues until a response succeeds or every fallback fails. Successful non-streaming calls return `{ status: "ok", text, usage?, modelKey, attempts }`; provider exhaustion returns `{ status: "queued", retryable: true, position: null, rateLimited, lastError? }` (future: NATS JetStream queue with position indicator). Call sites must not use old chat-message-array inputs, `status: "success"`, `response.content`, or direct provider calls.
 
 **Primary Chain (unified-rotation):** All tasks now default to this chain unless explicitly overridden.
 
@@ -374,7 +379,9 @@ A ZIP without `diagrams/` is invalid. `docs/HANDOFF.md` is generated separately 
 
 ## Database Schema
 
-Core models: `User`, `Project`, `Conversation`, `Requirements`, `Diagram`, `ContextFile`, `FeatureSpec`, `ResearchDocument`, `ResearchAsset`, `ResearchSource`, `ProjectAgentSkill`, `ExecutionPlan`, `ProjectMember`.
+Core models: `User`, `Project`, `Conversation`, `Requirements`, `Diagram`, `ContextFile`, `FeatureSpec`, `ResearchDocument`, `ResearchAsset`, `ResearchSource`, `ProjectAgentSkill`, `ExecutionPlan`. `ProjectMember` is deferred to Feature 35 and must not be queried before that schema migration lands.
+
+Current field contract: `Project.executionPlans` is a list relation; approved architecture is the latest `ExecutionPlan` with `status: "APPROVED"` and Markdown `content`. `ExecutionPlan` has `content`, `revisionNotes`, `approvedAt`, and `executedAt`; it does not have `critiqueContent` or `metadata`. `ResearchDocument` has `title`, `sourceType`, and `content`; it does not have `summary` or `category`. `ResearchAsset` stores AI-derived previews/details in `metadata`, not custom scalar summary fields.
 
 `User` adds Stripe/subscription fields (`stripeCustomerId`, `subscriptionPlan`, `subscriptionStatus`, `currentPeriodEnd`) alongside `plan` and `role`.
 

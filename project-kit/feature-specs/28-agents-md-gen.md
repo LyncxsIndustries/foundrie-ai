@@ -38,22 +38,25 @@ npx ctx7 docs <libraryId> "<specific question>"
 ## Files
 
 CREATE: `lib/generation/agents-md.ts` and `lib/ai/prompts/agents-md.ts`.
-MODIFY: `app/api/context-files/[projectId]/generate/route.ts` - add the `AGENTS_MD` branch.
+MODIFY: `app/api/context-files/[projectId]/generate/route.ts` - add the generated-agent-instructions branch using an existing schema-backed file type, or explicitly migrate `ContextFileType` before introducing a new enum value.
 
 ## Implementation Notes
+
+**CRITICAL CONTRACT SYNCHRONIZATION GATE**: Before implementation and before marking this feature done, compare this spec against the current codebase, Prisma schema, context files, AGENTS.md, and every dependent future spec. If the implementation changes or corrects any contract (schema fields or relations, route signatures, helper signatures, AI task names or callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, or file ownership), update this spec, all affected later specs, relevant context files, AGENTS.md, and progress-tracker.md in the same branch. Do not leave future specs with stale names, old API shapes, or invalid fields.
+
 
 - **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
 - **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
 - **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
 
 
-- Use project summary, context files, the feature list, the approved diagrams, and provisioned skills. Use `callAI('agents_md_generation')`.
+- Use project summary, context files, the feature list, the approved diagrams, and provisioned skills. Use the current AI rotation contract: `callAI('agents_md_generation', { systemPrompt, userPrompt, plan, maxTokens })`; success is `status: "ok"` with `text`, and exhaustion is `status: "queued"`.
 - Generate the seven sections. The reading order places `ARTKINS_STYLE_GUIDE.md` and `research/PROJECT_RESEARCH.md` first, then the diagrams (System Context, Container, ERD, API Map) before the context files (diagram-first reading order), then the context files, then a scan of feature specs.
 - Section 3 (Init Plan Data) lists every required env var with its exact source location, required CLI tools with install commands, required accounts with setup URLs, and ends with the gate sentence ("Tell me 'ready' when you have completed the above, and I will begin Feature 01.").
 - Tell downstream agents to use the approved project-specific stack (from `context/architecture-context.md`), not Foundrie's own, and to use Context7 and official sources before installing or pinning versions (no `"latest"`).
 - List the provisioned `.agents/skills/` (Universal, Stack-Dependent, Custom) and instruct active use for code review, document parsing, and stack implementation. Explain research assets are implementation inputs.
 - Include hard rules: planning gate (plan → approval → revision → execution); one spec at a time with unit tests, passing build, CodeRabbit pre-push gate, and the GitHub review loop; the Branch-First Git Workflow (one branch per feature, created before coding, merged after the review loop is clean); Context7-Driven Planning (read latest docs, surface prerequisites and required user inputs before approval); the User-Input-First Philosophy (never assume credentials/config; always ask); auth/authorization separation; user-owned data scoped by authenticated local user ID with 404 on ownership failure; no team RBAC/custom admin/RLS/ABAC/audit logs/hardware-key admin unless explicitly required; structured logging (no `console.log`); dependency audit as a hard gate; the diagram-first rule (RUWA reads diagrams before context files and never implements anything absent from a diagram); and the spec rules (exact dependencies, exact files, `Files Owned`, Out of Scope, Future Modifications, binary acceptance criteria, `MODIFICATION` labels).
-- Persist as `ContextFile` type `AGENTS_MD`. Use `db` for assembling metadata where eventual consistency is acceptable and for the final upsert. Fetch feature specs ordered by `[projectId, order]`.
+- Persist as `ContextFile` type `AI_WORKFLOW_RULES` unless the schema has been explicitly migrated to add a dedicated `AGENTS_MD` enum value. Use `db` for assembling metadata where eventual consistency is acceptable and for the final upsert. Fetch feature specs ordered by `[projectId, order]`.
 
 ## Out of Scope
 
