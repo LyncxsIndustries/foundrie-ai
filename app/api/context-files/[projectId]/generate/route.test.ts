@@ -30,6 +30,12 @@ vi.mock("@/lib/projects/auth", () => ({
 vi.mock("@/lib/generation/project-overview", () => ({
   generateProjectOverview: vi.fn(),
 }));
+vi.mock("@/lib/generation/architecture-context", () => ({
+  generateArchitectureContext: vi.fn(),
+}));
+vi.mock("@/lib/generation/architecture-context", () => ({
+  generateArchitectureContext: vi.fn(),
+}));
 
 describe("POST /api/context-files/[projectId]/generate", () => {
   beforeEach(() => {
@@ -196,5 +202,50 @@ describe("POST /api/context-files/[projectId]/generate", () => {
         content: "# Test Project\n\nOverview content",
       },
     });
+  });
+
+  it("generates and upserts ARCHITECTURE_CONTEXT successfully", async () => {
+    const { POST } = await import("./route");
+    const { requireAuth } = await import("@/lib/auth/require-auth");
+    const { requireProjectMember } = await import("@/lib/projects/auth");
+    const { generateArchitectureContext } = await import("@/lib/generation/architecture-context");
+    const { db } = await import("@/lib/db");
+
+    vi.mocked(requireAuth).mockResolvedValue({
+      id: "user1",
+      clerkId: "clerk1",
+      email: "user@test.com",
+      plan: "FREE",
+      role: "USER",
+    });
+    vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj1" });
+    vi.mocked(generateArchitectureContext).mockResolvedValue("# Architecture Context\n\nStack details");
+
+    const mockContextFile = {
+      id: "ctx2",
+      projectId: "proj1",
+      fileType: "ARCHITECTURE_CONTEXT" as const,
+      content: "# Architecture Context\n\nStack details",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    vi.mocked(db.contextFile.upsert).mockResolvedValue(mockContextFile);
+
+    const request = new Request("http://localhost/api/context-files/proj1/generate", {
+      method: "POST",
+      body: JSON.stringify({ fileType: "ARCHITECTURE_CONTEXT" }),
+    });
+
+    const response = await POST(request, {
+      params: Promise.resolve({ projectId: "proj1" }),
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.id).toBe("ctx2");
+    expect(data.fileType).toBe("ARCHITECTURE_CONTEXT");
+    expect(data.content).toContain("Architecture Context");
+    expect(vi.mocked(generateArchitectureContext)).toHaveBeenCalledWith("proj1");
   });
 });

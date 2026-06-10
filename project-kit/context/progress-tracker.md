@@ -9,11 +9,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 21 - Canvas Export** are complete and merged to `master`.
+- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 23 - Architecture Context Generation** are complete and merged to `master`.
 
 ## Current Goal
 
-- Begin **Feature 23 - Architecture Context Generation** when instructed. Awaiting user go-ahead before starting.
+- Begin **Feature 24 - UI Context Generation** when instructed. Awaiting user go-ahead before starting.
 
 ## Completed
 
@@ -44,13 +44,15 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - **Feature 22 - Project Overview Generation** (DONE): Context file generator for `context/project-overview.md`. Created `lib/ai/prompts/project-overview.ts` (comprehensive system prompt with 11 sections: project name, overview, product positioning, goals, primary users, core flow, features, technical stack, scope, success criteria, research basis; never assumes Foundrie's stack, cites research files). Created `lib/generation/project-overview.ts` (reads project with Requirements `content` JSON field, ExecutionPlan `executionPlans` relation ordered by createdAt with APPROVED filter, ResearchDocuments with `sourceType` field; parses requirements JSON structure correctly; calls `callAI('project_overview_md')` with correct signature using `systemPrompt`/`userPrompt`/`plan`/`maxTokens` object pattern). Created `app/api/context-files/[projectId]/generate/route.ts` (POST with `fileType` body param, auth via `requireAuth()` + `requireProjectMember()`, validates fileType against ContextFileType enum from `@/lib/generated/prisma/enums`, upserts via `projectId_fileType` unique constraint, returns 200 with generated content or 400/404/401 on errors; supports extensibility for future context file types via switch statement). **CONTRACT FIX:** Corrected Requirements model access (single `content` JSON field, not individual `functional`/`nonFunctional`/etc. fields), ExecutionPlan model (relation is `executionPlans` with status filter, has `content`/`revisionNotes` fields, not `executionPlan` with `metadata`/`critiqueContent`), ResearchDocument model (has `content`/`sourceType` fields, not `summary`/`category`), and `callAI` signature (CallOptions object with `systemPrompt`/`userPrompt`/`plan`/`maxTokens`, not messages array). Imported `ContextFileType` enum from `@/lib/generated/prisma/enums` (not `@prisma/client` which doesn't export enums). Added 5 API route tests with proper Prisma client mocking (401/404/400 validation/200 success); **270 total passing**. Build green, TypeScript clean. Hard Rule 0 (contract synchronization gate) already present in AGENTS.md enforcing that schema/API changes update all dependent specs/context/agent files before merge.
 
+- **Feature 23 - Architecture Context Generation** (DONE — merged to `master`): Context file generator for `context/architecture-context.md`. Created `lib/ai/prompts/architecture-context.ts` (comprehensive system prompt covering stack decision with version research and rejected alternatives, system boundaries, database/storage, auth/authorization when relevant, API architecture from OpenAPI exports, seven-layer security mapping, core invariants, architectural risks, and research basis; **CRITICAL directives:** never assumes Foundrie's stack/web/React/Next.js, includes auth sections only when project needs them, does not over-engineer RBAC/RLS without explicit requirements, cites sources for all recommendations). Created `lib/generation/architecture-context.ts` (reads project with requirements, executionPlans APPROVED, diagrams with reactFlowData for API Map, researchDocuments; generates OpenAPI export from API Map diagram's reactFlowData via `exportToOpenAPI` when available with proper error handling; calls `callAI('architecture_context_md')` with 6000 max tokens). Modified `app/api/context-files/[projectId]/generate/route.ts` to add `ARCHITECTURE_CONTEXT` case in switch statement. Added 1 test for ARCHITECTURE_CONTEXT generation (401/404/200); **271 total passing**. Build green, TypeScript clean (0 errors). The `architecture_context_md` task was already defined in model-routing routing to `unified-rotation`. Generated architecture context records researched, user-approved, project-specific stack with version evidence and rejected alternatives, never defaulting to Foundrie's own polyglot architecture unless explicitly chosen or justified. Tracker flipped to final end-of-feature state on-branch before the implementation commit.
+
 ## In Progress
 
-- `[ ]` Nothing in progress. Feature 22 is complete; Feature 23 not yet started.
+- `[ ]` Nothing in progress. Feature 23 is complete; Feature 24 not yet started.
 
 ## Next Up
 
-- `[ ]` **Feature 23 - Architecture Context Generation**: per the feature DAG.
+- `[ ]` **Feature 24 - UI Context Generation**: per the feature DAG.
 
 ## Architecture Decisions
 
