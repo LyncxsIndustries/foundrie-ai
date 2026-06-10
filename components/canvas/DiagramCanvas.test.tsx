@@ -2,8 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { DiagramCanvas } from "./DiagramCanvas";
 import * as LiveblocksReactFlow from "@liveblocks/react-flow";
+import * as LiveblocksReact from "@liveblocks/react";
 
 vi.mock("@liveblocks/react-flow");
+vi.mock("@liveblocks/react", () => ({
+  useStorage: vi.fn(() => undefined),
+  useMutation: vi.fn(() => vi.fn()),
+}));
 
 describe("DiagramCanvas", () => {
   beforeEach(() => {

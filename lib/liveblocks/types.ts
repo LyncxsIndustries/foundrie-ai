@@ -1,6 +1,10 @@
+import type { DiagramType } from "@/lib/diagrams/shape-libraries";
+
 declare global {
   interface Liveblocks {
-    Storage: Record<string, never>;
+    Storage: {
+      diagramType?: DiagramType;
+    };
   }
 }
 
