@@ -1,10 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { GET } from "./route";
 import { NextRequest } from "next/server";
 
-vi.mock("@/lib/auth/require-auth");
-vi.mock("@/lib/projects/auth");
-vi.mock("@/lib/db");
+vi.mock("@/lib/auth/require-auth", () => ({
+  requireAuth: vi.fn(),
+}));
+vi.mock("@/lib/projects/auth", () => ({
+  requireProjectMember: vi.fn(),
+}));
+vi.mock("@/lib/db", () => ({
+  db: {
+    diagram: {
+      findMany: vi.fn(),
+    },
+    project: {
+      findUnique: vi.fn(),
+    },
+  },
+}));
 
 describe("GET /api/diagrams/[projectId]/status", () => {
   beforeEach(() => {
@@ -12,6 +24,7 @@ describe("GET /api/diagrams/[projectId]/status", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
+    const { GET } = await import("./route");
     const { requireAuth } = await import("@/lib/auth/require-auth");
     vi.mocked(requireAuth).mockRejectedValue(new Error("Unauthorized"));
 
@@ -26,6 +39,7 @@ describe("GET /api/diagrams/[projectId]/status", () => {
   });
 
   it("returns 404 when project not found", async () => {
+    const { GET } = await import("./route");
     const { requireAuth } = await import("@/lib/auth/require-auth");
     const { requireProjectMember } = await import("@/lib/projects/auth");
     vi.mocked(requireAuth).mockResolvedValue({
@@ -48,6 +62,7 @@ describe("GET /api/diagrams/[projectId]/status", () => {
   });
 
   it("returns diagram status on success", async () => {
+    const { GET } = await import("./route");
     const { requireAuth } = await import("@/lib/auth/require-auth");
     const { requireProjectMember } = await import("@/lib/projects/auth");
     const { db } = await import("@/lib/db");
@@ -62,8 +77,6 @@ describe("GET /api/diagrams/[projectId]/status", () => {
     vi.mocked(requireProjectMember).mockResolvedValue(undefined);
     
     const mockDb = db as any;
-    mockDb.diagram = { findMany: vi.fn() };
-    mockDb.project = { findUnique: vi.fn() };
 
     mockDb.diagram.findMany.mockResolvedValue([
       {

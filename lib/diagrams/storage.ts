@@ -4,10 +4,14 @@ import { uploadDiagramPNG } from "@/lib/storage/diagram-blob";
 
 interface SaveDiagramDataParams {
   diagramId: string;
-  reactFlowData?: { nodes: unknown[]; edges: unknown[] };
+  reactFlowData?: { nodes: unknown[]; edges: unknown[]; viewport?: unknown };
   pngBuffer?: Buffer;
   status: DiagramStatus;
   errorMessage?: string;
+}
+
+interface SaveDiagramDataResult {
+  pngUrl?: string;
 }
 
 export async function saveDiagramData({
@@ -16,8 +20,8 @@ export async function saveDiagramData({
   pngBuffer,
   status,
   errorMessage,
-}: SaveDiagramDataParams): Promise<void> {
-  await db.$transaction(async (tx) => {
+}: SaveDiagramDataParams): Promise<SaveDiagramDataResult> {
+  return await db.$transaction(async (tx) => {
     // Fetch current diagram to check prior status
     const diagram = await tx.diagram.findUnique({
       where: { id: diagramId },
@@ -67,6 +71,8 @@ export async function saveDiagramData({
         data: { completedDiagramCount: { increment: 1 } },
       });
     }
+
+    return { pngUrl };
   });
 }
 

@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { POST } from "./route";
 import { NextRequest } from "next/server";
 
-// Mock dependencies
-vi.mock("@/lib/auth/require-auth");
-vi.mock("@/lib/projects/auth");
-vi.mock("@/lib/diagrams/plan-diagram-jobs");
+vi.mock("@/lib/auth/require-auth", () => ({
+  requireAuth: vi.fn(),
+}));
+vi.mock("@/lib/projects/auth", () => ({
+  requireProjectMember: vi.fn(),
+}));
+vi.mock("@/lib/diagrams/plan-diagram-jobs", () => ({
+  planDiagramJobs: vi.fn(),
+}));
 
 const { requireAuth } = await import("@/lib/auth/require-auth");
 const { requireProjectMember } = await import("@/lib/projects/auth");
@@ -17,6 +21,7 @@ describe("POST /api/diagrams/[projectId]/plan", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
+    const { POST } = await import("./route");
     vi.mocked(requireAuth).mockRejectedValueOnce(new Error("Unauthorized"));
 
     const req = new NextRequest("http://localhost/api/diagrams/test-project/plan", {
@@ -29,6 +34,7 @@ describe("POST /api/diagrams/[projectId]/plan", () => {
   });
 
   it("returns 404 when user is not a project member", async () => {
+    const { POST } = await import("./route");
     vi.mocked(requireAuth).mockResolvedValueOnce({
       id: "user-123",
       clerkId: "clerk-123",
@@ -50,6 +56,7 @@ describe("POST /api/diagrams/[projectId]/plan", () => {
   });
 
   it("returns 200 with diagram plan when successful", async () => {
+    const { POST } = await import("./route");
     vi.mocked(requireAuth).mockResolvedValueOnce({
       id: "user-123",
       clerkId: "clerk-123",
