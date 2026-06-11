@@ -8,6 +8,8 @@ vi.mock("@liveblocks/react-flow");
 vi.mock("@liveblocks/react", () => ({
   useStorage: vi.fn(() => undefined),
   useMutation: vi.fn(() => vi.fn()),
+  useOthersConnectionIds: vi.fn(() => []),
+  useOther: vi.fn(() => null),
 }));
 
 describe("DiagramCanvas", () => {

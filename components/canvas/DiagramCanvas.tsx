@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { ReactFlow, Background, Controls, MiniMap, BackgroundVariant } from "@xyflow/react";
-import { useLiveblocksFlow } from "@liveblocks/react-flow";
+import { useLiveblocksFlow, Cursors } from "@liveblocks/react-flow";
 import { useStorage, useMutation } from "@liveblocks/react";
 import "@xyflow/react/dist/style.css";
+import "@liveblocks/react-ui/styles.css";
+import "@liveblocks/react-flow/styles.css";
 import { DiagramSidebar } from "./DiagramSidebar";
+import { PresenceLayer } from "./PresenceLayer";
 import type { DiagramType } from "@/lib/diagrams/shape-libraries";
 
 export function DiagramCanvas() {
@@ -48,6 +50,8 @@ export function DiagramCanvas() {
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} className="opacity-30" />
           <Controls />
           <MiniMap />
+          <Cursors />
+          <PresenceLayer />
         </ReactFlow>
       </div>
     </div>
