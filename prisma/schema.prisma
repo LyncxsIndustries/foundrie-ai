@@ -104,6 +104,11 @@ enum ExecutionPlanStatus {
   EXECUTED
 }
 
+enum ProjectMemberRole {
+  OWNER
+  COLLABORATOR
+}
+
 // ----------------------------------------------------------------------------
 // Models
 // ----------------------------------------------------------------------------
@@ -123,6 +128,8 @@ model User {
   currentPeriodEnd   DateTime?
 
   projects Project[]
+  memberships     ProjectMember[] @relation("memberships")
+  invitedMembers  ProjectMember[] @relation("invitedMembers")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -147,6 +154,7 @@ model Project {
   lastZipGeneratedAt DateTime?
 
   user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  members           ProjectMember[]
   conversation      Conversation?
   requirements      Requirements?
   diagrams          Diagram[]
@@ -365,4 +373,23 @@ model ExecutionPlan {
   @@index([projectId])
   @@index([projectId, status])
   @@index([projectId, taskType])
+}
+
+model ProjectMember {
+  id               String            @id @default(cuid())
+  projectId        String
+  userId           String
+  role             ProjectMemberRole
+  invitedByUserId  String?
+  joinedAt         DateTime
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User    @relation("memberships", fields: [userId], references: [id], onDelete: Cascade)
+  invitedBy User?   @relation("invitedMembers", fields: [invitedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@index([projectId, role])
 }
