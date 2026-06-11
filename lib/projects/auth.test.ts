@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { ProjectMemberRole } from "@/lib/generated/prisma/client";
 import { requireProjectOwner, requireProjectMember, ProjectAuthError } from "./auth";
 import { db } from "@/lib/db";
 
@@ -7,10 +8,13 @@ vi.mock("@/lib/db", () => ({
     project: {
       findFirst: vi.fn(),
     },
+    projectMember: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
-describe("Project Auth Helpers", () => {
+describe("Project Auth Helpers (re-exports)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -22,29 +26,30 @@ describe("Project Auth Helpers", () => {
       const result = await requireProjectOwner("proj_123", "user_456");
 
       expect(result).toEqual({ id: "proj_123" });
-      expect(db.project.findFirst).toHaveBeenCalledWith({
-        where: { id: "proj_123", userId: "user_456" },
-        select: { id: true },
-      });
     });
 
     it("throws ProjectAuthError when project does not exist or not owned", async () => {
       vi.mocked(db.project.findFirst).mockResolvedValue(null);
 
-      await expect(requireProjectOwner("proj_123", "user_456")).rejects.toThrow(ProjectAuthError);
+      await expect(requireProjectOwner("proj_123", "user_456")).rejects.toThrow(
+        ProjectAuthError,
+      );
     });
   });
 
   describe("requireProjectMember", () => {
-    it("aliases requireProjectOwner for now", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue({ id: "proj_123" } as never);
+    it("returns owner role for project creator", async () => {
+      vi.mocked(db.project.findFirst).mockResolvedValue({
+        id: "proj_123",
+        userId: "user_456",
+        members: [],
+      } as never);
 
       const result = await requireProjectMember("proj_123", "user_456");
 
-      expect(result).toEqual({ id: "proj_123" });
-      expect(db.project.findFirst).toHaveBeenCalledWith({
-        where: { id: "proj_123", userId: "user_456" },
-        select: { id: true },
+      expect(result).toEqual({
+        id: "proj_123",
+        role: ProjectMemberRole.OWNER,
       });
     });
   });

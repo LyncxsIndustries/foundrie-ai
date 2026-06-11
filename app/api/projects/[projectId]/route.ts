@@ -7,6 +7,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { requireAuth, AuthError } from "@/lib/auth/require-auth";
+import {
+  ProjectAuthError,
+  requireProjectOwner,
+} from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 
 const PROJECT_DETAIL_SELECT = {
@@ -55,13 +59,13 @@ export async function GET(
     const user = await requireAuth();
     const { projectId } = await params;
 
+    await requireProjectOwner(projectId, user.id);
+
     const project = await db.project.findFirst({
       where: { id: projectId, userId: user.id },
       select: PROJECT_DETAIL_SELECT,
     });
 
-    // findFirst returns null both when the id is unknown and when it belongs to
-    // another user; either way the answer is 404.
     if (!project) {
       return notFound();
     }
@@ -70,6 +74,9 @@ export async function GET(
   } catch (error) {
     if (error instanceof AuthError) {
       return unauthorized(error.message);
+    }
+    if (error instanceof ProjectAuthError) {
+      return notFound();
     }
     throw error;
   }
@@ -92,8 +99,8 @@ export async function PATCH(
       );
     }
 
-    // Owner-scoped update: updateMany returns count 0 when the project is not
-    // the user's, which we map to 404 rather than leaking existence with a 403.
+    await requireProjectOwner(projectId, user.id);
+
     const result = await db.project.updateMany({
       where: { id: projectId, userId: user.id },
       data: parsed.data,
@@ -106,8 +113,6 @@ export async function PATCH(
       where: { id: projectId, userId: user.id },
       select: PROJECT_DETAIL_SELECT,
     });
-    // A concurrent delete between updateMany and this reload yields null; return
-    // 404 rather than a misleading 200 with project: null.
     if (!project) {
       return notFound();
     }
@@ -116,6 +121,9 @@ export async function PATCH(
   } catch (error) {
     if (error instanceof AuthError) {
       return unauthorized(error.message);
+    }
+    if (error instanceof ProjectAuthError) {
+      return notFound();
     }
     throw error;
   }
@@ -129,7 +137,8 @@ export async function DELETE(
     const user = await requireAuth();
     const { projectId } = await params;
 
-    // Scoped delete: cannot remove another user's project; count 0 -> 404.
+    await requireProjectOwner(projectId, user.id);
+
     const result = await db.project.deleteMany({
       where: { id: projectId, userId: user.id },
     });
@@ -141,6 +150,9 @@ export async function DELETE(
   } catch (error) {
     if (error instanceof AuthError) {
       return unauthorized(error.message);
+    }
+    if (error instanceof ProjectAuthError) {
+      return notFound();
     }
     throw error;
   }
