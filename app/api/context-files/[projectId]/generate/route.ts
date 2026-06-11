@@ -12,6 +12,7 @@ import { generateProjectOverview } from "@/lib/generation/project-overview";
 import { generateArchitectureContext } from "@/lib/generation/architecture-context";
 import { generateUIContext } from "@/lib/generation/ui-context";
 import { generateCodeStandards } from "@/lib/generation/code-standards";
+import { generateAgentsMD } from "@/lib/generation/agents-md";
 import { ContextFileType } from "@/lib/generated/prisma/enums";
 
 export async function POST(
@@ -59,6 +60,9 @@ export async function POST(
         break;
       case "CODE_STANDARDS":
         content = await generateCodeStandards(projectId);
+        break;
+      case "AI_WORKFLOW_RULES":
+        content = await generateAgentsMD(projectId);
         break;
       default:
         return NextResponse.json(
