@@ -13,6 +13,7 @@ import { generateArchitectureContext } from "@/lib/generation/architecture-conte
 import { generateUIContext } from "@/lib/generation/ui-context";
 import { generateCodeStandards } from "@/lib/generation/code-standards";
 import { generateAgentsMD } from "@/lib/generation/agents-md";
+import { generateProgressTracker } from "@/lib/generation/progress-tracker";
 import { ContextFileType } from "@/lib/generated/prisma/enums";
 
 export async function POST(
@@ -63,6 +64,9 @@ export async function POST(
         break;
       case "AI_WORKFLOW_RULES":
         content = await generateAgentsMD(projectId);
+        break;
+      case "PROGRESS_TRACKER":
+        content = await generateProgressTracker(projectId);
         break;
       default:
         return NextResponse.json(
