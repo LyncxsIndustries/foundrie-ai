@@ -3,7 +3,7 @@
 // their projects via the indexed, cursor-paginated, select-only list path. No
 // heavy child collections are loaded. Renders project cards or the empty state.
 import { redirect } from "next/navigation";
-import { FolderPlus } from "lucide-react";
+import { FolderPlus, Users } from "lucide-react";
 
 import {
   WorkspaceShell,
@@ -28,7 +28,8 @@ export default async function DashboardPage() {
     redirect("/sign-in");
   }
 
-  const { projects } = await listDashboardProjects({ userId: user.id });
+  const { owned, shared } = await listDashboardProjects({ userId: user.id });
+  const hasProjects = owned.length > 0 || shared.length > 0;
 
   return (
     <WorkspaceShell
@@ -40,7 +41,7 @@ export default async function DashboardPage() {
         description="Your architectural workspaces."
         actions={<NewProjectButton />}
       />
-      {projects.length === 0 ? (
+      {!hasProjects ? (
         <SurfaceEmpty
           icon={<FolderPlus className="size-8" />}
           title="No projects yet"
@@ -48,10 +49,31 @@ export default async function DashboardPage() {
           action={<NewProjectButton variant="outline" />}
         />
       ) : (
-        <div className="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
+        <div className="flex flex-col gap-8 p-6">
+          {owned.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold tracking-tight">My Projects</h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {owned.map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {shared.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Users className="size-5 text-text-muted" />
+                <h2 className="text-lg font-semibold tracking-tight">Shared With Me</h2>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {shared.map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </WorkspaceShell>

@@ -23,9 +23,9 @@ describe("listDashboardProjects", () => {
   });
 
   it("uses a deterministic cursor-paginated dashboard query", async () => {
-    await listDashboardProjects({ userId: "user_123", cursor: "project_1" });
+    await listDashboardProjects({ userId: "user_123", ownedCursor: "project_1" });
 
-    expect(findMany).toHaveBeenCalledWith({
+    expect(findMany).toHaveBeenNthCalledWith(1, {
       where: { userId: "user_123" },
       select: DASHBOARD_PROJECT_SELECT,
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
@@ -36,18 +36,21 @@ describe("listDashboardProjects", () => {
   });
 
   it("returns a next cursor when the query fetches an extra row", async () => {
-    findMany.mockResolvedValue([
+    findMany.mockResolvedValueOnce([
       { id: "project_3" },
       { id: "project_2" },
       { id: "project_1" },
     ]);
+    findMany.mockResolvedValueOnce([]); // shared projects empty
 
     const result = await listDashboardProjects({
       userId: "user_123",
       limit: 2,
     });
 
-    expect(result.projects).toEqual([{ id: "project_3" }, { id: "project_2" }]);
-    expect(result.nextCursor).toBe("project_2");
+    expect(result.owned).toEqual([{ id: "project_3" }, { id: "project_2" }]);
+    expect(result.nextOwnedCursor).toBe("project_2");
+    expect(result.shared).toEqual([]);
+    expect(result.nextSharedCursor).toBe(null);
   });
 });

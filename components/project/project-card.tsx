@@ -24,6 +24,7 @@ interface ProjectCardProps {
     completedDiagramCount: number;
     featureSpecCount: number;
     updatedAt: Date;
+    ownerName?: string;
   };
 }
 
@@ -45,9 +46,14 @@ export function ProjectCard({ project }: ProjectCardProps) {
       <Card className="h-full transition-colors hover:border-border-strong">
         <CardHeader className="flex-row items-start justify-between gap-3">
           <CardTitle className="min-w-0 truncate">{project.name}</CardTitle>
-          <Badge variant="secondary" className="shrink-0">
-            {statusLabel(project.status)}
-          </Badge>
+          <div className="flex shrink-0 items-center gap-2">
+            {project.ownerName && (
+              <Badge variant="outline" className="border-border">Shared</Badge>
+            )}
+            <Badge variant="secondary">
+              {statusLabel(project.status)}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="line-clamp-2 min-h-10 text-sm text-text-secondary">
@@ -62,9 +68,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
             </span>
             <span>{project.featureSpecCount} specs</span>
           </div>
-          <p className="text-xs text-text-muted">
-            Updated {dateFormatter.format(project.updatedAt)}
-          </p>
+          <div className="flex items-center justify-between text-xs text-text-muted mt-2">
+            <p>Updated {dateFormatter.format(project.updatedAt)}</p>
+            {project.ownerName && <p className="truncate ml-2">Shared by {project.ownerName}</p>}
+          </div>
         </CardContent>
       </Card>
     </Link>
