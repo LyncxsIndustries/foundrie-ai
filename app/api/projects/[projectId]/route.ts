@@ -62,7 +62,7 @@ export async function GET(
     await requireProjectOwner(projectId, user.id);
 
     const project = await db.project.findFirst({
-      where: { id: projectId, userId: user.id },
+      where: { id: projectId },
       select: PROJECT_DETAIL_SELECT,
     });
 
@@ -102,7 +102,7 @@ export async function PATCH(
     await requireProjectOwner(projectId, user.id);
 
     const result = await db.project.updateMany({
-      where: { id: projectId, userId: user.id },
+      where: { id: projectId },
       data: parsed.data,
     });
     if (result.count === 0) {
@@ -110,7 +110,7 @@ export async function PATCH(
     }
 
     const project = await db.project.findFirst({
-      where: { id: projectId, userId: user.id },
+      where: { id: projectId },
       select: PROJECT_DETAIL_SELECT,
     });
     if (!project) {
@@ -140,7 +140,7 @@ export async function DELETE(
     await requireProjectOwner(projectId, user.id);
 
     const result = await db.project.deleteMany({
-      where: { id: projectId, userId: user.id },
+      where: { id: projectId },
     });
     if (result.count === 0) {
       return notFound();
