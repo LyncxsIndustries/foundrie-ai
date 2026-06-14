@@ -30,7 +30,8 @@ const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
 
 const listQuerySchema = z.object({
-  cursor: z.string().min(1).optional(),
+  ownedCursor: z.string().min(1).optional(),
+  sharedCursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).optional(),
 });
 
@@ -55,23 +56,54 @@ export async function GET(req: NextRequest): Promise<Response> {
     }
 
     const limit = parsed.data.limit ?? DEFAULT_PAGE_SIZE;
-    const { cursor } = parsed.data;
+    const { ownedCursor, sharedCursor } = parsed.data;
 
-    // Cursor pagination (never offset): fetch one extra row to detect the next
-    // page without a separate count query.
-    const rows = await db.project.findMany({
-      where: { userId: user.id },
-      select: PROJECT_LIST_SELECT,
-      orderBy: { updatedAt: "desc" },
-      take: limit + 1,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    const [ownedRows, sharedRows] = await Promise.all([
+      db.project.findMany({
+        where: { userId: user.id },
+        select: PROJECT_LIST_SELECT,
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        take: limit + 1,
+        ...(ownedCursor ? { cursor: { id: ownedCursor }, skip: 1 } : {}),
+      }),
+      db.project.findMany({
+        where: {
+          members: {
+            some: {
+              userId: user.id,
+              role: "COLLABORATOR",
+            },
+          },
+        },
+        select: {
+          ...PROJECT_LIST_SELECT,
+          user: {
+            select: { name: true, email: true },
+          },
+        },
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        take: limit + 1,
+        ...(sharedCursor ? { cursor: { id: sharedCursor }, skip: 1 } : {}),
+      }),
+    ]);
+
+    const ownedHasMore = ownedRows.length > limit;
+    const owned = ownedHasMore ? ownedRows.slice(0, limit) : ownedRows;
+    const nextOwnedCursor = ownedHasMore ? owned[owned.length - 1].id : null;
+
+    const sharedHasMore = sharedRows.length > limit;
+    const sharedRaw = sharedHasMore ? sharedRows.slice(0, limit) : sharedRows;
+    const nextSharedCursor = sharedHasMore ? sharedRaw[sharedRaw.length - 1].id : null;
+
+    const shared = sharedRaw.map((p) => {
+      const { user, ...projectData } = p;
+      return {
+        ...projectData,
+        ownerName: user.name || user.email,
+      };
     });
 
-    const hasMore = rows.length > limit;
-    const projects = hasMore ? rows.slice(0, limit) : rows;
-    const nextCursor = hasMore ? projects[projects.length - 1].id : null;
-
-    return NextResponse.json({ projects, nextCursor });
+    return NextResponse.json({ owned, nextOwnedCursor, shared, nextSharedCursor });
   } catch (error) {
     if (error instanceof AuthError) {
       return NextResponse.json({ error: error.message }, { status: 401 });
