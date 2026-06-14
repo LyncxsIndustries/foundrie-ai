@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
 import { requireAuth, AuthError } from "@/lib/auth/require-auth";
-import { requireProjectOwner, ProjectAuthError } from "@/lib/projects/auth";
+import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import { db } from "@/lib/db";
 import { analyzeVisualAsset } from "@/lib/research/visual-analysis";
 import { analyzeMotionAsset } from "@/lib/research/motion-plan";
@@ -13,7 +13,7 @@ vi.mock("@/lib/auth/require-auth", () => ({
 }));
 
 vi.mock("@/lib/projects/auth", () => ({
-  requireProjectOwner: vi.fn(),
+  requireProjectMember: vi.fn(),
   ProjectAuthError: class MockProjectAuthError extends Error {},
 }));
 
@@ -38,7 +38,7 @@ describe("POST /api/research/[projectId]/analyze", () => {
 
   it("returns 400 if assetId is missing", async () => {
     vi.mocked(requireAuth).mockResolvedValue({ id: "user_1", plan: "FREE" } as never);
-    vi.mocked(requireProjectOwner).mockResolvedValue({ id: "proj_1" } as never);
+    vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj_1" } as never);
 
     const req = new NextRequest("http://localhost/api/research/proj_1/analyze", {
       method: "POST",
@@ -51,7 +51,7 @@ describe("POST /api/research/[projectId]/analyze", () => {
 
   it("routes to motion analysis for FRAME_ZIP", async () => {
     vi.mocked(requireAuth).mockResolvedValue({ id: "user_1", plan: "FREE" } as never);
-    vi.mocked(requireProjectOwner).mockResolvedValue({ id: "proj_1" } as never);
+    vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj_1" } as never);
 
     vi.mocked(db.researchAsset.findUnique).mockResolvedValue({
       id: "asset_1",
@@ -75,7 +75,7 @@ describe("POST /api/research/[projectId]/analyze", () => {
 
   it("routes to visual analysis for IMAGE_ASSET", async () => {
     vi.mocked(requireAuth).mockResolvedValue({ id: "user_1", plan: "FREE" } as never);
-    vi.mocked(requireProjectOwner).mockResolvedValue({ id: "proj_1" } as never);
+    vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj_1" } as never);
 
     vi.mocked(db.researchAsset.findUnique).mockResolvedValue({
       id: "asset_1",

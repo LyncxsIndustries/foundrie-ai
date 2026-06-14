@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { requireAuth, AuthError } from "@/lib/auth/require-auth";
-import { requireProjectOwner, ProjectAuthError } from "@/lib/projects/auth";
+import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import { db } from "@/lib/db";
 import { analyzeVisualAsset } from "@/lib/research/visual-analysis";
 import { analyzeMotionAsset } from "@/lib/research/motion-plan";
@@ -25,7 +25,7 @@ export async function POST(
     const user = await requireAuth();
     const { projectId } = await params;
 
-    await requireProjectOwner(projectId, user.id);
+    await requireProjectMember(projectId, user.id);
 
     const body = await req.json().catch(() => null);
     if (!body || !body.assetId) {

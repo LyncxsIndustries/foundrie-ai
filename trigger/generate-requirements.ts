@@ -9,8 +9,8 @@ import type { Plan } from "../lib/ai/tier";
 
 export const generateRequirementsTask = task({
   id: "generate-requirements",
-  run: async (payload: { projectId: string }) => {
-    const { projectId } = payload;
+  run: async (payload: { projectId: string; triggeredByUserId: string }) => {
+    const { projectId, triggeredByUserId } = payload;
 
     // 1. Fetch project and related context
     const project = await db.project.findUnique({

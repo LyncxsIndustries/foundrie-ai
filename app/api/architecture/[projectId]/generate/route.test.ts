@@ -46,6 +46,7 @@ describe("POST /api/architecture/[projectId]/generate", () => {
     expect(data.runId).toBe("run-123");
     expect(tasks.trigger).toHaveBeenCalledWith("generate-architecture", {
       projectId: "project-1",
+      triggeredByUserId: "user-1",
     });
   });
 

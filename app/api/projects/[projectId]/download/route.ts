@@ -4,6 +4,7 @@ import { tasks, runs } from "@trigger.dev/sdk";
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth/get-auth-user";
 import { requireAuth } from "@/lib/auth/require-auth";
+import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import type { generateProjectZip } from "@/trigger/generate-project-zip";
 
 const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutes
@@ -21,9 +22,11 @@ export async function POST(
     const user = await requireAuth();
     const { projectId } = await params;
 
-    // Ownership check
+    await requireProjectMember(projectId, user.id);
+
+    // Fetch project
     const project = await db.project.findFirst({
-      where: { id: projectId, userId: user.id },
+      where: { id: projectId },
       select: {
         id: true,
         lastZipUrl: true,
@@ -68,7 +71,7 @@ export async function POST(
       "generate-project-zip",
       {
         projectId: project.id,
-        userId: user.id,
+        triggeredByUserId: user.id,
       }
     );
 
@@ -80,6 +83,9 @@ export async function POST(
       { status: 202 }
     );
   } catch (error) {
+    if (error instanceof ProjectAuthError) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -113,13 +119,9 @@ export async function GET(
       );
     }
 
-    // Ownership check (no hammering project tables - just verify ownership)
-    const project = await db.project.findFirst({
-      where: { id: projectId, userId: user.id },
-      select: { id: true },
-    });
-
-    if (!project) {
+    try {
+      await requireProjectMember(projectId, user.id);
+    } catch (e) {
       return NextResponse.json(
         { error: "Project not found" },
         { status: 404 }

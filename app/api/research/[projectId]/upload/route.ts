@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { requireAuth, AuthError } from "@/lib/auth/require-auth";
-import { requireProjectOwner, ProjectAuthError } from "@/lib/projects/auth";
+import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import { db } from "@/lib/db";
 import { ResearchAssetType } from "@/lib/generated/prisma/client";
 
@@ -36,7 +36,7 @@ export async function POST(
       request: req,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         // 1. Authorize: user must own the project
-        await requireProjectOwner(projectId, user.id);
+        await requireProjectMember(projectId, user.id);
 
         // 2. Validate payload
         if (!clientPayload) {

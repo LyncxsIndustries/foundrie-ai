@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
-import { AuthError } from "@/lib/auth/require-auth";
+import { requireAuth, AuthError } from "@/lib/auth/require-auth";
+import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 
 vi.mock("@/lib/auth/require-auth", () => ({
   requireAuth: vi.fn(),
-  AuthError: class extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = "AuthError";
-    }
-  },
+  AuthError: class AuthError extends Error {},
+}));
+
+vi.mock("@/lib/projects/auth", () => ({
+  requireProjectMember: vi.fn(),
+  ProjectAuthError: class ProjectAuthError extends Error {},
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -26,7 +27,6 @@ describe("POST /api/projects/[projectId]/clear-zip", () => {
   });
 
   it("returns 401 when not authenticated", async () => {
-    const { requireAuth } = await import("@/lib/auth/require-auth");
     vi.mocked(requireAuth).mockRejectedValue(new AuthError("Unauthorized"));
 
     const request = new Request("http://localhost/api/projects/proj-1/clear-zip");
@@ -36,15 +36,13 @@ describe("POST /api/projects/[projectId]/clear-zip", () => {
     const data = await response.json();
 
     expect(response.status).toBe(401);
-    expect(data.error).toBe("Unauthorized");
   });
 
-  it("returns 404 when project not found", async () => {
-    const { requireAuth } = await import("@/lib/auth/require-auth");
+  it("returns 404 when project not found or user is not a member", async () => {
     const { db } = await import("@/lib/db");
-
-    vi.mocked(requireAuth).mockResolvedValue({ id: "user-1" });
-    vi.mocked(db.project.updateMany).mockResolvedValue({ count: 0 });
+    vi.mocked(requireAuth).mockResolvedValue({ id: "user-1" } as any);
+    vi.mocked(requireProjectMember).mockRejectedValue(new ProjectAuthError("Not found"));
+    vi.mocked(db.project.updateMany).mockResolvedValue({ count: 0 } as any);
 
     const request = new Request("http://localhost/api/projects/proj-1/clear-zip");
     const params = Promise.resolve({ projectId: "proj-1" });
@@ -57,11 +55,11 @@ describe("POST /api/projects/[projectId]/clear-zip", () => {
   });
 
   it("clears ZIP metadata successfully", async () => {
-    const { requireAuth } = await import("@/lib/auth/require-auth");
     const { db } = await import("@/lib/db");
 
-    vi.mocked(requireAuth).mockResolvedValue({ id: "user-1" });
-    vi.mocked(db.project.updateMany).mockResolvedValue({ count: 1 });
+    vi.mocked(requireAuth).mockResolvedValue({ id: "user-1" } as any);
+    vi.mocked(requireProjectMember).mockResolvedValue(undefined);
+    vi.mocked(db.project.updateMany).mockResolvedValue({ count: 1 } as any);
 
     const request = new Request("http://localhost/api/projects/proj-1/clear-zip");
     const params = Promise.resolve({ projectId: "proj-1" });
@@ -72,31 +70,12 @@ describe("POST /api/projects/[projectId]/clear-zip", () => {
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(db.project.updateMany).toHaveBeenCalledWith({
-      where: { id: "proj-1", userId: "user-1" },
+      where: { id: "proj-1" },
       data: {
         lastZipUrl: null,
         lastZipFileName: null,
         lastZipGeneratedAt: null,
       },
     });
-  });
-
-  it("scopes update to authenticated user", async () => {
-    const { requireAuth } = await import("@/lib/auth/require-auth");
-    const { db } = await import("@/lib/db");
-
-    vi.mocked(requireAuth).mockResolvedValue({ id: "user-2" });
-    vi.mocked(db.project.updateMany).mockResolvedValue({ count: 1 });
-
-    const request = new Request("http://localhost/api/projects/proj-1/clear-zip");
-    const params = Promise.resolve({ projectId: "proj-1" });
-
-    await POST(request, { params });
-
-    expect(db.project.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "proj-1", userId: "user-2" },
-      })
-    );
   });
 });

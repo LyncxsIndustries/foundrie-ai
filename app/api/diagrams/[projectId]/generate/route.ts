@@ -16,7 +16,7 @@ export async function POST(
 
     const handle = await tasks.trigger<typeof generateDiagramsTask>(
       "generate-diagrams",
-      { projectId }
+      { projectId, triggeredByUserId: user.id }
     );
 
     return NextResponse.json(

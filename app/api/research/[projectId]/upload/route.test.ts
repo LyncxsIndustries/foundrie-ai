@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
 import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth/require-auth";
-import { requireProjectOwner } from "@/lib/projects/auth";
+import { requireProjectMember } from "@/lib/projects/auth";
 
 vi.mock("@/lib/db", () => ({
   db: {
@@ -32,7 +32,7 @@ vi.mock("@/lib/auth/require-auth", () => ({
 }));
 
 vi.mock("@/lib/projects/auth", () => ({
-  requireProjectOwner: vi.fn(),
+  requireProjectMember: vi.fn(),
   ProjectAuthError: class ProjectAuthError extends Error {
     constructor(message = "Project not found.") {
       super(message);
@@ -49,7 +49,7 @@ describe("Research Upload API", () => {
   describe("POST", () => {
     it("calls handleUpload and authenticates user", async () => {
       vi.mocked(requireAuth).mockResolvedValue({ id: "user_123" } as never);
-      vi.mocked(requireProjectOwner).mockResolvedValue({ id: "proj_123" } as never);
+      vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj_123" } as never);
       
       const req = new NextRequest("http://localhost/api/research/proj_123/upload", {
         method: "POST",
