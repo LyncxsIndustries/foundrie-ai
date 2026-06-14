@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const projectId = room.replace("project:", "");
-    await requireProjectMember(projectId, user.id);
+    const member = await requireProjectMember(projectId, user.id);
 
     const clerkUser = await currentUser();
     const session = liveblocks.prepareSession(user.id, {
@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
         name: clerkUser?.fullName || clerkUser?.emailAddresses[0]?.emailAddress || "Anonymous",
         email: user.email,
         avatar: clerkUser?.imageUrl,
+        role: member.role,
       },
     });
 

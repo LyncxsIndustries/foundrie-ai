@@ -13,6 +13,15 @@ declare global {
       diagramType?: DiagramType;
     };
     Presence: UserPresence;
+    UserMeta: {
+      id: string;
+      info: {
+        name: string;
+        email: string;
+        avatar?: string;
+        role: "OWNER" | "COLLABORATOR";
+      };
+    };
   }
 }
 

@@ -13,13 +13,15 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- **Feature 40 - Member Management UI**: Next numbered spec after Feature 39.
+- **Feature 41 - Member-Aware AI Generation**: Next numbered spec after Feature 40.
 
 ## In Progress
 
 - `[ ]` Nothing in progress.
 
 ## Completed
+
+- **Feature 40 - Member-Aware Canvas Access** (DONE): Modified Liveblocks room auth endpoint (`app/api/liveblocks-auth/route.ts`) to use `requireProjectMember()` instead of `requireProjectOwner()`. Updated Liveblocks `UserMeta` presence types to expose `role: "OWNER" | "COLLABORATOR"` within `userInfo` to let UI conditionally show controls. Verified that diagram API routes already use `requireProjectMember()`.
 
 - **Feature 39 - Shared Projects Dashboard** (DONE): Implemented shared projects section on the dashboard. Updated `GET /api/projects` to return separate `owned` and `shared` lists. Updated `listDashboardProjects` helper to fetch both using `Promise.all` with role filters. Updated `components/project/project-card.tsx` to conditionally display a 'Shared' badge and the owner's name. Updated `app/(app)/dashboard/page.tsx` to display separate 'My Projects' and 'Shared With Me' grids. Build green, tests passing.
 - **Initial Scaffold**: Created the Next.js project. No feature work beyond the base project scaffold has been done.
@@ -72,7 +74,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- `[ ]` **Feature 38 - List/Remove Collaborators API**: next numbered spec after Feature 37.
+- `[ ]` **Feature 41 - Member-Aware AI Generation**: Next numbered spec after Feature 40.
 
 ## Architecture Decisions
 
@@ -107,6 +109,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Session Notes
 
+- **Session 2026-06-14 (Feature 40)**: Implemented Member-Aware Canvas Access. Updated `app/api/liveblocks-auth/route.ts` to grant room access to both owners and collaborators using `requireProjectMember()`. Included user's project role in Liveblocks session `userInfo`. Verified that existing Diagram routes (`app/api/diagrams/`) already properly utilized `requireProjectMember()`. Updated Types to reflect changes. Tracker flipped to final end-of-feature state on-branch before commit (Feature 40 → Completed/DONE, Current Goal/Next Up → Feature 41).
 - **Session 2026-06-14 (Feature 39)**: Implemented Shared Projects Dashboard. Updated `app/api/projects/route.ts` to return both `owned` and `shared` lists. Modified `lib/projects/list.ts` to support dual-list fetching using `Promise.all` with correct Prisma member role filtering. Adjusted `components/project/project-card.tsx` to display 'Shared' badges and owner names. Updated `app/(app)/dashboard/page.tsx` to handle the dual lists and render separate sections. Tests updated to reflect the new API signature (`ownedCursor` and `sharedCursor`). Build green, tests passing. Tracker flipped to final end-of-feature state on-branch before commit (Feature 39 → Completed/DONE, Current Goal/Next Up → Feature 40).
 - **Session 2026-06-14 (Feature 36 Refactor)**: Re-reviewed Feature 36 and successfully refactored the routes in `app/api/projects/[projectId]/route.ts` to completely remove raw `where: { id, userId }` clauses in favor of relying entirely on `requireProjectOwner()`, as strictly required by the spec. Verified test pass with mocked environment variables and clean Next.js build.
 - **Session 2026-06-12 (Feature 36)**: Branched `feature/36-authorization-helpers` from synced `master`. Implemented Owner/Collaborator authorization helpers in `lib/auth/project-access.ts` (`requireProjectOwner`, `requireProjectMember` returning `{ id, role }`, `getProjectRole`). Refactored `app/api/projects/[projectId]/route.ts` to gate GET/PATCH/DELETE with `requireProjectOwner()` while preserving 404-on-failure semantics. Kept `lib/projects/auth.ts` as a backward-compatible re-export layer for Feature 07+ call sites. Verified Prisma query patterns against `prisma-client-api` skill. Added 9 focused unit tests; auth helper suite **12 passing**. Build green. Tracker flipped to final end-of-feature state on-branch (Feature 36 → Completed/DONE, Current Goal/Next Up → Feature 37).
