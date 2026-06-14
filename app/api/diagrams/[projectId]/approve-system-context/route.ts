@@ -17,7 +17,7 @@ export async function POST(
     // Re-trigger the task to continue with remaining diagrams
     const handle = await tasks.trigger<typeof generateDiagramsTask>(
       "generate-diagrams",
-      { projectId }
+      { projectId, triggeredByUserId: user.id }
     );
 
     return NextResponse.json(

@@ -4,7 +4,7 @@
 // later phase features.
 import { notFound, redirect } from "next/navigation";
 
-import { SurfaceHeader } from "@/components/shells/workspace-shell";
+import { ProjectHeader } from "@/components/project/project-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -52,7 +52,8 @@ export default async function ProjectOverviewPage({
 
   return (
     <>
-      <SurfaceHeader
+      <ProjectHeader
+        projectId={project.id}
         title={project.name}
         description={`Phase ${position} of ${PROJECT_PHASE_COUNT} — ${statusLabel(project.status)}`}
       />

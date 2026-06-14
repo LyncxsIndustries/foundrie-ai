@@ -1,4 +1,4 @@
-import { SurfaceHeader } from "@/components/shells/workspace-shell";
+import { ProjectHeader } from "@/components/project/project-header";
 import { ResearchLibrary } from "@/components/research/ResearchLibrary";
 import {
   phasePosition,
@@ -13,7 +13,8 @@ export default async function ResearchPage({ params }: RouteContext) {
 
   return (
     <>
-      <SurfaceHeader 
+      <ProjectHeader
+        projectId={projectId}
         title="Research" 
         description={`${prefix} — Visual references and domain docs.`} 
       />

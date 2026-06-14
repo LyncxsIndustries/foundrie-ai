@@ -5,9 +5,15 @@ import { FileText } from "lucide-react";
 
 import { PhasePlaceholder } from "@/components/project/phase-placeholder";
 
-export default function SpecsPage() {
+export default async function SpecsPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const { projectId } = await params;
   return (
     <PhasePlaceholder
+      projectId={projectId}
       phaseId="specs"
       title="Specs"
       description="Ordered feature specifications."

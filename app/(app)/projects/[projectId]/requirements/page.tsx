@@ -2,7 +2,7 @@
 // Server component fetches requirements and renders the editable review UI.
 // Only loads the requirements row, not full conversation history.
 import { redirect } from "next/navigation";
-import { SurfaceHeader } from "@/components/shells/workspace-shell";
+import { ProjectHeader } from "@/components/project/project-header";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { SurfaceEmpty } from "@/components/shells/surface-states";
@@ -43,7 +43,8 @@ export default async function RequirementsReviewPage({ params }: Props) {
 
   return (
     <>
-      <SurfaceHeader
+      <ProjectHeader
+        projectId={projectId}
         title="Requirements"
         description={`${prefix} — Review and edit the surfaced requirements before architecture.`}
       />

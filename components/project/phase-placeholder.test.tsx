@@ -3,6 +3,10 @@ import { render, screen } from "@testing-library/react";
 
 import { PhasePlaceholder } from "./phase-placeholder";
 
+vi.mock("@/components/project/project-header", () => ({
+  ProjectHeader: ({ description }: any) => <div>{description}</div>,
+}));
+
 describe("PhasePlaceholder", () => {
   it("derives the phase prefix from the phase id, not a hardcoded number", () => {
     render(

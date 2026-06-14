@@ -8,8 +8,8 @@
 // the nav order.
 import type { ReactNode } from "react";
 
-import { SurfaceHeader } from "@/components/shells/workspace-shell";
 import { SurfaceEmpty } from "@/components/shells/surface-states";
+import { ProjectHeader } from "@/components/project/project-header";
 import {
   phasePosition,
   PROJECT_PHASE_COUNT,
@@ -17,6 +17,7 @@ import {
 } from "@/components/project/project-phases";
 
 interface PhasePlaceholderProps {
+  projectId: string;
   /** The phase this surface represents; drives the derived "Phase N of 8" label. */
   phaseId: ProjectPhaseId;
   title: string;
@@ -28,6 +29,7 @@ interface PhasePlaceholderProps {
 }
 
 export function PhasePlaceholder({
+  projectId,
   phaseId,
   title,
   description,
@@ -38,7 +40,7 @@ export function PhasePlaceholder({
   const prefix = `Phase ${phasePosition(phaseId)} of ${PROJECT_PHASE_COUNT}`;
   return (
     <>
-      <SurfaceHeader title={title} description={`${prefix} — ${description}`} />
+      <ProjectHeader projectId={projectId} title={title} description={`${prefix} — ${description}`} />
       <SurfaceEmpty icon={icon} title={emptyTitle} message={emptyMessage} />
     </>
   );

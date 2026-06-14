@@ -50,6 +50,7 @@ export default async function ExportPage({ params }: ExportPageProps) {
   if (!hasSkills) {
     return (
       <PhasePlaceholder
+        projectId={projectId}
         phaseId="export"
         title="Export"
         description="Package checklist and ZIP download."

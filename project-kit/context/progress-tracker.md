@@ -13,7 +13,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- **Feature 42 - Sharing UI**: Next numbered spec after Feature 41.
+- **Feature 43 - Marketing Onboarding**: Next numbered spec after Feature 42.
 
 ## In Progress
 
@@ -21,6 +21,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Completed
 
+- **Feature 42 - Sharing UI** (DONE): Created `components/project/project-header.tsx` to display project member avatars and a Share button. Modified phase pages (`page.tsx`, `requirements/page.tsx`, `research/page.tsx`, `export/page.tsx`, `specs/page.tsx`, and `phase-placeholder.tsx`) to use the new `ProjectHeader` component, replacing the basic `SurfaceHeader` usage. The share button correctly wraps the previously implemented `ShareModal` and correctly gates it to project owners.
 - **Feature 41 - Member-Aware AI Generation** (DONE): Updated authorization checks across research analysis, synthesis, requirement generation, architecture proposal, diagram planning, context file generation, feature spec generation, and agent skill generation endpoints to use `requireProjectMember()` instead of `requireProjectOwner()`. This allows collaborators to trigger AI tasks. Kept owner-only checks for project settings and deletion. Updated the `generate-project-zip` Trigger.dev task to properly enforce project membership, and standardized `userId` to `triggeredByUserId` in payload structures for auditability. Build and tests green.
 - **Feature 40 - Member-Aware Canvas Access** (DONE): Modified Liveblocks room auth endpoint (`app/api/liveblocks-auth/route.ts`) to use `requireProjectMember()` instead of `requireProjectOwner()`. Updated Liveblocks `UserMeta` presence types to expose `role: "OWNER" | "COLLABORATOR"` within `userInfo` to let UI conditionally show controls. Verified that diagram API routes already use `requireProjectMember()`.
 
