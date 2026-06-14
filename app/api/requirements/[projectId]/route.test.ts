@@ -4,6 +4,12 @@ import { GET, PATCH } from "./route";
 
 vi.mock("@/lib/auth/require-auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({ id: "user-1" }),
+  AuthError: class AuthError extends Error {},
+}));
+
+vi.mock("@/lib/projects/auth", () => ({
+  requireProjectMember: vi.fn(),
+  ProjectAuthError: class ProjectAuthError extends Error {},
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -16,11 +22,13 @@ vi.mock("@/lib/db", () => ({
 }));
 
 const { requireAuth } = await import("@/lib/auth/require-auth");
+const { requireProjectMember, ProjectAuthError } = await import("@/lib/projects/auth");
 const { db } = await import("@/lib/db");
 
 describe("GET /api/requirements/[projectId]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(requireProjectMember).mockResolvedValue(undefined);
   });
 
   it("returns requirements when user owns project", async () => {
@@ -44,7 +52,6 @@ describe("GET /api/requirements/[projectId]", () => {
     expect(db.requirements.findFirst).toHaveBeenCalledWith({
       where: {
         projectId: "proj-1",
-        project: { userId: "user-1" },
       },
       select: {
         id: true,
@@ -56,6 +63,7 @@ describe("GET /api/requirements/[projectId]", () => {
   });
 
   it("returns 404 when requirements not found or not owned", async () => {
+    vi.mocked(requireProjectMember).mockRejectedValue(new ProjectAuthError("Not found"));
     vi.mocked(db.requirements.findFirst).mockResolvedValue(null);
 
     const req = new NextRequest("http://localhost/api/requirements/proj-1");
@@ -72,6 +80,7 @@ describe("GET /api/requirements/[projectId]", () => {
 describe("PATCH /api/requirements/[projectId]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(requireProjectMember).mockResolvedValue(undefined);
   });
 
   it("updates requirements when user owns project", async () => {
@@ -101,7 +110,6 @@ describe("PATCH /api/requirements/[projectId]", () => {
     expect(db.requirements.updateMany).toHaveBeenCalledWith({
       where: {
         projectId: "proj-1",
-        project: { userId: "user-1" },
       },
       data: {
         content: updatedContent,
@@ -110,6 +118,7 @@ describe("PATCH /api/requirements/[projectId]", () => {
   });
 
   it("returns 404 when user does not own project", async () => {
+    vi.mocked(requireProjectMember).mockRejectedValue(new ProjectAuthError("Not found"));
     vi.mocked(db.requirements.updateMany).mockResolvedValue({ count: 0 });
 
     const req = new NextRequest("http://localhost/api/requirements/proj-1", {

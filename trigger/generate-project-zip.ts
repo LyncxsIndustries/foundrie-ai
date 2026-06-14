@@ -1,12 +1,15 @@
 import { task, logger } from "@trigger.dev/sdk";
 import { put } from "@vercel/blob";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { buildProjectZip } from "@/lib/zip/build-project-zip";
 
-interface GenerateZipPayload {
-  projectId: string;
-  userId: string;
-}
+export const GenerateZipPayloadSchema = z.object({
+  projectId: z.string(),
+  triggeredByUserId: z.string(),
+});
+
+type GenerateZipPayload = z.infer<typeof GenerateZipPayloadSchema>;
 
 interface GenerateZipResult {
   fileName: string;
@@ -26,13 +29,13 @@ export const generateProjectZip = task({
   },
   maxDuration: 300, // 5 minutes for large ZIPs
   run: async (payload: GenerateZipPayload): Promise<GenerateZipResult> => {
-    const { projectId, userId } = payload;
+    const { projectId, triggeredByUserId } = payload;
 
-    logger.info("Starting ZIP generation", { projectId, userId });
+    logger.info("Starting ZIP generation", { projectId, triggeredByUserId });
 
-    // Fetch project with ownership check
+    // Fetch project
     const project = await db.project.findFirst({
-      where: { id: projectId, userId },
+      where: { id: projectId },
       select: {
         id: true,
         slug: true,
@@ -43,7 +46,7 @@ export const generateProjectZip = task({
     });
 
     if (!project) {
-      logger.error("Project not found or access denied", { projectId, userId });
+      logger.error("Project not found", { projectId, triggeredByUserId });
       throw new Error("Project not found or access denied");
     }
 

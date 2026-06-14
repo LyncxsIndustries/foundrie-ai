@@ -30,10 +30,12 @@ export default async function ProjectLayout({
 
   const { projectId } = await params;
 
-  // Ownership-scoped read: findFirst returns null for both an unknown id and a
-  // project owned by someone else, and both map to 404.
+  // Ownership and membership-scoped read
   const project = await db.project.findFirst({
-    where: { id: projectId, userId: user.id },
+    where: {
+      id: projectId,
+      OR: [{ userId: user.id }, { members: { some: { userId: user.id } } }],
+    },
     select: { id: true, status: true },
   });
   if (!project) {

@@ -21,7 +21,7 @@ export async function POST(
     // Trigger the durable task asynchronously.
     const handle = await tasks.trigger<typeof generateRequirementsTask>(
       "generate-requirements",
-      { projectId }
+      { projectId, triggeredByUserId: user.id }
     );
 
     return NextResponse.json({ id: handle.id }, { status: 202 });

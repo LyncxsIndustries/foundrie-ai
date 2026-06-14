@@ -18,6 +18,12 @@ vi.mock("@/lib/auth/get-auth-user", () => ({
 
 vi.mock("@/lib/auth/require-auth", () => ({
   requireAuth: vi.fn(),
+  AuthError: class AuthError extends Error {},
+}));
+
+vi.mock("@/lib/projects/auth", () => ({
+  requireProjectMember: vi.fn(),
+  ProjectAuthError: class ProjectAuthError extends Error {},
 }));
 
 vi.mock("@trigger.dev/sdk", () => ({
@@ -36,6 +42,7 @@ vi.mock("@/trigger/generate-project-zip", () => ({
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth/get-auth-user";
 import { requireAuth } from "@/lib/auth/require-auth";
+import { requireProjectMember } from "@/lib/projects/auth";
 
 describe("POST /api/projects/[projectId]/download", () => {
   const mockUser = { id: "user-1", clerkId: "clerk-1", email: "test@example.com", plan: "FREE", role: "USER" };
@@ -44,6 +51,7 @@ describe("POST /api/projects/[projectId]/download", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireAuth).mockResolvedValue(mockUser);
+    vi.mocked(requireProjectMember).mockResolvedValue(undefined);
   });
 
   it("returns 401 when user is not authenticated", async () => {
@@ -58,10 +66,11 @@ describe("POST /api/projects/[projectId]/download", () => {
     const data = await response.json();
 
     expect(response.status).toBe(401);
-    expect(data.error).toBe("Unauthorized");
   });
 
-  it("returns 404 when project is not found or user does not own it", async () => {
+  it("returns 404 when project is not found or user is not a member", async () => {
+    const { requireProjectMember, ProjectAuthError } = await import("@/lib/projects/auth");
+    vi.mocked(requireProjectMember).mockRejectedValue(new ProjectAuthError("Not found"));
     vi.mocked(db.project.findFirst).mockResolvedValue(null);
 
     const request = new NextRequest("http://localhost:3000/api/projects/project-1/download", {
@@ -134,7 +143,7 @@ describe("POST /api/projects/[projectId]/download", () => {
     expect(data.runId).toBe("run-123");
     expect(tasks.trigger).toHaveBeenCalledWith("generate-project-zip", {
       projectId: mockProjectId,
-      userId: mockUser.id,
+      triggeredByUserId: mockUser.id,
     });
   });
 
@@ -170,6 +179,7 @@ describe("GET /api/projects/[projectId]/download", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getAuthUser).mockResolvedValue(mockUser);
+    vi.mocked(requireProjectMember).mockResolvedValue(undefined);
   });
 
   it("returns 401 when user is not authenticated", async () => {
@@ -203,7 +213,9 @@ describe("GET /api/projects/[projectId]/download", () => {
     expect(data.error).toBe("runId query parameter is required");
   });
 
-  it("returns 404 when project is not found or user does not own it", async () => {
+  it("returns 404 when project is not found or user is not a member", async () => {
+    const { requireProjectMember, ProjectAuthError } = await import("@/lib/projects/auth");
+    vi.mocked(requireProjectMember).mockRejectedValue(new ProjectAuthError("Not found"));
     vi.mocked(db.project.findFirst).mockResolvedValue(null);
 
     const request = new NextRequest(

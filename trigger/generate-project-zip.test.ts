@@ -42,7 +42,7 @@ describe("generateProjectZip task", () => {
     vi.mocked(db.project.findFirst).mockResolvedValue(null);
 
     await expect(
-      generateProjectZip.run({ projectId: "proj_123", userId: "user_123" })
+      generateProjectZip.run({ projectId: "proj_123", triggeredByUserId: "user_123" })
     ).rejects.toThrow("Project not found or access denied");
   });
 
@@ -64,7 +64,7 @@ describe("generateProjectZip task", () => {
 
     const result = await generateProjectZip.run({
       projectId: "proj_123",
-      userId: "user_123",
+      triggeredByUserId: "user_123",
     });
 
     expect(result.fileName).toBe("test-project_2026-06-11_10-00-00.zip");
@@ -93,7 +93,7 @@ describe("generateProjectZip task", () => {
 
     const result = await generateProjectZip.run({
       projectId: "proj_123",
-      userId: "user_123",
+      triggeredByUserId: "user_123",
     });
 
     expect(buildProjectZip).toHaveBeenCalledWith("proj_123");
@@ -127,7 +127,7 @@ describe("generateProjectZip task", () => {
 
     const result = await generateProjectZip.run({
       projectId: "proj_123",
-      userId: "user_123",
+      triggeredByUserId: "user_123",
     });
 
     expect(buildProjectZip).toHaveBeenCalledWith("proj_123");
@@ -151,7 +151,7 @@ describe("generateProjectZip task", () => {
     } as any);
     vi.mocked(db.project.update).mockResolvedValue({} as any);
 
-    const payload = { projectId: "proj_123", userId: "user_123" };
+    const payload = { projectId: "proj_123", triggeredByUserId: "user_123" };
     
     const result1 = await generateProjectZip.run(payload);
     const result2 = await generateProjectZip.run(payload);

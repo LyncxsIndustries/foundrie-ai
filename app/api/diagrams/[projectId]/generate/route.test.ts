@@ -87,6 +87,6 @@ describe("POST /api/diagrams/[projectId]/generate", () => {
     expect(res.status).toBe(202);
     expect(data.message).toBe("Diagram generation started");
     expect(data.runId).toBe("run-123");
-    expect(tasks.trigger).toHaveBeenCalledWith("generate-diagrams", { projectId: "proj-1" });
+    expect(tasks.trigger).toHaveBeenCalledWith("generate-diagrams", { projectId: "proj-1", triggeredByUserId: "user-1" });
   });
 });

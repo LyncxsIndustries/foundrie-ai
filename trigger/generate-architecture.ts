@@ -16,7 +16,7 @@ export const generateArchitectureTask = task({
     maxTimeoutInMs: 30_000,
     randomize: false,
   },
-  run: async (payload: { projectId: string }) => {
+  run: async (payload: { projectId: string; triggeredByUserId: string }) => {
     const { projectId } = payload;
 
     const project = await db.project.findUnique({

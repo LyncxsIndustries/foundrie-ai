@@ -3,7 +3,8 @@
 // not the full conversation history.
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAuth } from "@/lib/auth/require-auth";
+import { requireAuth, AuthError } from "@/lib/auth/require-auth";
+import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import { db } from "@/lib/db";
 
 const requirementsContentSchema = z.object({
@@ -28,58 +29,80 @@ const requirementsContentSchema = z.object({
 type RouteParams = { params: Promise<{ projectId: string }> };
 
 export async function GET(req: NextRequest, { params }: RouteParams) {
-  const user = await requireAuth();
-  const { projectId } = await params;
+  try {
+    const user = await requireAuth();
+    const { projectId } = await params;
 
-  const requirements = await db.requirements.findFirst({
-    where: {
-      projectId,
-      project: { userId: user.id },
-    },
-    select: {
-      id: true,
-      content: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+    await requireProjectMember(projectId, user.id);
 
-  if (!requirements) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const requirements = await db.requirements.findFirst({
+      where: {
+        projectId,
+      },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!requirements) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(requirements);
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof ProjectAuthError) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
-
-  return NextResponse.json(requirements);
 }
 
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
-  const user = await requireAuth();
-  const { projectId } = await params;
+  try {
+    const user = await requireAuth();
+    const { projectId } = await params;
 
-  const body = await req.json();
-  const validatedContent = requirementsContentSchema.parse(body.content);
+    await requireProjectMember(projectId, user.id);
 
-  const updated = await db.requirements.updateMany({
-    where: {
-      projectId,
-      project: { userId: user.id },
-    },
-    data: {
-      content: validatedContent,
-    },
-  });
+    const body = await req.json();
+    const validatedContent = requirementsContentSchema.parse(body.content);
 
-  if (updated.count === 0) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const updated = await db.requirements.updateMany({
+      where: {
+        projectId,
+      },
+      data: {
+        content: validatedContent,
+      },
+    });
+
+    if (updated.count === 0) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const requirements = await db.requirements.findFirst({
+      where: { projectId },
+      select: {
+        id: true,
+        content: true,
+        updatedAt: true,
+      },
+    });
+
+    return NextResponse.json(requirements);
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof ProjectAuthError) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
-
-  const requirements = await db.requirements.findFirst({
-    where: { projectId },
-    select: {
-      id: true,
-      content: true,
-      updatedAt: true,
-    },
-  });
-
-  return NextResponse.json(requirements);
 }

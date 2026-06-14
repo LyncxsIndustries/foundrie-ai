@@ -16,7 +16,7 @@ export async function POST(
 
     const handle = await tasks.trigger<typeof generateArchitectureTask>(
       "generate-architecture",
-      { projectId }
+      { projectId, triggeredByUserId: user.id }
     );
 
     return NextResponse.json(

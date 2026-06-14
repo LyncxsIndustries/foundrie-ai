@@ -13,7 +13,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- **Feature 41 - Member-Aware AI Generation**: Next numbered spec after Feature 40.
+- **Feature 42 - Sharing UI**: Next numbered spec after Feature 41.
 
 ## In Progress
 
@@ -21,6 +21,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Completed
 
+- **Feature 41 - Member-Aware AI Generation** (DONE): Updated authorization checks across research analysis, synthesis, requirement generation, architecture proposal, diagram planning, context file generation, feature spec generation, and agent skill generation endpoints to use `requireProjectMember()` instead of `requireProjectOwner()`. This allows collaborators to trigger AI tasks. Kept owner-only checks for project settings and deletion. Updated the `generate-project-zip` Trigger.dev task to properly enforce project membership, and standardized `userId` to `triggeredByUserId` in payload structures for auditability. Build and tests green.
 - **Feature 40 - Member-Aware Canvas Access** (DONE): Modified Liveblocks room auth endpoint (`app/api/liveblocks-auth/route.ts`) to use `requireProjectMember()` instead of `requireProjectOwner()`. Updated Liveblocks `UserMeta` presence types to expose `role: "OWNER" | "COLLABORATOR"` within `userInfo` to let UI conditionally show controls. Verified that diagram API routes already use `requireProjectMember()`.
 
 - **Feature 39 - Shared Projects Dashboard** (DONE): Implemented shared projects section on the dashboard. Updated `GET /api/projects` to return separate `owned` and `shared` lists. Updated `listDashboardProjects` helper to fetch both using `Promise.all` with role filters. Updated `components/project/project-card.tsx` to conditionally display a 'Shared' badge and the owner's name. Updated `app/(app)/dashboard/page.tsx` to display separate 'My Projects' and 'Shared With Me' grids. Build green, tests passing.
@@ -109,6 +110,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Session Notes
 
+- **Session 2026-06-14 (Feature 41)**: Implemented Member-Aware AI Generation. Replaced `requireProjectOwner()` with `requireProjectMember()` across all AI generation API routes (`/api/research/*`, `/api/requirements/*`, `/api/architecture/*`, `/api/diagrams/*`, `/api/context-files/*`, `/api/feature-specs/*`, `/api/skills/*`, `/api/projects/[projectId]/download`). Standardized `triggeredByUserId` parameter for auditability in Trigger.dev background tasks (`generate-requirements`, `generate-architecture`, `generate-diagrams`, `generate-project-zip`). Ensured owner-only settings remain protected. Verified test suites pass. Tracker flipped to final end-of-feature state on-branch before commit (Feature 41 → Completed/DONE, Current Goal/Next Up → Feature 42).
 - **Session 2026-06-14 (Feature 40)**: Implemented Member-Aware Canvas Access. Updated `app/api/liveblocks-auth/route.ts` to grant room access to both owners and collaborators using `requireProjectMember()`. Included user's project role in Liveblocks session `userInfo`. Verified that existing Diagram routes (`app/api/diagrams/`) already properly utilized `requireProjectMember()`. Updated Types to reflect changes. Tracker flipped to final end-of-feature state on-branch before commit (Feature 40 → Completed/DONE, Current Goal/Next Up → Feature 41).
 - **Session 2026-06-14 (Feature 39)**: Implemented Shared Projects Dashboard. Updated `app/api/projects/route.ts` to return both `owned` and `shared` lists. Modified `lib/projects/list.ts` to support dual-list fetching using `Promise.all` with correct Prisma member role filtering. Adjusted `components/project/project-card.tsx` to display 'Shared' badges and owner names. Updated `app/(app)/dashboard/page.tsx` to handle the dual lists and render separate sections. Tests updated to reflect the new API signature (`ownedCursor` and `sharedCursor`). Build green, tests passing. Tracker flipped to final end-of-feature state on-branch before commit (Feature 39 → Completed/DONE, Current Goal/Next Up → Feature 40).
 - **Session 2026-06-14 (Feature 36 Refactor)**: Re-reviewed Feature 36 and successfully refactored the routes in `app/api/projects/[projectId]/route.ts` to completely remove raw `where: { id, userId }` clauses in favor of relying entirely on `requireProjectOwner()`, as strictly required by the spec. Verified test pass with mocked environment variables and clean Next.js build.

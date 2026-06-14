@@ -12,7 +12,7 @@ export const generateDiagramsTask = task({
     minTimeoutInMs: 1000,
     maxTimeoutInMs: 10000,
   },
-  run: async (payload: { projectId: string }) => {
+  run: async (payload: { projectId: string; triggeredByUserId: string }) => {
     const { projectId } = payload;
 
     // Fetch project with all context

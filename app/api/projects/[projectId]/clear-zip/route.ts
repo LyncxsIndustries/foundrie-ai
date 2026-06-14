@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAuth, AuthError } from "@/lib/auth/require-auth";
+import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import { db } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
@@ -20,8 +21,10 @@ export async function POST(
     const user = await requireAuth();
     const { projectId } = await params;
 
+    await requireProjectMember(projectId, user.id);
+
     const result = await db.project.updateMany({
-      where: { id: projectId, userId: user.id },
+      where: { id: projectId },
       data: {
         lastZipUrl: null,
         lastZipFileName: null,
@@ -35,6 +38,9 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof ProjectAuthError) {
+      return notFound();
+    }
     if (error instanceof AuthError) {
       return unauthorized(error.message);
     }

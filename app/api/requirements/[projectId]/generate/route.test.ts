@@ -60,6 +60,7 @@ describe("Requirements Generate Route", () => {
     expect(requireProjectMember).toHaveBeenCalledWith("proj-1", "user-1");
     expect(tasks.trigger).toHaveBeenCalledWith("generate-requirements", {
       projectId: "proj-1",
+      triggeredByUserId: "user-1",
     });
   });
 
