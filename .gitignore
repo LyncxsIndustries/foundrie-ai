@@ -67,6 +67,7 @@ next-env.d.ts
 .agents
 .github
 .trigger
+.clerk
 
 # local context images
 context-images/
