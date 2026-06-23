@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { getAuthUser } from "../auth/get-auth-user";
-import { requireProjectMember } from "../projects/auth";
+import { requireProjectOwner } from "../auth/project-access";
 import { callAI } from "../ai";
 import {
   getDiscoveryNotesPrompt,
@@ -19,7 +19,7 @@ import type { Plan } from "../ai/tier";
  */
 export async function generateRequirementsDocs(projectId: string, userId: string) {
   // 1. Verify membership
-  await requireProjectMember(projectId, userId);
+  await requireProjectOwner(projectId, userId);
 
   // 2. Fetch the project and user
   const project = await db.project.findUnique({
