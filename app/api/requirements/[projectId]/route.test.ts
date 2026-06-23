@@ -6,6 +6,10 @@ vi.mock("@/lib/auth/require-auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({ id: "user-1" }),
 }));
 
+vi.mock("@/lib/projects/auth", () => ({
+  requireProjectMember: vi.fn().mockResolvedValue({ role: "OWNER" }),
+}));
+
 vi.mock("@/lib/db", () => ({
   db: {
     requirements: {
@@ -44,7 +48,6 @@ describe("GET /api/requirements/[projectId]", () => {
     expect(db.requirements.findFirst).toHaveBeenCalledWith({
       where: {
         projectId: "proj-1",
-        project: { userId: "user-1" },
       },
       select: {
         id: true,
@@ -101,7 +104,6 @@ describe("PATCH /api/requirements/[projectId]", () => {
     expect(db.requirements.updateMany).toHaveBeenCalledWith({
       where: {
         projectId: "proj-1",
-        project: { userId: "user-1" },
       },
       data: {
         content: updatedContent,

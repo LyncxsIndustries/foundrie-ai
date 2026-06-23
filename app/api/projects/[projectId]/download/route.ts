@@ -3,7 +3,7 @@ import { tasks, runs } from "@trigger.dev/sdk";
 
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/require-auth";
-import { requireProjectMember } from "@/lib/projects/auth";
+import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import type { generateProjectZip } from "@/trigger/generate-project-zip";
 
 const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutes
@@ -85,6 +85,10 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (error instanceof ProjectAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
     return NextResponse.json(
       { error: "Failed to prepare download" },
       { status: 500 }
@@ -138,6 +142,14 @@ export async function GET(
       progress: run.metadata?.progress || 0,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (error instanceof ProjectAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
     return NextResponse.json(
       { error: "Failed to check status" },
       { status: 500 }
