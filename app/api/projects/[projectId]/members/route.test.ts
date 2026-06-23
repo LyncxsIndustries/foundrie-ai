@@ -3,7 +3,7 @@ import { POST, GET } from "./route";
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/require-auth";
-import { requireProjectMember, requireProjectMember, ProjectAuthError } from "@/lib/auth/project-access";
+import { requireProjectMember, requireProjectOwner, ProjectAuthError } from "@/lib/auth/project-access";
 import { ProjectMemberRole } from "@/lib/generated/prisma/client";
 
 // Mock the dependencies
@@ -29,7 +29,7 @@ vi.mock("@/lib/auth/require-auth", () => ({
 
 vi.mock("@/lib/auth/project-access", () => ({
   requireProjectMember: vi.fn(),
-  requireProjectMember: vi.fn(),
+  requireProjectOwner: vi.fn(),
   ProjectAuthError: class ProjectAuthError extends Error {
     status = 404;
     constructor() {
@@ -47,6 +47,7 @@ describe("POST /api/projects/[projectId]/members", () => {
     vi.clearAllMocks();
     vi.mocked(requireAuth).mockResolvedValue({ id: authUserId } as any);
     vi.mocked(requireProjectMember).mockResolvedValue({ id: projectId } as any);
+    vi.mocked(requireProjectOwner).mockResolvedValue({ id: projectId } as any);
   });
 
   function createRequest(body: any) {
@@ -69,7 +70,7 @@ describe("POST /api/projects/[projectId]/members", () => {
   });
 
   it("returns 404 if not the project owner", async () => {
-    vi.mocked(requireProjectMember).mockRejectedValue(new ProjectAuthError());
+    vi.mocked(requireProjectOwner).mockRejectedValueOnce(new ProjectAuthError());
 
     const req = createRequest({ email: "test@example.com" });
     const res = await POST(req, { params: Promise.resolve({ projectId }) });

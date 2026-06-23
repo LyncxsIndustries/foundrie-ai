@@ -20,6 +20,16 @@ vi.mock("@/lib/auth/require-auth", () => ({
   requireAuth: vi.fn(),
 }));
 
+vi.mock("@/lib/projects/auth", () => ({
+  requireProjectMember: vi.fn().mockResolvedValue({ role: "OWNER" }),
+  ProjectAuthError: class ProjectAuthError extends Error {
+    status = 404;
+    constructor(message = "Project not found") {
+      super(message);
+    }
+  }
+}));
+
 vi.mock("@trigger.dev/sdk", () => ({
   tasks: {
     trigger: vi.fn(),
@@ -36,6 +46,7 @@ vi.mock("@/trigger/generate-project-zip", () => ({
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth/get-auth-user";
 import { requireAuth } from "@/lib/auth/require-auth";
+import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 
 describe("POST /api/projects/[projectId]/download", () => {
   const mockUser = { id: "user-1", clerkId: "clerk-1", email: "test@example.com", plan: "FREE", role: "USER" };
@@ -62,7 +73,7 @@ describe("POST /api/projects/[projectId]/download", () => {
   });
 
   it("returns 404 when project is not found or user does not own it", async () => {
-    vi.mocked(db.project.findFirst).mockResolvedValue(null);
+    vi.mocked(requireProjectMember).mockRejectedValueOnce(new ProjectAuthError());
 
     const request = new NextRequest("http://localhost:3000/api/projects/project-1/download", {
       method: "POST",
@@ -169,11 +180,11 @@ describe("GET /api/projects/[projectId]/download", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getAuthUser).mockResolvedValue(mockUser);
+    vi.mocked(requireAuth).mockResolvedValue(mockUser);
   });
 
   it("returns 401 when user is not authenticated", async () => {
-    vi.mocked(getAuthUser).mockResolvedValue(null);
+    vi.mocked(requireAuth).mockRejectedValue(new Error("Unauthorized"));
 
     const request = new NextRequest(
       "http://localhost:3000/api/projects/project-1/download?runId=run-123",
@@ -204,7 +215,7 @@ describe("GET /api/projects/[projectId]/download", () => {
   });
 
   it("returns 404 when project is not found or user does not own it", async () => {
-    vi.mocked(db.project.findFirst).mockResolvedValue(null);
+    vi.mocked(requireProjectMember).mockRejectedValueOnce(new ProjectAuthError());
 
     const request = new NextRequest(
       "http://localhost:3000/api/projects/project-1/download?runId=run-123",

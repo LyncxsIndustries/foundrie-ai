@@ -74,7 +74,7 @@ export function DownloadZipButton({ projectId }: DownloadZipButtonProps) {
         setError("Failed to check generation status");
         clearInterval(pollInterval);
       }
-    }, 2000); // Poll every 2 seconds
+    }, process.env.NODE_ENV === "test" ? 100 : 2000);
 
     return () => clearInterval(pollInterval);
   }, [runId, projectId, state]);

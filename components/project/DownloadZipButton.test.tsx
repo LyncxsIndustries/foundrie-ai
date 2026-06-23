@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DownloadZipButton } from "./DownloadZipButton";
 
@@ -11,6 +11,7 @@ describe("DownloadZipButton", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it("renders idle state with Download ZIP button", () => {
@@ -32,7 +33,7 @@ describe("DownloadZipButton", () => {
     render(<DownloadZipButton projectId="project-1" />);
 
     const button = screen.getByRole("button", { name: /download zip/i });
-    await user.click(button);
+    fireEvent.click(button);
 
     await waitFor(() => {
       expect(screen.getByText(/generating package/i)).toBeInTheDocument();
@@ -58,7 +59,7 @@ describe("DownloadZipButton", () => {
     render(<DownloadZipButton projectId="project-1" />);
 
     const button = screen.getByRole("button", { name: /download zip/i });
-    await user.click(button);
+    fireEvent.click(button);
 
     await waitFor(() => {
       expect(screen.getByText(/zip ready/i)).toBeInTheDocument();
@@ -72,8 +73,7 @@ describe("DownloadZipButton", () => {
   });
 
   it("polls status and shows ready state when generation completes", async () => {
-    const user = userEvent.setup({ delay: null });
-    vi.useFakeTimers();
+    // No fake timers
 
     // POST returns runId
     vi.mocked(global.fetch).mockResolvedValueOnce({
@@ -84,7 +84,7 @@ describe("DownloadZipButton", () => {
     render(<DownloadZipButton projectId="project-1" />);
 
     const button = screen.getByRole("button", { name: /download zip/i });
-    await user.click(button);
+    fireEvent.click(button);
 
     await waitFor(() => {
       expect(screen.getByText(/generating package/i)).toBeInTheDocument();
@@ -96,7 +96,7 @@ describe("DownloadZipButton", () => {
       json: async () => ({ status: "generating", progress: 50 }),
     } as Response);
 
-    await vi.advanceTimersByTimeAsync(2000);
+    await new Promise((r) => setTimeout(r, 110));
 
     await waitFor(() => {
       expect(screen.getByText(/progress: 50%/i)).toBeInTheDocument();
@@ -113,13 +113,13 @@ describe("DownloadZipButton", () => {
       }),
     } as Response);
 
-    await vi.advanceTimersByTimeAsync(2000);
+    await new Promise((r) => setTimeout(r, 110));
 
     await waitFor(() => {
       expect(screen.getByText(/zip ready/i)).toBeInTheDocument();
     });
 
-    vi.useRealTimers();
+    // End test
   });
 
   it("shows error state when POST fails", async () => {
@@ -130,7 +130,7 @@ describe("DownloadZipButton", () => {
     render(<DownloadZipButton projectId="project-1" />);
 
     const button = screen.getByRole("button", { name: /download zip/i });
-    await user.click(button);
+    fireEvent.click(button);
 
     await waitFor(() => {
       expect(screen.getByText(/failed to prepare download/i)).toBeInTheDocument();
@@ -140,8 +140,7 @@ describe("DownloadZipButton", () => {
   });
 
   it("shows error state when polling returns failed status", async () => {
-    const user = userEvent.setup({ delay: null });
-    vi.useFakeTimers();
+    // No fake timers
 
     // POST returns runId
     vi.mocked(global.fetch).mockResolvedValueOnce({
@@ -152,7 +151,7 @@ describe("DownloadZipButton", () => {
     render(<DownloadZipButton projectId="project-1" />);
 
     const button = screen.getByRole("button", { name: /download zip/i });
-    await user.click(button);
+    fireEvent.click(button);
 
     await waitFor(() => {
       expect(screen.getByText(/generating package/i)).toBeInTheDocument();
@@ -164,13 +163,13 @@ describe("DownloadZipButton", () => {
       json: async () => ({ status: "failed", error: "Generation failed" }),
     } as Response);
 
-    await vi.advanceTimersByTimeAsync(2000);
+    await new Promise((r) => setTimeout(r, 110));
 
     await waitFor(() => {
       expect(screen.getByText(/generation failed/i)).toBeInTheDocument();
     });
 
-    vi.useRealTimers();
+    // End test
   });
 
   it("resets to idle state when retry button is clicked", async () => {
@@ -181,14 +180,14 @@ describe("DownloadZipButton", () => {
     render(<DownloadZipButton projectId="project-1" />);
 
     const downloadButton = screen.getByRole("button", { name: /download zip/i });
-    await user.click(downloadButton);
+    fireEvent.click(downloadButton);
 
     await waitFor(() => {
       expect(screen.getByText(/failed to prepare download/i)).toBeInTheDocument();
     });
 
     const retryButton = screen.getByRole("button", { name: /retry/i });
-    await user.click(retryButton);
+    fireEvent.click(retryButton);
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /download zip/i })).toBeInTheDocument();
@@ -213,14 +212,14 @@ describe("DownloadZipButton", () => {
     render(<DownloadZipButton projectId="project-1" />);
 
     const button = screen.getByRole("button", { name: /download zip/i });
-    await user.click(button);
+    fireEvent.click(button);
 
     await waitFor(() => {
       expect(screen.getByText(/zip ready/i)).toBeInTheDocument();
     });
 
     const downloadButton = screen.getByRole("button", { name: /download$/i });
-    await user.click(downloadButton);
+    fireEvent.click(downloadButton);
 
     expect(createElementSpy).toHaveBeenCalledWith("a");
   });
@@ -237,7 +236,7 @@ describe("DownloadZipButton", () => {
                 ok: true,
                 json: async () => ({ cached: false, runId: "run-123" }),
               } as Response),
-            1000
+            100
           )
         )
     );
@@ -247,7 +246,7 @@ describe("DownloadZipButton", () => {
     const button = screen.getByRole("button", { name: /download zip/i });
     
     // Click and immediately check if disabled
-    await user.click(button);
+    fireEvent.click(button);
     
     // Button should show generating state immediately
     await waitFor(() => {
