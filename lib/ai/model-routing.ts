@@ -42,6 +42,9 @@ export type AITask =
   | "rfc_generation"
   | "progress_tracker_md"
   | "ai_workflow_rules_md"
+  | "requirements_export_discovery_md"
+  | "requirements_export_analysis_md"
+  | "requirements_export_adr_md"
   // Code and implementation specs -> unified-rotation
   | "prisma_schema_gen"
   | "react_flow_node_gen"
@@ -97,6 +100,9 @@ export const TASK_MODEL_MAP: Record<AITask, ModelKey> = {
   rfc_generation: "unified-rotation",
   progress_tracker_md: "unified-rotation",
   ai_workflow_rules_md: "unified-rotation",
+  requirements_export_discovery_md: "unified-rotation",
+  requirements_export_analysis_md: "unified-rotation",
+  requirements_export_adr_md: "unified-rotation",
   // Code and implementation specs
   prisma_schema_gen: "unified-rotation",
   react_flow_node_gen: "unified-rotation",
