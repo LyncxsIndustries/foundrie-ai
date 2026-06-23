@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { generateRequirementsDocs } from "./requirements-docs";
 import { db } from "../db";
 import { getAuthUser } from "../auth/get-auth-user";
-import { requireProjectMember } from "../projects/auth";
+import { requireProjectOwner } from "../auth/project-access";
 import { callAI } from "../ai";
 
 vi.mock("../db", () => ({
@@ -20,8 +20,8 @@ vi.mock("../auth/get-auth-user", () => ({
   getAuthUser: vi.fn(),
 }));
 
-vi.mock("../projects/auth", () => ({
-  requireProjectMember: vi.fn(),
+vi.mock("../auth/project-access", () => ({
+  requireProjectOwner: vi.fn(),
 }));
 
 vi.mock("../ai", () => ({
@@ -34,7 +34,7 @@ describe("generateRequirementsDocs", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requireProjectMember).mockResolvedValue(undefined as any);
+    vi.mocked(requireProjectOwner).mockResolvedValue({ id: projectId } as any);
     vi.mocked(getAuthUser).mockResolvedValue({ id: userId, plan: "PRO" } as any);
   });
 
@@ -94,5 +94,23 @@ describe("generateRequirementsDocs", () => {
   it("should throw if project not found", async () => {
     vi.mocked(db.project.findUnique).mockResolvedValue(null);
     await expect(generateRequirementsDocs(projectId, userId)).rejects.toThrow(`Project ${projectId} not found.`);
+  });
+
+  it("should use requireProjectOwner for authorization", async () => {
+    vi.mocked(db.project.findUnique).mockResolvedValue({
+      id: projectId,
+      requirements: { content: {} },
+      executionPlans: [],
+      researchDocuments: [],
+    } as any);
+
+    vi.mocked(callAI).mockResolvedValue({
+      status: "success",
+      text: "content",
+    } as any);
+
+    await generateRequirementsDocs(projectId, userId);
+
+    expect(requireProjectOwner).toHaveBeenCalledWith(projectId, userId);
   });
 });
