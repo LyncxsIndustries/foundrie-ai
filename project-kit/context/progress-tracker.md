@@ -9,11 +9,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 38 - List/Remove Collaborators API** are complete.
+- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 41 - Member-Aware AI Generation** are complete.
 
 ## Current Goal
 
-- **Feature 41 - Member-Aware AI Generation**: Next numbered spec after Feature 40.
+- **Feature 42 - Sharing UI**: Next numbered spec after Feature 41.
 
 ## In Progress
 
@@ -67,7 +67,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- `[ ]` **Feature 41 - Member-Aware AI Generation**: Next numbered spec after Feature 40.
+- `[ ]` **Feature 42 - Sharing UI**: Next numbered spec after Feature 41.
 
 ## Architecture Decisions
 
@@ -146,3 +146,4 @@ Update this file whenever the current phase, active feature, or implementation s
 ## Process Reminders
 
 - End-of-feature tracker update (AGENTS.md step 6) is a hard gate: before committing the feature branch, the current spec must be moved to Completed/DONE, In Progress cleared, and Current Goal + Next Up set to the next numbered spec. Do not commit the tracker in an intermediate "pending review" state — the merged branch must land a tracker already pointing at the next feature.
+- **Feature 41 - Member-Aware AI Generation** (DONE): Extended all AI generation and content routes to use `requireProjectMember()` instead of owner-only checks. Both Owners and Collaborators can now trigger discovery chat, requirements generation, architecture proposals, diagram generation, context file generation, feature spec generation, agent skills generation, and ZIP download. Updated routes: requirements GET/PATCH, download POST/GET, research upload/assets/analyze/links/synthesize, and diagram approve-system-context. Owner-only routes (project PATCH/DELETE/settings, member management) remain protected with `requireProjectOwner()`. Test files updated to mock `requireProjectMember`.

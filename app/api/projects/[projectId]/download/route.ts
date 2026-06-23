@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { tasks, runs } from "@trigger.dev/sdk";
 
 import { db } from "@/lib/db";
-import { getAuthUser } from "@/lib/auth/get-auth-user";
 import { requireAuth } from "@/lib/auth/require-auth";
+import { requireProjectMember } from "@/lib/projects/auth";
 import type { generateProjectZip } from "@/trigger/generate-project-zip";
 
 const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutes
@@ -21,9 +21,10 @@ export async function POST(
     const user = await requireAuth();
     const { projectId } = await params;
 
-    // Ownership check
+    await requireProjectMember(projectId, user.id);
+
     const project = await db.project.findFirst({
-      where: { id: projectId, userId: user.id },
+      where: { id: projectId },
       select: {
         id: true,
         lastZipUrl: true,
@@ -97,11 +98,7 @@ export async function GET(
   { params }: DownloadRouteParams
 ) {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+    const user = await requireAuth();
     const { projectId } = await params;
     const searchParams = request.nextUrl.searchParams;
     const runId = searchParams.get("runId");
@@ -113,18 +110,7 @@ export async function GET(
       );
     }
 
-    // Ownership check (no hammering project tables - just verify ownership)
-    const project = await db.project.findFirst({
-      where: { id: projectId, userId: user.id },
-      select: { id: true },
-    });
-
-    if (!project) {
-      return NextResponse.json(
-        { error: "Project not found" },
-        { status: 404 }
-      );
-    }
+    await requireProjectMember(projectId, user.id);
 
     // Retrieve run status from Trigger.dev
     const run = await runs.retrieve(runId);

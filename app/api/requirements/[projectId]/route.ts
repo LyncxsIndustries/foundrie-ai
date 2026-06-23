@@ -1,9 +1,10 @@
 // Requirements review API (Feature 12).
-// GET/PATCH with ownership checks. Returns only the requirements content,
+// GET/PATCH with member access. Returns only the requirements content,
 // not the full conversation history.
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/require-auth";
+import { requireProjectMember } from "@/lib/projects/auth";
 import { db } from "@/lib/db";
 
 const requirementsContentSchema = z.object({
@@ -31,11 +32,10 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   const user = await requireAuth();
   const { projectId } = await params;
 
+  await requireProjectMember(projectId, user.id);
+
   const requirements = await db.requirements.findFirst({
-    where: {
-      projectId,
-      project: { userId: user.id },
-    },
+    where: { projectId },
     select: {
       id: true,
       content: true,
@@ -55,14 +55,13 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const user = await requireAuth();
   const { projectId } = await params;
 
+  await requireProjectMember(projectId, user.id);
+
   const body = await req.json();
   const validatedContent = requirementsContentSchema.parse(body.content);
 
   const updated = await db.requirements.updateMany({
-    where: {
-      projectId,
-      project: { userId: user.id },
-    },
+    where: { projectId },
     data: {
       content: validatedContent,
     },

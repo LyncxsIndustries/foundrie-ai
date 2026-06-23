@@ -3,7 +3,7 @@ import { GET, POST } from "./route";
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/require-auth";
-import { requireProjectOwner } from "@/lib/projects/auth";
+import { requireProjectMember } from "@/lib/projects/auth";
 
 vi.mock("@/lib/db", () => ({
   db: {
@@ -28,7 +28,7 @@ vi.mock("@/lib/auth/require-auth", () => ({
 }));
 
 vi.mock("@/lib/projects/auth", () => ({
-  requireProjectOwner: vi.fn(),
+  requireProjectMember: vi.fn(),
   ProjectAuthError: class ProjectAuthError extends Error {
     constructor(message = "Project not found.") {
       super(message);
@@ -45,7 +45,7 @@ describe("Research Assets API", () => {
   describe("GET", () => {
     it("returns assets and documents for the project", async () => {
       vi.mocked(requireAuth).mockResolvedValue({ id: "user_123" } as never);
-      vi.mocked(requireProjectOwner).mockResolvedValue({ id: "proj_123" } as never);
+      vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj_123" } as never);
       
       const mockAssets = [{ id: "asset_1" }];
       const mockDocs = [{ id: "doc_1" }];
@@ -59,14 +59,14 @@ describe("Research Assets API", () => {
       const json = await res.json();
       expect(json).toEqual({ assets: mockAssets, documents: mockDocs });
       
-      expect(requireProjectOwner).toHaveBeenCalledWith("proj_123", "user_123");
+      expect(requireProjectMember).toHaveBeenCalledWith("proj_123", "user_123");
     });
   });
 
   describe("POST", () => {
     it("creates a document when given valid payload", async () => {
       vi.mocked(requireAuth).mockResolvedValue({ id: "user_123" } as never);
-      vi.mocked(requireProjectOwner).mockResolvedValue({ id: "proj_123" } as never);
+      vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj_123" } as never);
       
       const mockDoc = { id: "doc_1", title: "Test Note" };
       vi.mocked(db.researchDocument.create).mockResolvedValue(mockDoc as never);
@@ -97,7 +97,7 @@ describe("Research Assets API", () => {
 
     it("returns 400 for invalid payload", async () => {
       vi.mocked(requireAuth).mockResolvedValue({ id: "user_123" } as never);
-      vi.mocked(requireProjectOwner).mockResolvedValue({ id: "proj_123" } as never);
+      vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj_123" } as never);
       
       const req = new NextRequest("http://localhost/api/research/proj_123/assets", {
         method: "POST",

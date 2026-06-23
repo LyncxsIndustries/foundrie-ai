@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { requireAuth, AuthError } from "@/lib/auth/require-auth";
-import { requireProjectOwner, ProjectAuthError } from "@/lib/projects/auth";
+import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import { synthesizeResearch } from "@/lib/research/synthesize-research";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
@@ -29,7 +29,7 @@ export async function POST(
     const user = await requireAuth();
     const { projectId } = await params;
 
-    await requireProjectOwner(projectId, user.id);
+    await requireProjectMember(projectId, user.id);
 
     const doc = await synthesizeResearch(projectId, user.plan);
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { requireAuth } from "@/lib/auth/require-auth";
-import { requireProjectOwner } from "@/lib/projects/auth";
+import { requireProjectMember } from "@/lib/projects/auth";
 import type { generateDiagramsTask } from "@/trigger/generate-diagrams";
 
 export async function POST(
@@ -12,7 +12,7 @@ export async function POST(
     const user = await requireAuth();
     const { projectId } = await params;
 
-    await requireProjectOwner(projectId, user.id);
+    await requireProjectMember(projectId, user.id);
 
     // Re-trigger the task to continue with remaining diagrams
     const handle = await tasks.trigger<typeof generateDiagramsTask>(
