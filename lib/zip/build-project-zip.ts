@@ -255,6 +255,7 @@ export async function buildProjectZip(
       if (docsFolder) {
         for (const doc of projectData.researchDocuments) {
           if (doc.sourceType === 'REQUIREMENTS_EXPORT') continue;
+          if (doc.sourceType === 'PROJECT_MANAGEMENT_EXPORT') continue;
           const fileName = `${slugify(doc.title)}.md`;
           docsFolder.file(fileName, doc.content || '');
         }
@@ -300,10 +301,17 @@ export async function buildProjectZip(
     }
   }
 
-  // Add project management folder (placeholder structure for now)
+  // Add project management folder
   const pmFolder = root.folder('project-management');
   if (pmFolder) {
-    pmFolder.file('README.md', '# Project Management\n\nProject management documentation will be added in future features.\n');
+    const pmDocs = projectData.researchDocuments.filter((d: any) => d.sourceType === 'PROJECT_MANAGEMENT_EXPORT');
+    if (pmDocs.length > 0) {
+      for (const doc of pmDocs) {
+        pmFolder.file(doc.title, doc.content || '');
+      }
+    } else {
+      pmFolder.file('README.md', '# Project Management\n\nProject management documentation will be added in future features.\n');
+    }
   }
 
   // Add docs folder (placeholder structure for now)

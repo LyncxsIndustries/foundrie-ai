@@ -45,6 +45,11 @@ export type AITask =
   | "requirements_export_discovery_md"
   | "requirements_export_analysis_md"
   | "requirements_export_adr_md"
+  // Project management docs -> unified-rotation (Feature 48)
+  | "pm_scope_md"
+  | "pm_timeline_md"
+  | "pm_pricing_md"
+  | "pm_changelog_md"
   // Code and implementation specs -> unified-rotation
   | "prisma_schema_gen"
   | "react_flow_node_gen"
@@ -103,6 +108,11 @@ export const TASK_MODEL_MAP: Record<AITask, ModelKey> = {
   requirements_export_discovery_md: "unified-rotation",
   requirements_export_analysis_md: "unified-rotation",
   requirements_export_adr_md: "unified-rotation",
+  // Project management docs (Feature 48)
+  pm_scope_md: "unified-rotation",
+  pm_timeline_md: "unified-rotation",
+  pm_pricing_md: "unified-rotation",
+  pm_changelog_md: "unified-rotation",
   // Code and implementation specs
   prisma_schema_gen: "unified-rotation",
   react_flow_node_gen: "unified-rotation",
