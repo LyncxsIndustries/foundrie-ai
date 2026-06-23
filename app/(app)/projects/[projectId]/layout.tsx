@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 import { WorkspaceShell } from "@/components/shells/workspace-shell";
 import { ProjectPhaseNav } from "@/components/project/ProjectPhaseNav";
 import { ProjectHeader } from "@/components/project/project-header";
+import { ResumeSessionPrompt } from "@/components/project/ResumeSessionPrompt";
 import { getAuthUser } from "@/lib/auth/get-auth-user";
 import { getProjectRole } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
@@ -53,6 +54,7 @@ export default async function ProjectLayout({
       className="min-h-[calc(100svh-3.5rem)]"
     >
       <ProjectHeader projectId={project.id} userRole={userRole} />
+      <ResumeSessionPrompt projectId={project.id} />
       {children}
     </WorkspaceShell>
   );
