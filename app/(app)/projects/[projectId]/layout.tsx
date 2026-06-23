@@ -8,7 +8,9 @@ import type { ReactNode } from "react";
 
 import { WorkspaceShell } from "@/components/shells/workspace-shell";
 import { ProjectPhaseNav } from "@/components/project/ProjectPhaseNav";
+import { ProjectHeader } from "@/components/project/project-header";
 import { getAuthUser } from "@/lib/auth/get-auth-user";
+import { getProjectRole } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 
 // User-scoped data must never be cached across requests.
@@ -30,10 +32,15 @@ export default async function ProjectLayout({
 
   const { projectId } = await params;
 
-  // Ownership-scoped read: findFirst returns null for both an unknown id and a
-  // project owned by someone else, and both map to 404.
+  // Check if user has any access (owner or member)
+  const userRole = await getProjectRole(projectId, user.id);
+  if (!userRole) {
+    notFound();
+  }
+
+  // Fetch minimal project data for status
   const project = await db.project.findFirst({
-    where: { id: projectId, userId: user.id },
+    where: { id: projectId },
     select: { id: true, status: true },
   });
   if (!project) {
@@ -45,6 +52,7 @@ export default async function ProjectLayout({
       nav={<ProjectPhaseNav projectId={project.id} status={project.status} />}
       className="min-h-[calc(100svh-3.5rem)]"
     >
+      <ProjectHeader projectId={project.id} userRole={userRole} />
       {children}
     </WorkspaceShell>
   );
