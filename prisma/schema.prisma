@@ -233,8 +233,31 @@ model Diagram {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  versions  DiagramVersion[]
+
   @@index([projectId])
   @@index([projectId, category, orderInCategory])
+}
+
+model DiagramVersion {
+  id              String   @id @default(cuid())
+  diagramId       String
+  version         Int
+  
+  // Snapshot of the React Flow JSON at this version
+  reactFlowData   Json?
+  
+  // Snapshot of the PNG storage URL at this version
+  pngStorageUrl   String?
+  
+  errorMessage    String?
+  
+  diagram         Diagram  @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+
+  @@unique([diagramId, version])
+  @@index([diagramId])
 }
 
 model ContextFile {
