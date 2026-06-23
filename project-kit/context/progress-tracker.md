@@ -13,7 +13,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- **Feature 45 - Architecture Approval Gate**: Next numbered spec after Feature 44.
+- **Feature 46 - Session Autosave & Recovery**: Next numbered spec after Feature 45.
 
 ## In Progress
 
@@ -21,6 +21,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Completed
 
+- **Feature 45 - Architecture Approval Gate** (DONE): Architecture diagram approval and rollback system. Created `DiagramVersion` model in `prisma/schema.prisma` with relation to `Diagram` for immutable snapshots (stores `reactFlowData`, `pngStorageUrl`, `errorMessage`). Implemented versioning logic in `lib/diagrams/versioning.ts` with `snapshotDiagramVersion`, `listDiagramVersions`, and `restoreDiagramVersion`. Implemented authorization using `projectId` checks. Created backend routes `app/api/diagrams/[projectId]/approve/route.ts` (with server-side validation ensuring all diagrams are `DONE` before generating an `APPROVED` `ExecutionPlan`) and `app/api/diagrams/[projectId]/[diagramId]/versions/route.ts`. Created `components/diagram-generation/ArchitectureApprovalPanel.tsx` and `components/diagram-generation/DiagramVersionHistory.tsx` with confirmation dialogs and standard UI tokens. Extensive test coverage for backend and frontend components. Restoring a version creates a snapshot of the current state, applies the restored state, bumps the diagram version, and marks all dependent feature specs for re-review.
 - **Initial Scaffold**: Created the Next.js project. No feature work beyond the base project scaffold has been done.
 - **Documentation Foundation**: Consolidated the full versioned research corpus into the master research files, AGENTS.md, the six context files, and all 52 feature specs.
 - **Feature 01 - Design System** (DONE — merged to `master`, PR #12): Dark workspace token system in `app/globals.css` (Foundrie palette mapped onto shadcn semantic tokens via Tailwind v4 `@theme`), `lib/utils.ts` `cn()`, typed `design-system.ts` (typography/spacing/radius/motion tokens), 14 shadcn primitives in `components/ui/**` themed with Foundrie tokens, workspace shell + loading/error/empty state components, and base surfaces (dashboard, project shell, requirements review, diagram workspace placeholder). Vitest + React Testing Library test harness configured (`vitest.config.mts`, `vitest.setup.ts`, `test`/`test:watch`/`test:coverage` scripts) with 22 passing tests. Next.js patched to 16.2.7 (cleared high-severity CVE); GSAP, `@gsap/react`, and Framer Motion installed. `.npmrc` added (`save-exact`, `engine-strict`). `.gitignore` extended for editor/IDE, logs, and local CodeRabbit artifacts. Build, tests, lint, and dependency audit (no critical/high) all green; local + GitHub CodeRabbit review loop clean.
