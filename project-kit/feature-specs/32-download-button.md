@@ -51,7 +51,7 @@ MODIFY: `app/(app)/projects/[projectId]/export/page.tsx` - mount the export UI a
 
 - **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
 - **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
-- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens, executable `npm run security:all` gates) is also baked into the generated projects, ensuring they are premium products.
 
 
 - POST returns cached ZIP metadata when `lastZipGeneratedAt` is within the 10-minute window; otherwise triggers `generate-project-zip` and returns `runId`. GET polls run status and returns the ZIP URL/file name when complete.
@@ -65,6 +65,12 @@ MODIFY: `app/(app)/projects/[projectId]/export/page.tsx` - mount the export UI a
 ## Future Modifications
 
 - Feature 39+: Collaborators (not just owners) can download via `requireProjectMember`.
+
+## Quality Gates
+
+- Run `npm run test` and ensure it passes.
+- Run `npm run build` and ensure it passes.
+- Run `npm run security:all` and ensure it passes before push.
 
 ## Acceptance Criteria
 

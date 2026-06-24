@@ -179,7 +179,7 @@ Update the relevant context file whenever implementation changes: architecture o
 6. Unit tests are written for the feature's core logic, API routes, and critical paths.
 7. All unit tests pass: `npm run test`.
 8. `npm run build` passes when application code exists.
-9. `security:all` passes (SAST, dependency audit with no critical/high CVEs, secret detection).
+9. `npm run security:all` passes (SAST, dependency audit with no critical/high CVEs, secret detection).
 10. Push the branch to GitHub.
 11. We wait for the user to do CodeRabbit review in GitHub. While not mandatory, it is highly recommended as a quality gate to catch issues early.
 12. Fix every GitHub CodeRabbit finding and push again. Repeat until there are no unresolved findings (if the user chose to use it).
@@ -197,7 +197,7 @@ Every feature spec is implemented on an isolated Git branch, created before any 
 ### Completing a Feature Branch
 1. Write unit tests for core logic, API routes, and critical paths.
 2. Run `npm run test` and `npm run build`; ensure both pass.
-3. Run `security:all`; resolve all critical/high findings.
+3. Run `npm run security:all`; resolve all critical/high findings.
 4. Push: `git push origin feature/<number>-<slug>`.
 5. Open a PR.
 6. We wait for the user to do CodeRabbit review in GitHub (recommended but optional).

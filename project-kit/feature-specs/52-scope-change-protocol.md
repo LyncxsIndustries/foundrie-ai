@@ -25,23 +25,61 @@ The mid-project scope-change workflow: any addition, removal, or redesign trigge
 
 - Prisma `/prisma/web`
 - Next.js `/vercel/next.js`
+- Clerk `/clerk/clerk-docs`
+- Official npm registry version metadata (`npm view`) for dependency overrides used by the security gate.
 
 ```bash
 npx ctx7 library <library> "<specific question>"
 npx ctx7 docs <libraryId> "<specific question>"
 ```
 
+## Agent Skills To Use
+
+- `.agents/skills/next-best-practices/SKILL.md`
+- `.agents/skills/clerk-nextjs-patterns/SKILL.md`
+- `.agents/skills/prisma-client-api/SKILL.md`
+- `.agents/skills/context7-cli/SKILL.md`
+- `.agents/skills/find-docs/SKILL.md`
+- `.agents/skills/code-review/SKILL.md` when preparing review or security-quality feedback.
+
 ## Files Owned
 
 - `app/api/projects/[projectId]/scope-changes/route.ts`
+- `app/api/projects/[projectId]/scope-changes/route.test.ts`
 - `lib/scope/impact-analysis.ts`
+- `lib/scope/impact-analysis.test.ts`
+- `lib/ai/model-routing.ts` (adds the `scope_change_impact_analysis` task only)
+- `lib/ai/prompts/feature-specs.ts` (Quality Gates contract wording only)
+- `lib/research/providers/context7.ts` (SAST hardening only)
 - `components/project/ScopeChangePanel.tsx`
+- `scripts/security/sast-scan.mjs`
+- `scripts/security/secret-scan.mjs`
+- `package.json`
+- `package-lock.json`
+- `eslint.config.mjs`
+- `AGENTS.md` (security gate wording only)
+- `project-kit/context/architecture-context.md`
+- `project-kit/context/code-standards.md`
+- `project-kit/context/ai-workflow-rules.md`
+- `project-kit/context/progress-tracker.md`
+- `project-kit/feature-specs/*.md` (Quality Gates wording only)
 
 ## Files
 
 CREATE: `lib/scope/impact-analysis.ts` - compute the impact report and apply approved changes.
 CREATE: `app/api/projects/[projectId]/scope-changes/route.ts` - submit a change, return the impact report, apply on approval.
 CREATE: `components/project/ScopeChangePanel.tsx` - request a change, review impact, approve/reject.
+CREATE: `lib/scope/impact-analysis.test.ts` - verify AI contract usage and approved-scope-change side effects.
+CREATE: `app/api/projects/[projectId]/scope-changes/route.test.ts` - verify auth, validation, approval, and rejection behavior.
+CREATE: `scripts/security/sast-scan.mjs` - local SAST gate used by `npm run security:all`.
+CREATE: `scripts/security/secret-scan.mjs` - local secret-detection gate used by `npm run security:all`.
+MODIFY: `lib/ai/model-routing.ts` - add `scope_change_impact_analysis` to the canonical task map.
+MODIFY: `lib/ai/prompts/feature-specs.ts` - ensure newly generated specs include explicit Quality Gates and executable `npm run security:all` wording.
+MODIFY: `lib/research/providers/context7.ts` - replace shell `exec` with `execFile` argument arrays so SAST can enforce no shell interpolation.
+MODIFY: `package.json` / `package-lock.json` - add `security:sast`, `security:deps`, `security:secrets`, `security:all`; add exact npm overrides for vulnerable transitive packages.
+MODIFY: `eslint.config.mjs` - ignore generated `.trigger/**` and generated Prisma client output.
+MODIFY: `AGENTS.md`, `context/architecture-context.md`, `context/code-standards.md`, `context/ai-workflow-rules.md` - synchronize the executable `npm run security:all` contract.
+MODIFY: `project-kit/feature-specs/*.md` - add explicit Quality Gates commands across the spec corpus.
 MODIFY: `context/progress-tracker.md` - mark feature progress.
 
 ## Implementation Notes
@@ -51,13 +89,18 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 
 - **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
 - **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
-- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens, executable `npm run security:all` gates) is also baked into the generated projects, ensuring they are premium products.
 
 
 - A scope change is one of: addition, removal, or redesign. Impact Analysis produces: completed features affected, in-progress features affected, pending features affected, new features needed, diagrams needing updates, timeline delta, and cost delta — shown to the user before anything is regenerated.
-- On approval (via a Feature 44 `ExecutionPlan` with `taskType: SCOPE_CHANGE`, with the impact report as its context): update affected diagrams as new versions (Feature 45), regenerate affected feature specs, generate any new specs, append a `CHANGE_LOG.md` entry (date, requester, impact summary, feature delta, timeline delta, cost delta), generate an ADR recording the decision, and flag revised specs as "re-review required" in `progress-tracker.md`.
-- Feature removal: a NOT STARTED feature is marked CANCELLED; an IN PROGRESS feature pauses for the user's choice; a COMPLETE (merged) feature generates a new `REMOVAL` feature spec (delete files, remove references, clean migrations, grep for residual references) so dead code is never left behind.
-- Use `requireProjectOwner()` for submitting and approving scope changes. Use transactions when applying multi-record regeneration. Buttons disable on click. Rejected change requests are recorded, not silently dropped.
+- The impact report includes `changeType: "ADDITION" | "REMOVAL" | "REDESIGN"` so downstream handling is deterministic.
+- Route handlers use `requireAuth()` to resolve the local database user and then call `requireProjectOwner(projectId, user.id)`. Never pass Clerk's external user ID into project ownership helpers.
+- On approval (via a Feature 44 `ExecutionPlan` with `taskType: SCOPE_CHANGE`, with the impact report as its context): snapshot affected diagrams in `DiagramVersion`, bump current diagram versions to `QUEUED`, flag affected feature specs for re-review, generate any new specs, append a `CHANGE_LOG.md` entry (date, requester, impact summary, feature delta, timeline delta, cost delta), generate an ADR recording the decision, and update the project `PROGRESS_TRACKER` context file.
+- `FeatureSpec` has no status enum in the current Prisma contract. CANCELLED, PAUSED, and re-review states are recorded as Markdown notes/spec content and tracker notes rather than inventing unsupported schema fields.
+- `CHANGE_LOG.md` and ADRs are stored as `ResearchDocument` records (`sourceType: "PROJECT_MANAGEMENT_EXPORT"` and `"SCOPE_CHANGE_ADR"` respectively) because `ResearchDocument.sourceType` is a string contract.
+- Feature removal: a NOT STARTED feature is marked CANCELLED in content/tracker; an IN PROGRESS feature pauses for the user's choice; a COMPLETE (merged) feature generates a new `REMOVAL` feature spec (delete files, remove references, clean migrations, grep for residual references) so dead code is never left behind.
+- Use transactions when applying multi-record regeneration. Buttons disable on click. Rejected change requests are recorded with a rejected ADR, not silently dropped.
+- The security gate is executable through `npm run security:all`: local SAST, `npm audit --audit-level=high`, and local secret detection. Exact npm overrides are used for transitive `@hono/node-server@1.19.14`, `postcss@8.5.15`, `systeminformation@5.31.9`, and `ws@8.21.0`; current `@trigger.dev/sdk@4.4.6`, `@trigger.dev/build@4.4.6`, `prisma@7.8.0`, and `@prisma/client@7.8.0` were checked with official npm metadata on 2026-06-24.
 
 ## Out of Scope
 
@@ -67,6 +110,12 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 ## Future Modifications
 
 - None planned; this completes the scope-management loop for v1.
+
+## Quality Gates
+
+- Run `npm run test` and ensure it passes.
+- Run `npm run build` and ensure it passes.
+- Run `npm run security:all` and ensure it passes before push.
 
 ## Acceptance Criteria
 

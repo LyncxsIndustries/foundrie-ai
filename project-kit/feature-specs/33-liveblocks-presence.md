@@ -47,7 +47,7 @@ CREATE: `components/canvas/PresenceLayer.tsx` - live cursors, avatars, AI presen
 
 - **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
 - **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
-- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens, executable `npm run security:all` gates) is also baked into the generated projects, ensuring they are premium products.
 
 
 - Define the Liveblocks presence schema (cursor position, selection, status). Show live cursors on the canvas and participant avatars/names. Show AI thinking/generation presence during background work.
@@ -63,6 +63,12 @@ CREATE: `components/canvas/PresenceLayer.tsx` - live cursors, avatars, AI presen
 
 - Feature 40: Liveblocks room auth authorizes both Owner and Collaborator.
 - Feature 42: Member avatars appear in the project header.
+
+## Quality Gates
+
+- Run `npm run test` and ensure it passes.
+- Run `npm run build` and ensure it passes.
+- Run `npm run security:all` and ensure it passes before push.
 
 ## Acceptance Criteria
 

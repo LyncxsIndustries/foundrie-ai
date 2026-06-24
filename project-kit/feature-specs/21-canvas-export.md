@@ -50,7 +50,7 @@ CREATE: `lib/diagrams/export-formats.ts` - Mermaid/SVG/DBML/OpenAPI/XState expor
 
 - **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
 - **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
-- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens, executable `npm run security:all` gates) is also baked into the generated projects, ensuring they are premium products.
 
 
 - Use html-to-image (or Konva) to capture only the diagram surface, not UI panels. Ensure capture bounds include all relevant nodes and edges; handle fonts and the dark background correctly.
@@ -65,6 +65,12 @@ CREATE: `lib/diagrams/export-formats.ts` - Mermaid/SVG/DBML/OpenAPI/XState expor
 ## Future Modifications
 
 - Feature 30: The ZIP builder includes the captured PNGs and format-specific exports under `diagrams/`.
+
+## Quality Gates
+
+- Run `npm run test` and ensure it passes.
+- Run `npm run build` and ensure it passes.
+- Run `npm run security:all` and ensure it passes before push.
 
 ## Acceptance Criteria
 

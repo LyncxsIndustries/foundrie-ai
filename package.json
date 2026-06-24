@@ -10,6 +10,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "security:sast": "node scripts/security/sast-scan.mjs",
+    "security:deps": "npm audit --audit-level=high",
+    "security:secrets": "node scripts/security/secret-scan.mjs",
+    "security:all": "npm run security:sast && npm run security:deps && npm run security:secrets",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
@@ -74,5 +78,11 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "4.1.8"
+  },
+  "overrides": {
+    "@hono/node-server": "1.19.14",
+    "postcss": "8.5.15",
+    "systeminformation": "5.31.9",
+    "ws": "8.21.0"
   }
 }
