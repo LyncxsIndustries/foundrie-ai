@@ -18,6 +18,24 @@ vi.mock("@octokit/app", () => {
         }),
       },
     },
+    request: vi.fn((route) => {
+      if (route.startsWith("GET /repos/{owner}/{repo}/contents")) {
+        return Promise.resolve({
+          data: { type: "file", content: Buffer.from("test").toString("base64"), sha: "sha", size: 4 },
+        });
+      }
+      if (route.startsWith("GET /repos/{owner}/{repo}")) {
+        return Promise.resolve({
+          data: { permissions: { admin: true }, private: true },
+        });
+      }
+      if (route.startsWith("GET /installation/repositories")) {
+        return Promise.resolve({
+          data: { repositories: [{ id: 1, full_name: "test/repo", private: true }] },
+        });
+      }
+      return Promise.resolve({ data: {} });
+    }),
   };
 
   return {

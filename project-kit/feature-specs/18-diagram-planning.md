@@ -51,7 +51,7 @@ CREATE: `lib/ai/prompts/diagram-plan.ts` and `lib/diagrams/schemas/plan.ts`.
 
 - **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
 - **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
-- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens, executable `npm run security:all` gates) is also baked into the generated projects, ensuring they are premium products.
 
 
 - Use architecture context and requirements as input. Plan the applicable subset of the 12 diagram types with their triggers: System Context (always, first), Container (always), Component (per container > 3 components), ERD (if database), Sequence (min 3), DFD (if user data/payments/AI signals), State Machine (conditional), Deployment (if > 1 target), API Map (if > 3 endpoints), Feature DAG (always), Agent Architecture (agentic), Security Architecture (always).
@@ -67,6 +67,12 @@ CREATE: `lib/ai/prompts/diagram-plan.ts` and `lib/diagrams/schemas/plan.ts`.
 
 - Feature 19: The sequential runner executes these jobs one at a time and respects the System-Context-first gate.
 - Feature 26: The Feature DAG produced here drives feature-spec ordering.
+
+## Quality Gates
+
+- Run `npm run test` and ensure it passes.
+- Run `npm run build` and ensure it passes.
+- Run `npm run security:all` and ensure it passes before push.
 
 ## Acceptance Criteria
 

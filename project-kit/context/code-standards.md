@@ -103,6 +103,8 @@ Foundrie's own system spans four languages. When working in the deployed system 
 - Run the dependency audit (`npm audit` / `pip-audit` / `safety check`) before feature work; resolve all critical and high findings.
 - Never delete or gitignore the lock file (`package-lock.json`, `poetry.lock`, `Cargo.lock`). Always commit it. Lock-file changes require review. CI uses `npm ci`, not `npm install`.
 - `.npmrc` uses `save-exact=true`, `engine-strict=true`.
+- Foundrie's TypeScript package exposes `security:sast`, `security:deps`, `security:secrets`, and `security:all`; run `npm run security:all` before push. The gate is local SAST, `npm audit --audit-level=high`, and local secret detection.
+- Exact npm overrides may be used only to remediate vulnerable transitive packages when the public direct dependency is already current and `npm audit fix --force` proposes breaking downgrades. Record the override and source/version evidence in the affected feature spec and tracker.
 - Monthly cadence: `npm audit` → `npm outdated` → patch safe versions → flag risky ones → log in `CHANGE_LOG.md`. Dependabot and SBOM generation are configured. Dependency audit is a hard CI gate — no critical or high CVEs.
 
 ## Logging
@@ -144,19 +146,19 @@ Foundrie's own system spans four languages. When working in the deployed system 
 ## Tests and Verification
 
 - **A test harness is mandatory and baked in.** Every Foundrie codebase and every generated project ships with a configured test runner from its first feature — testing is never deferred or treated as optional. For the TypeScript/Next.js layer the baseline is Vitest + React Testing Library + jsdom (`@testing-library/jest-dom`, `@testing-library/user-event`), configured via `vitest.config.mts` and a `vitest.setup.ts` that registers jest-dom matchers and cleans up between tests. Generated projects in other stacks use the idiomatic equivalent for that stack (e.g., `pytest` for Python, `cargo test` for Rust, `go test` for Go), selected through research and recorded in the architecture context — never copy Foundrie's runner into a project that does not use that stack.
-- Required NPM scripts: `test` (single run, CI-safe — `vitest run`), `test:watch`, and `test:coverage`. `npm run test` must be non-watch so it terminates in CI.
+- Required NPM scripts: `test` (single run, CI-safe — `vitest run`), `test:watch`, `test:coverage`, `security:sast`, `security:deps`, `security:secrets`, and `security:all`. `npm run test` must be non-watch so it terminates in CI.
 - The first feature spec of every project (Foundrie's `01-design-system` and each generated project's first spec) provisions and verifies the test harness as part of its scope, so no later feature inherits an unconfigured runner.
 - Add unit tests for pure helpers: slugging, fallback chain selection, output parsing, ZIP path generation, diagram job planning.
 - Add integration tests for API auth and ownership boundaries.
 - Add component tests where interaction risk is high. For agentic behavior, use LLM-as-judge plus a behavioral golden set.
-- Every feature is done only when its new logic has tests and `npm run test` passes. `npm run build` must also pass before moving to the next feature.
+- Every feature is done only when its new logic has tests and `npm run test` passes. `npm run build` and `npm run security:all` must also pass before moving to the next feature.
 - After pushing, wait for the user to do CodeRabbit review on the GitHub PR (recommended but optional) and fix any findings before merging.
 
 ## Quality Gate
 
 Every deliverable passes the three-category quality gate before it is considered complete:
 - **Documents**: placeholders populated, internally consistent, legally coherent, consistently formatted, version-accurate, brand-aligned, actionable.
-- **Code/Technical**: test harness configured and `npm run test` green (new logic covered), structured logging (no `console.log`), dependency audit passes (no critical/high CVEs), complete README, env vars documented, no hardcoded secrets, CI green.
+- **Code/Technical**: test harness configured and `npm run test` green (new logic covered), `npm run build` green, `npm run security:all` green, structured logging (no `console.log`), dependency audit passes (no critical/high CVEs), complete README, env vars documented, no hardcoded secrets, CI green.
 - **Research/Intelligence**: sources cited and accessible, data points dated, recommendations actionable with specific numbers, conflicting sources acknowledged.
 
 Gate failures are logged in `docs/QUALITY-GATE.md`, classified, routed to the correct upstream step, and re-checked through the full gate.

@@ -537,7 +537,7 @@ components/
 6. Long-running work runs in Trigger.dev tasks with retries and idempotency; route handlers stay thin.
 7. PostgreSQL stores metadata; Vercel Blob stores artifacts; MongoDB Atlas (isolated) stores anonymized training data only.
 8. Structured JSON logging only; no `console.log`; request IDs and `trace_id` correlation; PII scrubbed.
-9. Security (seven-layer), CI/CD (22-step), dependency audit (hard gate), and the file security pipeline (6 steps) are generated into every project.
+9. Security (seven-layer), CI/CD (22-step), executable `npm run security:all` gates, dependency audit (hard gate), and the file security pipeline (6 steps) are generated into every project.
 10. The ZIP structure is a product contract; required files are never omitted without updating this context.
 11. Every feature spec is one feature with exact dependencies, `Files Owned`, Out of Scope, Future Modifications, and binary acceptance criteria.
 12. Update `progress-tracker.md` after meaningful changes; record missing requirements before inventing behavior.

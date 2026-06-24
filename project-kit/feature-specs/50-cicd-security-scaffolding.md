@@ -51,7 +51,7 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 
 - **CRITICAL**: Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within this feature spec.
 - **CRITICAL**: For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed.
-- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens) is also baked into the generated projects, ensuring they are premium products.
+- **CRITICAL**: Ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens, executable `npm run security:all` gates) is also baked into the generated projects, ensuring they are premium products.
 
 
 - Generate `.github/workflows/ci.yml` and `cd.yml` implementing the 22-step pipeline adapted to the selected stack: CI (lint/format, type check, unit, integration, SAST, dependency audit, secret detection, build/containerize, container scan, agent evals, publish immutable artifact `<semver>-<git-sha>`); CD (deploy dev, smoke, deploy staging, E2E, load, DAST, manual gate, canary or blue-green, feature-flag check, observability verify, auto-rollback watch). Choose canary vs blue-green from the discovery Phase 4 decision and record it in an ADR.
@@ -67,6 +67,12 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 ## Future Modifications
 
 - Feature 30: the ZIP builder includes `.github/`, and (for agentic projects) `tools/` and `evals/`.
+
+## Quality Gates
+
+- Run `npm run test` and ensure it passes.
+- Run `npm run build` and ensure it passes.
+- Run `npm run security:all` and ensure it passes before push.
 
 ## Acceptance Criteria
 
