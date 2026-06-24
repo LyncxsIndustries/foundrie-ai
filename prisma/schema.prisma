@@ -87,6 +87,7 @@ enum ResearchSourceProvider {
   TAVILY
   OBSCURA
   UPLOAD_DERIVED
+  GITHUB
 }
 
 enum ResearchSourceStatus {
@@ -114,12 +115,12 @@ enum ProjectMemberRole {
 // ----------------------------------------------------------------------------
 
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique
-  email     String   @unique
-  name      String?
-  plan      UserPlan @default(FREE)
-  role      UserRole @default(USER)
+  id      String   @id @default(cuid())
+  clerkId String   @unique
+  email   String   @unique
+  name    String?
+  plan    UserPlan @default(FREE)
+  role    UserRole @default(USER)
 
   // Stripe / subscription fields (billing feature reuses these).
   stripeCustomerId   String?
@@ -127,9 +128,12 @@ model User {
   subscriptionStatus String?
   currentPeriodEnd   DateTime?
 
-  projects Project[]
-  memberships     ProjectMember[] @relation("memberships")
-  invitedMembers  ProjectMember[] @relation("invitedMembers")
+  // GitHub App integration (Feature 51).
+  githubInstallationId Int?
+
+  projects       Project[]
+  memberships    ProjectMember[] @relation("memberships")
+  invitedMembers ProjectMember[] @relation("invitedMembers")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -233,28 +237,28 @@ model Diagram {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  versions  DiagramVersion[]
+  versions DiagramVersion[]
 
   @@index([projectId])
   @@index([projectId, category, orderInCategory])
 }
 
 model DiagramVersion {
-  id              String   @id @default(cuid())
-  diagramId       String
-  version         Int
-  
+  id        String @id @default(cuid())
+  diagramId String
+  version   Int
+
   // Snapshot of the React Flow JSON at this version
-  reactFlowData   Json?
-  
+  reactFlowData Json?
+
   // Snapshot of the PNG storage URL at this version
-  pngStorageUrl   String?
-  
-  errorMessage    String?
-  
-  diagram         Diagram  @relation(fields: [diagramId], references: [id], onDelete: Cascade)
-  
-  createdAt       DateTime @default(now())
+  pngStorageUrl String?
+
+  errorMessage String?
+
+  diagram Diagram @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 
   @@unique([diagramId, version])
   @@index([diagramId])
@@ -399,14 +403,14 @@ model ExecutionPlan {
 }
 
 model ProjectMember {
-  id               String            @id @default(cuid())
-  projectId        String
-  userId           String
-  role             ProjectMemberRole
-  invitedByUserId  String?
-  joinedAt         DateTime
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id              String            @id @default(cuid())
+  projectId       String
+  userId          String
+  role            ProjectMemberRole
+  invitedByUserId String?
+  joinedAt        DateTime
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User    @relation("memberships", fields: [userId], references: [id], onDelete: Cascade)

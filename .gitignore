@@ -65,9 +65,11 @@ next-env.d.ts
 
 # hidden folders
 .agents
+!.agents/skills/
 .github
 .trigger
 .clerk
 
 # local context images
 context-images/
+\n# GitHub App Private Key\n*.private-key.pem
