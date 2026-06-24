@@ -118,6 +118,18 @@ export default async function ExportPage({ params }: ExportPageProps) {
           </div>
 
           <div className="flex items-start gap-3">
+            <FileText className="h-5 w-5 text-accent-primary mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">
+                Project Management
+              </p>
+              <p className="text-xs text-text-tertiary mt-1">
+                4 documents (SCOPE, TIMELINE, PRICING, CHANGE_LOG)
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
             <Code className="h-5 w-5 text-accent-primary mt-0.5" />
             <div>
               <p className="text-sm font-medium text-text-primary">

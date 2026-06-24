@@ -314,6 +314,38 @@ export function ProjectSettings({ project }: Props) {
             </Button>
           </div>
 
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Project Management Docs</p>
+              <p className="text-sm text-muted-foreground">
+                Regenerate SCOPE, TIMELINE, PRICING, and CHANGE_LOG
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                handleRegenerate(
+                  "Project Management Docs",
+                  `/api/project-management/${project.id}/generate`
+                )
+              }
+              disabled={regenerating !== null}
+            >
+              {regenerating === "Project Management Docs" && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {regenerating === "Project Management Docs" ? (
+                "Regenerating..."
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Regenerate
+                </>
+              )}
+            </Button>
+          </div>
+
           <Separator />
 
           <div className="flex items-center justify-between">
