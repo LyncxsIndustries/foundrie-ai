@@ -47,7 +47,7 @@ describe("generateRequirementsDocs", () => {
     } as any);
 
     vi.mocked(callAI).mockResolvedValue({
-      status: "success",
+      status: "ok",
       text: "```markdown\nGenerated content\n```",
     } as any);
 
@@ -105,7 +105,7 @@ describe("generateRequirementsDocs", () => {
     } as any);
 
     vi.mocked(callAI).mockResolvedValue({
-      status: "success",
+      status: "ok",
       text: "content",
     } as any);
 

@@ -67,7 +67,7 @@ ${architecturePlans}
     maxTokens: 8000,
   });
 
-  if (res.status !== "success" && res.status !== "ok") {
+  if (res.status !== "ok") {
     throw new Error("AI rotation engine exhausted providers during generation.");
   }
 

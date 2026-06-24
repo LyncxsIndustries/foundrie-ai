@@ -76,7 +76,7 @@ describe("generateProjectManagementDocs", () => {
     );
 
     vi.mocked(callAI).mockResolvedValue({
-      status: "success",
+      status: "ok",
       text: "```markdown\nGenerated content\n```",
     } as any);
 
@@ -148,7 +148,7 @@ describe("generateProjectManagementDocs", () => {
     );
 
     vi.mocked(callAI).mockResolvedValue({
-      status: "success",
+      status: "ok",
       text: "content",
     } as any);
 
@@ -163,7 +163,7 @@ describe("generateProjectManagementDocs", () => {
     );
 
     vi.mocked(callAI).mockResolvedValue({
-      status: "success",
+      status: "ok",
       text: "content",
     } as any);
 
@@ -182,7 +182,7 @@ describe("generateProjectManagementDocs", () => {
     );
 
     vi.mocked(callAI).mockResolvedValue({
-      status: "success",
+      status: "ok",
       text: "content",
     } as any);
 
