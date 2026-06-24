@@ -12,6 +12,8 @@ export const publicRoutes = [
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/webhooks/clerk",
+  "/api/github/webhook",
+  "/api/github/install",
 ];
 
 const isPublicRoute = createRouteMatcher(publicRoutes);

@@ -25,6 +25,8 @@
     "@liveblocks/react-flow": "3.19.5",
     "@liveblocks/react-ui": "3.19.5",
     "@neondatabase/serverless": "1.1.0",
+    "@octokit/app": "16.1.2",
+    "@octokit/webhooks": "14.2.0",
     "@prisma/adapter-neon": "7.8.0",
     "@prisma/client": "7.8.0",
     "@tavily/core": "0.7.5",

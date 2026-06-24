@@ -9,13 +9,15 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-## Current Phase
-
 - Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 50 - CI/CD & Security Scaffolding Generation** are complete.
 
 ## Current Goal
 
-- **Feature 51 - GitHub Integration**: Next numbered spec after Feature 50.
+- **Feature 52 - Scope Change Protocol**: Next numbered spec after Feature 51.
+
+## Next Up
+
+- **Feature 52 - Scope Change Protocol**
 
 ## In Progress
 
@@ -23,7 +25,8 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Completed
 
-- **Feature 50 - CI/CD & Security Scaffolding Generation** (DONE — on `feature/50-cicd-security-scaffolding`, pending review): Generation of `.github/` scaffolding and agentic security artifacts. Created `lib/ai/prompts/cicd-scaffolding.ts` with prompts for DevSecOps and AI Security Engineer generation. Created `lib/generation/cicd-scaffolding.ts` and `lib/generation/agentic-security.ts` to orchestrate generation and store results in `ResearchDocument` via atomic transactions. Updated AI rotation engine to support `cicd_scaffolding_generation` and `agentic_security_generation` tasks. Built comprehensive unit tests (`lib/generation/cicd-scaffolding.test.ts`, `lib/generation/agentic-security.test.ts`) covering all logic including agentic-only skipped behavior and exhaustion states. **Bug fix**: corrected `callAI` status check from `res.status !== "success"` (invalid — `CallResult` type is `"ok" | "queued"`, never `"success"`) to `res.status !== "ok"` in both `cicd-scaffolding.ts` and `agentic-security.ts`; also corrected test mocks in `project-management-docs.test.ts` and `requirements-docs.test.ts` from `status: "success"` to `status: "ok"` for contract accuracy. All tests passing (504: 503 passed, 1 skipped). Build green, TypeScript clean. Contracts synchronized. Next: push, GitHub review loop, then user merge.
+- **Feature 50 - CI/CD & Security Scaffolding Generation** (DONE — merged to `master`): Generation of `.github/` scaffolding and agentic security artifacts. Created `lib/ai/prompts/cicd-scaffolding.ts` with prompts for DevSecOps and AI Security Engineer generation. Created `lib/generation/cicd-scaffolding.ts` and `lib/generation/agentic-security.ts` to orchestrate generation and store results in `ResearchDocument` via atomic transactions. Updated AI rotation engine to support `cicd_scaffolding_generation` and `agentic_security_generation` tasks. Built comprehensive unit tests (`lib/generation/cicd-scaffolding.test.ts`, `lib/generation/agentic-security.test.ts`) covering all logic including agentic-only skipped behavior and exhaustion states. **Bug fix**: corrected `callAI` status check from `res.status !== "success"` (invalid — `CallResult` type is `"ok" | "queued"`, never `"success"`) to `res.status !== "ok"` in both `cicd-scaffolding.ts` and `agentic-security.ts`; also corrected test mocks in `project-management-docs.test.ts` and `requirements-docs.test.ts` from `status: "success"` to `status: "ok"` for contract accuracy. All tests passing (504: 503 passed, 1 skipped). Build green, TypeScript clean. Contracts synchronized.
+- **Feature 51 - GitHub App Integration** (DONE — on `feature/51-github-app-integration`, pending review): Implemented OAuth flow for GitHub App installation, repository mapping, and webhook event processing (`installation`, `installation_repositories`). Created `lib/github/webhook.ts` for signature verification and event dispatch. Added `app/api/webhooks/github/route.ts` to handle repository syncing and installation events. Updated project dashboard to allow linking GitHub repositories to projects. All tests passing. Build green, TypeScript clean. Contracts synchronized. Next: push, GitHub review loop, then user merge.
 
 ## Completed
 
