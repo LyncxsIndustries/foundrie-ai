@@ -85,7 +85,9 @@ export type AITask =
   // Diagram generation -> unified-rotation
   | "diagram_generation"
   // Feature specs generation -> unified-rotation
-  | "feature_specs_generation";
+  | "feature_specs_generation"
+  | "cicd_scaffolding_generation"
+  | "agentic_security_generation";
 
 /**
  * Task -> model key. This is the canonical routing table; do not select models
@@ -159,6 +161,9 @@ export const TASK_MODEL_MAP: Record<AITask, ModelKey> = {
   diagram_generation: "unified-rotation",
   // Feature specs generation (Feature 26)
   feature_specs_generation: "unified-rotation",
+  // CI/CD Scaffolding generation (Feature 50)
+  cicd_scaffolding_generation: "unified-rotation",
+  agentic_security_generation: "unified-rotation",
 };
 
 /** Resolve a task to its default model key. */

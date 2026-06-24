@@ -9,15 +9,21 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 49 - Project Docs Package Generation** are complete.
+## Current Phase
+
+- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 50 - CI/CD & Security Scaffolding Generation** are complete.
 
 ## Current Goal
 
-- **Feature 50 - CI/CD & Security Scaffolding Generation**: Next numbered spec after Feature 49. Generates CI/CD workflows and security configuration files for the project.
+- **Feature 51 - GitHub Integration**: Next numbered spec after Feature 50.
 
 ## In Progress
 
 - `[ ]` Nothing in progress.
+
+## Completed
+
+- **Feature 50 - CI/CD & Security Scaffolding Generation** (DONE — on `feature/50-cicd-security-scaffolding`, pending review): Generation of `.github/` scaffolding and agentic security artifacts. Created `lib/ai/prompts/cicd-scaffolding.ts` with prompts for DevSecOps and AI Security Engineer generation. Created `lib/generation/cicd-scaffolding.ts` and `lib/generation/agentic-security.ts` to orchestrate generation and store results in `ResearchDocument` via atomic transactions. Updated AI rotation engine to support `cicd_scaffolding_generation` and `agentic_security_generation` tasks. Built comprehensive unit tests (`lib/generation/cicd-scaffolding.test.ts`, `lib/generation/agentic-security.test.ts`) covering all logic including agentic-only skipped behavior and exhaustion states. All tests passing (250/250). Build green, TypeScript clean. Contracts synchronized. Tracker flipped to final end-of-feature state on-branch before the implementation commit. Next: push, GitHub review loop, then user merge.
 
 ## Completed
 
