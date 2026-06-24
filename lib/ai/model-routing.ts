@@ -50,6 +50,16 @@ export type AITask =
   | "pm_timeline_md"
   | "pm_pricing_md"
   | "pm_changelog_md"
+  // Project docs package -> unified-rotation (Feature 49)
+  | "docs_production_checklist_md"
+  | "docs_quality_gate_md"
+  | "docs_logging_md"
+  | "docs_security_md"
+  | "docs_privacy_md"
+  | "docs_tooling_md"
+  | "docs_contributing_md"
+  | "docs_adr_md"
+  | "docs_red_team_md"
   // Code and implementation specs -> unified-rotation
   | "prisma_schema_gen"
   | "react_flow_node_gen"
@@ -113,6 +123,16 @@ export const TASK_MODEL_MAP: Record<AITask, ModelKey> = {
   pm_timeline_md: "unified-rotation",
   pm_pricing_md: "unified-rotation",
   pm_changelog_md: "unified-rotation",
+  // Project docs package (Feature 49)
+  docs_production_checklist_md: "unified-rotation",
+  docs_quality_gate_md: "unified-rotation",
+  docs_logging_md: "unified-rotation",
+  docs_security_md: "unified-rotation",
+  docs_privacy_md: "unified-rotation",
+  docs_tooling_md: "unified-rotation",
+  docs_contributing_md: "unified-rotation",
+  docs_adr_md: "unified-rotation",
+  docs_red_team_md: "unified-rotation",
   // Code and implementation specs
   prisma_schema_gen: "unified-rotation",
   react_flow_node_gen: "unified-rotation",

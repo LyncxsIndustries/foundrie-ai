@@ -9,11 +9,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 48 - Project Management Docs** are complete.
+- Feature implementation. The full versioned research corpus (v1.0.0 → v14.0.0) has been consolidated into the master research files, AGENTS.md, the six context files, and all 52 feature specs. **Feature 01 - Design System** through **Feature 49 - Project Docs Package Generation** are complete.
 
 ## Current Goal
 
-- **Feature 49 - Project Docs Package Generation**: Next numbered spec after Feature 48. Generates the initial production documentation package for the `docs/` folder.
+- **Feature 50 - CI/CD & Security Scaffolding Generation**: Next numbered spec after Feature 49. Generates CI/CD workflows and security configuration files for the project.
 
 ## In Progress
 
@@ -156,6 +156,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - **Session 2026-06-24 (Feature 47 fixes)**: On branch `feature/47-requirements-export-docs`. Fixed three gaps in the Feature 47 implementation: (1) Created missing API route `app/api/requirements/[projectId]/export-docs/route.ts` (POST, owner-only via `requireProjectOwner` inside `generateRequirementsDocs`, returns 401/404/503/200) to satisfy the "Non-owner access returns 404" acceptance criterion. (2) Changed authorization in `lib/generation/requirements-docs.ts` from `requireProjectMember` (collaborator-accessible) to `requireProjectOwner` (owner-only) to match spec. (3) Modified `lib/zip/build-project-zip.ts` to route `REQUIREMENTS_EXPORT` research documents into the `requirements/` ZIP folder and exclude them from `research/documents/`. Fixed test file to mock `requireProjectOwner` from `../auth/project-access` instead of old `requireProjectMember` from `../projects/auth`. Added 5 API route tests + 1 authorization test. **476 tests passing + 1 skipped**. Build green. Tracker updated to point at Feature 48.
 
 - **Feature 48 - Project Management Docs** (DONE): Project management documents generation for export. Added AI routing tasks (`pm_scope_md`, `pm_timeline_md`, `pm_pricing_md`, `pm_changelog_md`) mapped to `unified-rotation`. Created `lib/ai/prompts/project-management-docs.ts` with explicit system prompts for SCOPE.md, TIMELINE.md, PRICING.md, and CHANGE_LOG.md. Implemented `lib/generation/project-management-docs.ts` to fetch project data using the `[projectId, order]` index, invoke the 4 generation tasks concurrently, and persist them via `db.researchDocument` with `sourceType` of `PROJECT_MANAGEMENT_EXPORT`. Created `app/api/project-management/[projectId]/generate/route.ts` (POST: `requireAuth()` → `requireProjectOwner()` → 200 with generated docs; 401/404/503). Modified `lib/zip/build-project-zip.ts` to route `PROJECT_MANAGEMENT_EXPORT` docs into the `project-management/` folder and exclude them from `research/documents/`. Added 5 API route tests and 6 generation logic tests; **488 tests passing + 1 skipped**. Build green, TypeScript clean. Tracker flipped to final end-of-feature state on-branch before commit.
+
+- **Feature 49 - Project Docs Package Generation** (DONE): Project documentation package generation. Created `lib/ai/prompts/project-docs.ts` with explicit system prompts for PRODUCTION-CHECKLIST.md, QUALITY-GATE.md, LOGGING.md, SECURITY.md, PRIVACY.md, TOOLING.md, CONTRIBUTING.md, ADR templates, and an optional RED-TEAM.md for agentic projects. Implemented `lib/generation/project-docs.ts` to fetch project context and execution plans, identify if the project is agentic via diagram types, invoke the corresponding tasks via `callAI`, parse the JSON arrays (especially for ADRs), and persist them via `db.researchDocument` with `sourceType` of `PROJECT_DOCS_EXPORT`. Updated `lib/ai/model-routing.ts` to map all docs tasks to `unified-rotation`. Created `app/api/docs/[projectId]/generate/route.ts` (POST: `requireAuth()` → `requireProjectOwner()` → 200 with generated docs; 401/404/503). Wrote extensive test coverage for the generation logic and API route. Build green, tests passing. Tracker flipped to final end-of-feature state on-branch before commit.
 
 ## Process Reminders
 
