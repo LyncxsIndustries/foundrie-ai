@@ -4,6 +4,7 @@ import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import { getDiscoveryConversation, appendConversationMessage, ChatMessage } from "@/lib/conversations/chat";
 import { callAIStream } from "@/lib/ai/rotation-engine";
 import { getDiscoverySystemPrompt } from "@/lib/ai/prompts/discovery";
+import { db } from "@/lib/db";
 
 // Polyfill Iterator.from or use a custom stream encoder
 function iteratorToStream(iterable: AsyncIterable<string>) {
@@ -67,10 +68,54 @@ export async function POST(
       createdAt: new Date().toISOString(),
     };
 
+    // Append to legacy JSON storage
     const updatedMessages = await appendConversationMessage(projectId, userMessage);
+
+    // Also persist to structured ConversationMessage table (Feature 54)
+    const conversation = await db.conversation.findUnique({
+      where: { projectId },
+    });
+
+    if (conversation) {
+      await db.conversationMessage.create({
+        data: {
+          conversationId: conversation.id,
+          projectId,
+          role: 'USER',
+          content: message.content,
+          attachments: message.attachments
+            ? {
+                create: message.attachments.map((att: any) => ({
+                  type: att.type,
+                  cloudinaryId: att.cloudinaryId,
+                  cloudinaryUrl: att.cloudinaryUrl,
+                  originalName: att.originalName,
+                  mimeType: att.mimeType,
+                  sizeBytes: att.sizeBytes,
+                  width: att.width,
+                  height: att.height,
+                })),
+              }
+            : undefined,
+        },
+      });
+    }
 
     // Format conversation history for the AI. Truncate to the last 6 messages to avoid context window limit exhaustion.
     const recentMessages = updatedMessages.slice(-6);
+    
+    // Add attachment context if present
+    let attachmentContext = '';
+    if (message.attachments && message.attachments.length > 0) {
+      const descriptions = message.attachments.map((att: any) => {
+        if (att.type === 'IMAGE') {
+          return `[User uploaded image: ${att.originalName}]`;
+        }
+        return `[User attached ${att.type.toLowerCase()}: ${att.originalName}]`;
+      });
+      attachmentContext = '\n\n' + descriptions.join('\n');
+    }
+    
     const historyText = recentMessages.map(m => {
       const roleName = m.role === "user" ? "User" : "Assistant";
       return `${roleName}:\n${m.content}`;
@@ -79,7 +124,7 @@ export async function POST(
     const systemPrompt = getDiscoverySystemPrompt();
     
     // We add the final directive to just respond to the last User message, considering history.
-    const userPrompt = `Here is the conversation history:\n\n${historyText}\n\nRespond to the last User message. Do not prefix your response with "Assistant:".`;
+    const userPrompt = `Here is the conversation history:\n\n${historyText}${attachmentContext}\n\nRespond to the last User message. Do not prefix your response with "Assistant:".`;
 
     const result = await callAIStream("streaming_chat", {
       plan: user.plan,
@@ -113,6 +158,20 @@ export async function POST(
           await appendConversationMessage(projectId, aiMessage).catch(err => {
             console.error("Failed to append AI message", err);
           });
+          
+          // Also persist to structured storage (Feature 54)
+          if (conversation) {
+            await db.conversationMessage.create({
+              data: {
+                conversationId: conversation.id,
+                projectId,
+                role: 'ASSISTANT',
+                content: aiFullText,
+              },
+            }).catch(err => {
+              console.error("Failed to append structured AI message", err);
+            });
+          }
         }
       }
     });
