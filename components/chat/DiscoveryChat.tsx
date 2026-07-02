@@ -23,6 +23,7 @@ interface Message {
     type: 'image' | 'document' | 'video';
     cloudinaryUrl: string;
     originalName: string;
+    mimeType: string;
     sizeBytes: number;
     width?: number;
     height?: number;
@@ -64,6 +65,7 @@ export function DiscoveryChat({ projectId }: DiscoveryChatProps) {
         type: att.type,
         cloudinaryUrl: att.cloudinaryUrl,
         originalName: att.originalName,
+        mimeType: att.mimeType,
         sizeBytes: att.sizeBytes,
         width: att.width,
         height: att.height,

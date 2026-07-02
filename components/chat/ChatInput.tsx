@@ -73,7 +73,7 @@ export function ChatInput({ projectId, onSend, disabled }: ChatInputProps) {
           <FileUpload
             projectId={projectId}
             onUploadComplete={(metadata) => {
-              setAttachments([...attachments, metadata]);
+              setAttachments(prev => [...prev, metadata]);
               setShowUpload(false);
             }}
             onCancel={() => setShowUpload(false)}
@@ -89,7 +89,7 @@ export function ChatInput({ projectId, onSend, disabled }: ChatInputProps) {
               key={att.cloudinaryId}
               attachment={att}
               size="sm"
-              onRemove={() => setAttachments(attachments.filter((a) => a.cloudinaryId !== att.cloudinaryId))}
+              onRemove={() => setAttachments(prev => prev.filter((a) => a.cloudinaryId !== att.cloudinaryId))}
             />
           ))}
         </div>

@@ -12,6 +12,7 @@ interface ChatMessageProps {
       type: 'image' | 'document' | 'video';
       cloudinaryUrl: string;
       originalName: string;
+      mimeType: string;
       sizeBytes: number;
       width?: number;
       height?: number;
@@ -54,8 +55,8 @@ export const ChatMessage = React.memo(function ChatMessage({ message }: ChatMess
       );
     }
 
-    // Document attachment
-    const icon = attachment.originalName.endsWith('.pdf') ? (
+    // Document attachment - use mimeType for reliable PDF detection
+    const icon = attachment.mimeType === 'application/pdf' ? (
       <FileText className="h-5 w-5" />
     ) : (
       <FileIcon className="h-5 w-5" />

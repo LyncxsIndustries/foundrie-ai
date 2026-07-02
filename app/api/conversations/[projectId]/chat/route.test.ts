@@ -108,5 +108,57 @@ describe("Discovery Chat Route", () => {
 
       expect(response.status).toBe(503);
     });
+
+    it("should succeed even if structured persistence succeeds", async () => {
+      vi.mocked(requireAuth).mockResolvedValue({ id: "user-1", email: "test@test.com", role: "USER", plan: "FREE" } as any);
+      vi.mocked(appendConversationMessage).mockResolvedValue([{ role: "user", content: "hello" } as any]);
+      vi.mocked(db.conversation.findUnique).mockResolvedValue({ id: "conv-1" } as any);
+      vi.mocked(db.conversationMessage.create).mockResolvedValue({ id: "msg-1" } as any);
+
+      const mockIterator = (async function* () {
+        yield "response";
+      })();
+
+      vi.mocked(callAIStream).mockResolvedValue({
+        status: "ok",
+        stream: mockIterator,
+      } as any);
+
+      const request = new Request("http://localhost/api/conversations/proj-1/chat", {
+        method: "POST",
+        body: JSON.stringify({ message: { content: "hello" } }),
+      });
+
+      const response = await POST(request, { params: Promise.resolve({ projectId: "proj-1" }) });
+
+      expect(response.status).toBe(200);
+      expect(db.conversationMessage.create).toHaveBeenCalled();
+    });
+
+    it("should succeed even if structured persistence fails", async () => {
+      vi.mocked(requireAuth).mockResolvedValue({ id: "user-1", email: "test@test.com", role: "USER", plan: "FREE" } as any);
+      vi.mocked(appendConversationMessage).mockResolvedValue([{ role: "user", content: "hello" } as any]);
+      vi.mocked(db.conversation.findUnique).mockResolvedValue({ id: "conv-1" } as any);
+      vi.mocked(db.conversationMessage.create).mockRejectedValue(new Error("DB error"));
+
+      const mockIterator = (async function* () {
+        yield "response";
+      })();
+
+      vi.mocked(callAIStream).mockResolvedValue({
+        status: "ok",
+        stream: mockIterator,
+      } as any);
+
+      const request = new Request("http://localhost/api/conversations/proj-1/chat", {
+        method: "POST",
+        body: JSON.stringify({ message: { content: "hello" } }),
+      });
+
+      const response = await POST(request, { params: Promise.resolve({ projectId: "proj-1" }) });
+
+      expect(response.status).toBe(200);
+      expect(db.conversationMessage.create).toHaveBeenCalled();
+    });
   });
 });

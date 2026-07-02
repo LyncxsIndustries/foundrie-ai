@@ -3,7 +3,7 @@
 // File upload component with drag-and-drop (Feature 54).
 // Integrates with Cloudinary for secure media storage.
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,13 @@ export interface AttachmentMetadata {
   mimeType: string;
   sizeBytes: number;
   type: 'image' | 'document' | 'video';
+  width?: number;
+  height?: number;
+}
+
+interface CloudinaryUploadResult {
+  public_id: string;
+  secure_url: string;
   width?: number;
   height?: number;
 }
@@ -46,6 +53,7 @@ export function FileUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -89,8 +97,15 @@ export function FileUpload({
         const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
 
         // Use XMLHttpRequest for upload progress events
-        const result = await new Promise<any>((resolve, reject) => {
+        const result = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
+          xhrRef.current = xhr;
+          
+          xhr.timeout = 30000; // 30s upload timeout
+
+          xhr.addEventListener('timeout', () => {
+            reject(new Error('Upload timed out'));
+          });
 
           xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
@@ -148,12 +163,22 @@ export function FileUpload({
         console.error('Upload failed:', err);
         setError(err instanceof Error ? err.message : 'Upload failed. Please try again.');
       } finally {
+        xhrRef.current = null;
         setUploading(false);
         setProgress(0);
       }
     },
     [projectId, maxSizeMB, onUploadComplete]
   );
+
+  const handleCancel = () => {
+    if (xhrRef.current) {
+      xhrRef.current.abort();
+    }
+    if (onCancel) {
+      onCancel();
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
@@ -217,10 +242,10 @@ export function FileUpload({
         </div>
       )}
 
-      {onCancel && !uploading && (
+      {onCancel && (
         <div className="mt-3 flex justify-end">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            Cancel
+          <Button variant="ghost" size="sm" onClick={handleCancel} disabled={!uploading && !onCancel}>
+            {uploading ? 'Cancel Upload' : 'Cancel'}
           </Button>
         </div>
       )}

@@ -84,12 +84,14 @@ export async function POST(
     const updatedMessages = await appendConversationMessage(projectId, userMessage);
 
     // Also persist to structured ConversationMessage table (Feature 54) - best effort
-    const conversation = await db.conversation.findUnique({
-      where: { projectId },
-    });
+    let conversation: { id: string } | null = null;
+    try {
+      conversation = await db.conversation.findUnique({
+        where: { projectId },
+        select: { id: true },
+      });
 
-    if (conversation) {
-      try {
+      if (conversation) {
         await db.conversationMessage.create({
           data: {
             conversationId: conversation.id,
@@ -112,15 +114,15 @@ export async function POST(
               : undefined,
           },
         });
-      } catch (structuredError) {
-        // Log but don't fail the request - legacy JSON storage is source of truth
-        console.error('Failed to persist structured user message:', {
-          projectId,
-          conversationId: conversation.id,
-          error: structuredError instanceof Error ? structuredError.message : 'Unknown error',
-          attachmentCount: message.attachments?.length || 0,
-        });
       }
+    } catch (structuredError) {
+      // Log but don't fail the request - legacy JSON storage is source of truth
+      console.error('Failed to persist structured user message:', {
+        projectId,
+        conversationId: conversation?.id,
+        error: structuredError instanceof Error ? structuredError.message : 'Unknown error',
+        attachmentCount: message.attachments?.length || 0,
+      });
     }
 
     // Format conversation history for the AI. Truncate to the last 6 messages to avoid context window limit exhaustion.

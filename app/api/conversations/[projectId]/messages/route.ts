@@ -35,7 +35,7 @@ export async function GET(
           orderBy: {
             createdAt: 'asc',
           },
-          take: 200,
+          take: -200, // Negative take fetches last 200 messages
         },
       },
     });
@@ -55,6 +55,7 @@ export async function GET(
           type: att.type.toLowerCase(),
           cloudinaryUrl: att.cloudinaryUrl,
           originalName: att.originalName,
+          mimeType: att.mimeType,
           sizeBytes: att.sizeBytes,
           width: att.width,
           height: att.height,

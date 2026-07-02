@@ -18,6 +18,7 @@ interface Message {
     type: 'image' | 'document' | 'video';
     cloudinaryUrl: string;
     originalName: string;
+    mimeType: string;
     sizeBytes: number;
     width?: number;
     height?: number;
@@ -54,8 +55,14 @@ export function ChatMessageList({ messages, projectId }: ChatMessageListProps) {
     prevLastContentRef.current = lastContent;
 
     if ((newMessageAdded || contentChanged) && isAtBottom) {
-      // Small delay to ensure DOM has updated
-      setTimeout(() => scrollToBottom(), 100);
+      // Small delay to ensure DOM has updated, re-check isAtBottom before scrolling
+      const timerId = setTimeout(() => {
+        if (isAtBottom) {
+          scrollToBottom();
+        }
+      }, 100);
+      
+      return () => clearTimeout(timerId);
     }
   }, [messages, isAtBottom]);
 
