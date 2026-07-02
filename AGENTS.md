@@ -14,19 +14,26 @@ The active project kit lives under `project-kit/`. Foundrie's own research corpu
 2. `research/PROJECT_RESEARCH.md` — research index and how the versioned corpus informs implementation.
 3. `research/FOUNDRIE_RESEARCH.md` — consolidated master product and implementation research (v1.0.0 → v14.0.0 flattened).
 4. `research/FOUNDRIE_V*.md` — the specific versioned file(s) relevant to the current feature, when you need the changelog or exact wording.
-5. `project-kit/context/project-overview.md` — product definition, users, the 8-phase flow, scope, success criteria.
+5. `project-kit/context/project-overview.md` — product definition, users, dynamic phase flow (scales from simple to complex), scope, success criteria.
 6. `project-kit/context/architecture-context.md` — four-layer stack, system boundaries, AI orchestration, storage, database, APIs, invariants.
-7. `project-kit/context/code-standards.md` — Foundrie-specific standards that extend the Artkins guide.
-8. `project-kit/context/ui-context.md` — dark workspace UI, diagram canvas, node/edge visual language, interaction rules.
-9. `project-kit/context/ai-workflow-rules.md` — how agents work, split tasks, use Context7, and keep docs synchronized.
-10. `project-kit/context/progress-tracker.md` — current state, next steps, open questions, session notes.
+7. `project-kit/context/build-plan.md` — phase-by-phase implementation plan with UI-first approach, clear done criteria.
+8. `project-kit/context/code-standards.md` — Foundrie-specific standards that extend the Artkins guide.
+9. `project-kit/context/library-docs.md` — third-party library usage patterns and project-specific integration rules.
+10. `project-kit/context/ui-tokens.md` — design system tokens (colors, typography, spacing, radius, motion).
+11. `project-kit/context/ui-rules.md` — UI behavior patterns, layout rules, component interaction standards.
+12. `project-kit/context/ui-registry.md` — component library, usage patterns, when to use each component.
+13. `project-kit/context/ai-workflow-rules.md` — how agents work, split tasks, use Context7, and keep docs synchronized.
+14. `project-kit/context/progress-tracker.md` — current state, next steps, open questions, session notes.
 
 ## The Research Corpus Is Cumulative
 
-The `research/FOUNDRIE_V*.md` files are append-only. `FOUNDRIE_V1.0.0.md` is the foundation; each later version documents only what changed, and all prior content remains in force. `FOUNDRIE_RESEARCH.md` flattens the whole history into the current state. When two sources disagree, the higher-numbered versioned file wins. Two material shifts you must internalize:
+The `research/FOUNDRIE_V*.md` files are append-only. `FOUNDRIE_V1.0.0.md` is the foundation; each later version documents only what changed, and all prior content remains in force. `FOUNDRIE_RESEARCH.md` flattens the whole history into the current state. When two sources disagree, the higher-numbered versioned file wins. Material shifts you must internalize:
 
 - **Foundrie's own stack is a four-layer polyglot architecture** (v2.0.0): Rust execution layer (Axum/Tokio — ZIP, key rotation, file ingestion, diagram rendering, WASM sandbox), Python AI layer (LangGraph/PydanticAI — discovery, multi-model rotation, RAG), TypeScript web layer (Next.js 16/React Flow/Liveblocks/GSAP), and a Go API gateway (Gin/gRPC). The old v1 Python+FastAPI / TypeScript+JSZip stack is deprecated.
-- **Foundrie is diagram-first** (v6.0.0): discovery is 8 phases, no feature spec is written before all applicable diagrams are generated and approved, and every ZIP includes `diagrams/`.
+- **Foundrie is diagram-first** (v6.0.0): discovery has dynamic phases (scales from simple to complex projects), no feature spec is written before all applicable diagrams are generated and approved, and every ZIP includes `diagrams/`.
+- **Dynamic phase completion** (v15.0.0): The discovery protocol is no longer rigid 8 phases. Projects are classified as SIMPLE (landing pages, portfolios — 3-4 phases, 5-10 messages), STANDARD (SaaS apps — 6-7 phases, 15-25 messages), or COMPLEX (enterprise platforms — 8 phases, 30+ messages). The AI uses semantic analysis to detect when phase requirements are met and auto-advances when appropriate, asking explicit continuation prompts when uncertain.
+- **Enhanced discovery UI** (v15.0.0): Chat interface supports file uploads (images, screenshots, videos, documents) via Cloudinary. Fixed scrolling layout (sidebar/header static, only chat scrolls). Auto-scroll to new messages. Premium dark theme with green accents matching Lynx Theme Pro aesthetic.
+- **Context architecture expansion** (v15.0.0): From 6 to 9+ specialized context files. `ui-context.md` split into `ui-tokens.md`, `ui-rules.md`, and `ui-registry.md`. Added `build-plan.md` for phase-by-phase planning and `library-docs.md` for third-party integration patterns.
 
 ## Required Skills
 

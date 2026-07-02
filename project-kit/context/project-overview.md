@@ -13,26 +13,60 @@ Foundrie holds the conversation, designs the architecture visually, and produces
 
 ## Product Positioning
 
-Foundrie AI is the upstream intelligence layer before an IDE or coding agent. It does not replace implementation tools such as RUWA, Claude Code, Cursor, Windsurf, Copilot, or Codex. It prepares the package those tools need: requirements, architecture, the full diagram suite, six context files, ordered feature specs, project-management documents, and an agent entry point.
+Foundrie AI is the upstream intelligence layer before an IDE or coding agent. It does not replace implementation tools such as RUWA, Claude Code, Cursor, Windsurf, Copilot, or Codex. It prepares the package those tools need: requirements, architecture, the full diagram suite, 9+ specialized context files, ordered feature specs, project-management documents, and an agent entry point.
 
 Every file Foundrie writes is an instruction. The quality of the downstream build is a direct function of the quality of Foundrie's output. Vagueness becomes wrong code; ambiguity becomes confusion; omission becomes missed features.
 
 ## Mental Model
 
-Raw idea -> research intake -> Socratic discovery interview -> approved implementation plan -> requirements analysis -> architecture proposal -> **all diagrams generated and approved (diagram-first gate)** -> feature specs written from diagrams -> Artkins style guide -> six context files -> ordered feature specs -> ZIP download -> AI-assisted implementation.
+Raw idea -> research intake -> Socratic discovery interview -> approved implementation plan -> requirements analysis -> architecture proposal -> **all diagrams generated and approved (diagram-first gate)** -> feature specs written from diagrams -> Artkins style guide -> 9+ specialized context files -> ordered feature specs -> ZIP download -> AI-assisted implementation.
 
-## The 8-Phase Discovery Protocol
+## The Dynamic Discovery Protocol (V15.0.0)
 
-1. **Problem & Users** — what problem, who uses it, what they do today, what success looks like in six months.
-2. **Core Flows** — the happy path, supporting workflows, CRUD surface, external services.
-3. **Scope & Constraints** — explicit out-of-scope, prior failures, timeline, team capability, design references.
-4. **Technical Direction** — Foundrie proposes a stack from the language decision matrix, records the decision in an ADR, and chooses deployment strategy and logging destination.
-5. **Feature Sequence** — preliminary build sequence, revised after diagrams.
-6. **Architecture Diagramming (the diagram-first gate)** — System Context first, then Container, then all remaining applicable diagrams; each reviewed and approved on the canvas before specs are written.
-7. **Feature Spec Generation** — the Feature Dependency Graph is topologically sorted into numbered specs, with file ownership, hidden requirements, and proactive architecture warnings.
-8. **ZIP Assembly** — diagrams, context files, feature specs, research, project-management docs, and docs are bundled into the named ZIP.
+Discovery flow adapts to project complexity. Projects are classified as **SIMPLE**, **STANDARD**, or **COMPLEX** based on semantic analysis of the initial description and conversation depth.
 
-The diagram-first gate is a hard stop: no feature spec file is created and no ZIP is assembled until every applicable diagram is generated, reviewed, and explicitly approved.
+### Project Classification
+
+**SIMPLE** (3-4 phases, 5-10 messages)
+- Landing pages, portfolios, marketing sites, single-feature tools
+- Limited backend, mostly static content with forms
+- Examples: "Build a portfolio site with dark theme", "Landing page for SaaS product"
+
+**STANDARD** (6-7 phases, 15-25 messages)
+- SaaS applications, CRUD apps, content platforms
+- Full-stack with database, auth, API, moderate complexity
+- Examples: "Task management app with teams", "Blog platform with CMS"
+
+**COMPLEX** (8+ phases, 30+ messages)
+- Enterprise platforms, multi-tenant systems, real-time collaboration
+- Advanced architecture, microservices, scaling concerns, integrations
+- Examples: "Real-time collaboration platform", "Multi-tenant analytics dashboard"
+
+### Core Phases (All Projects)
+
+1. **Problem & Users** — what problem, who uses it, what they do today, what success looks like.
+2. **Core Flows** — the happy path, supporting workflows, CRUD surface.
+3. **Architecture Diagramming (diagram-first gate)** — System Context first, then applicable diagrams; each reviewed and approved on the canvas before specs are written.
+4. **ZIP Assembly** — diagrams, context files, feature specs, research, project-management docs bundled into the named ZIP.
+
+### Extended Phases (Standard/Complex Projects)
+
+- **Scope & Constraints** — explicit out-of-scope, prior failures, timeline, team capability, design references.
+- **Technical Direction** — Foundrie proposes a stack from the language decision matrix, records the decision in an ADR, and chooses deployment strategy and logging destination.
+- **Feature Sequence** — preliminary build sequence, revised after diagrams.
+- **Feature Spec Generation** — Feature Dependency Graph topologically sorted into numbered specs, with file ownership, hidden requirements, and proactive architecture warnings.
+
+### Dynamic Phase Completion
+
+The AI uses semantic analysis to detect when phase requirements are met:
+
+- **Auto-advance**: When all phase requirements clearly satisfied (e.g., user provides comprehensive problem description covering users, goals, and success criteria)
+- **Explicit prompt**: When requirements partially met or ambiguity exists (e.g., "We have the core flows. Should we discuss technical constraints, or move to architecture?")
+- **Hold for clarification**: When critical information missing
+
+Detection rules in `ai-workflow-rules.md`. Phase transitions logged with classification confidence scores.
+
+The diagram-first gate remains a hard stop: no feature spec file is created and no ZIP is assembled until every applicable diagram is generated, reviewed, and explicitly approved.
 
 ## Goals
 
@@ -55,15 +89,16 @@ The diagram-first gate is a hard stop: no feature spec file is created and no ZI
 ## Core User Flow
 
 1. User signs in (Clerk; GitHub App for repo-connected sessions).
-2. User creates a project from a raw idea. Foundrie classifies the description as Level 1 (vague), 2 (partially specified), or 3 (over-specified) and responds accordingly.
-3. Foundrie runs the Socratic discovery interview, one question at a time, surfacing hidden requirements.
-4. AI generates a structured requirements analysis (functional, non-functional, hidden, scale, security).
-5. AI proposes an architecture and records trade-offs in ADRs.
-6. Foundrie generates the full diagram suite sequentially on the collaborative React Flow canvas, starting with the System Context Diagram.
-7. The user reviews and approves each diagram. The diagram-first gate holds until approval.
-8. AI generates the Feature Dependency Graph, six context files, and ordered feature specs from the approved diagrams.
-9. The user reviews the generated docs.
-10. The user downloads a ZIP package ready for coding agents.
+2. User creates a project from a raw idea. Foundrie classifies the project as SIMPLE, STANDARD, or COMPLEX and responds accordingly.
+3. Foundrie runs the dynamic discovery protocol, adapting phase flow to project complexity. The AI detects phase completion semantically and auto-advances when appropriate.
+4. User can upload media files (images, screenshots, documents, videos) during discovery via Cloudinary integration.
+5. AI generates a structured requirements analysis (functional, non-functional, hidden, scale, security).
+6. AI proposes an architecture and records trade-offs in ADRs (Standard/Complex projects).
+7. Foundrie generates applicable diagrams sequentially on the collaborative React Flow canvas, starting with the System Context Diagram.
+8. The user reviews and approves each diagram. The diagram-first gate holds until approval.
+9. AI generates the Feature Dependency Graph, 9+ context files, and ordered feature specs from the approved diagrams.
+10. The user reviews the generated docs.
+11. The user downloads a ZIP package ready for coding agents (includes downloaded media from Cloudinary in `/research` folder).
 
 ## Core Features
 
@@ -108,9 +143,9 @@ The diagram-first gate is a hard stop: no feature spec file is created and no ZI
 ### Export Package
 
 - Root `AGENTS.md` and root `ARTKINS_STYLE_GUIDE.md`.
-- Six context files, auto-numbered feature specs, the diagram suite, requirements documents, project-management documents, and docs (production checklist, quality gate, logging, security, privacy).
+- 9+ specialized context files (project-overview, architecture-context, build-plan, code-standards, library-docs, ui-tokens, ui-rules, ui-registry, ai-workflow-rules, progress-tracker), auto-numbered feature specs, the diagram suite, requirements documents, project-management documents, and docs (production checklist, quality gate, logging, security, privacy).
 - Rust streaming ZIP generation through Trigger.dev, stored in Vercel Blob with database metadata.
-- Research workspace for uploaded assets, frame ZIPs, extracted frames, documents, links, Context7 findings, and synthesized research.
+- Research workspace for uploaded media assets (images, videos, documents), frame ZIPs, extracted frames, documents, links, Context7 findings, and synthesized research. On ZIP export, Cloudinary media downloaded and placed in `/research` folder.
 
 ### Collaboration, Recovery, and Quality
 
@@ -149,10 +184,13 @@ The diagram-first gate is a hard stop: no feature spec file is created and no ZI
 
 ## Success Criteria
 
-1. A signed-in user can create a project and complete the 8-phase discovery flow.
-2. The system generates a requirements analysis from conversation history and surfaces hidden requirements.
-3. The system proposes architecture, generates the full diagram suite, and holds the diagram-first gate until approval.
-4. Diagrams are generated sequentially, rendered, captured as PNG, versioned, and stored.
-5. The Feature Dependency Graph, six context files, and ordered feature specs are generated from approved diagrams.
-6. The ZIP export matches the required folder structure exactly.
-7. The exported package can be opened by a coding agent using `AGENTS.md` as the entry point, with diagrams read before context files.
+1. A signed-in user can create a project and complete the dynamic discovery flow (3-8+ phases depending on complexity).
+2. The AI correctly classifies projects as SIMPLE, STANDARD, or COMPLEX and adapts phase flow accordingly.
+3. The AI detects phase completion semantically and auto-advances when appropriate, prompts for continuation when uncertain.
+4. Users can upload media files during discovery (images, videos, documents) with drag-and-drop or file picker, stored in Cloudinary.
+5. The system generates a requirements analysis from conversation history and surfaces hidden requirements.
+6. The system proposes architecture, generates applicable diagrams, and holds the diagram-first gate until approval.
+7. Diagrams are generated sequentially, rendered, captured as PNG, versioned, and stored.
+8. The Feature Dependency Graph, 9+ context files, and ordered feature specs are generated from approved diagrams.
+9. The ZIP export matches the required folder structure exactly, including downloaded Cloudinary media in `/research`.
+10. The exported package can be opened by a coding agent using `AGENTS.md` as the entry point, with diagrams read before context files.

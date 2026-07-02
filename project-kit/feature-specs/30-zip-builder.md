@@ -6,7 +6,7 @@ NEW FEATURE
 
 ## What This Delivers
 
-Server-side ZIP assembly that produces the full product-contract package: root `AGENTS.md` and `ARTKINS_STYLE_GUIDE.md`, the six context files, ordered feature specs, the `diagrams/` suite (with versioned folders), the `research/` folder, `project-management/` documents, `requirements/` docs, `docs/` (production checklist, quality gate, logging, security, privacy), and conditional `.agents/skills/`, `tools/`, and `evals/`. Error placeholders are used for missing diagram PNGs and unavailable research assets.
+Server-side ZIP assembly that produces the full product-contract package: root `AGENTS.md` and `ARTKINS_STYLE_GUIDE.md`, the 9+ specialized context files, ordered feature specs, the `diagrams/` suite (with versioned folders), the `research/` folder, `project-management/` documents, `requirements/` docs, `docs/` (production checklist, quality gate, logging, security, privacy), and conditional `.agents/skills/`, `tools/`, and `evals/`. Error placeholders are used for missing diagram PNGs and unavailable research assets.
 
 ## Dependencies
 
@@ -77,7 +77,7 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 
 ## Acceptance Criteria
 
-- [ ] The ZIP contains root `AGENTS.md`, root `ARTKINS_STYLE_GUIDE.md`, the six context files, ordered feature specs, the `diagrams/` suite, `research/PROJECT_RESEARCH.md`, `project-management/`, `requirements/`, and `docs/`.
+- [ ] The ZIP contains root `AGENTS.md`, root `ARTKINS_STYLE_GUIDE.md`, the 9+ specialized context files, ordered feature specs, the `diagrams/` suite, `research/PROJECT_RESEARCH.md`, `project-management/`, `requirements/`, and `docs/`.
 - [ ] `diagrams/` is present (a ZIP without it is invalid) and includes versioned `vN/` folders where diagrams changed.
 - [ ] Conditional `.agents/skills/`, `tools/`, `evals/` appear only when populated.
 - [ ] Missing diagram PNGs and unavailable research assets use placeholders without failing the build.
