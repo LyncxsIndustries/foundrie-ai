@@ -40,7 +40,7 @@ export function DiscoveryChat({ projectId }: DiscoveryChatProps) {
       .then((res) => res.json())
       .then((data) => {
         // Normalize dates to strings
-        const normalized = (data.messages || []).map((msg: any) => ({
+        const normalized = (data.messages || []).map((msg: Message) => ({
           ...msg,
           createdAt: typeof msg.createdAt === 'string' ? msg.createdAt : new Date(msg.createdAt).toISOString(),
         }));

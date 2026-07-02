@@ -84,12 +84,12 @@ export function ChatInput({ projectId, onSend, disabled }: ChatInputProps) {
       {/* Attachment Previews */}
       {attachments.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
-          {attachments.map((att, i) => (
+          {attachments.map((att) => (
             <MediaPreview
-              key={i}
+              key={att.cloudinaryId}
               attachment={att}
               size="sm"
-              onRemove={() => setAttachments(attachments.filter((_, idx) => idx !== i))}
+              onRemove={() => setAttachments(attachments.filter((a) => a.cloudinaryId !== att.cloudinaryId))}
             />
           ))}
         </div>
@@ -103,6 +103,7 @@ export function ChatInput({ projectId, onSend, disabled }: ChatInputProps) {
           onClick={() => setShowUpload(!showUpload)}
           className="flex-shrink-0"
           disabled={disabled || sending}
+          aria-label="Attach file"
         >
           <Paperclip className="h-5 w-5" />
         </Button>
@@ -123,6 +124,7 @@ export function ChatInput({ projectId, onSend, disabled }: ChatInputProps) {
           disabled={sending || disabled || (!content.trim() && attachments.length === 0)}
           size="icon"
           className="flex-shrink-0 bg-accent hover:bg-accent/90"
+          aria-label="Send message"
         >
           <Send className="h-5 w-5" />
         </Button>

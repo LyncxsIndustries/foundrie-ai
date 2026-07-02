@@ -34,6 +34,7 @@ export function ChatMessageList({ messages, projectId }: ChatMessageListProps) {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const prevMessageCountRef = useRef(messages.length);
+  const prevLastContentRef = useRef('');
 
   const scrollToBottom = (smooth = true) => {
     scrollRef.current?.scrollTo({
@@ -42,16 +43,21 @@ export function ChatMessageList({ messages, projectId }: ChatMessageListProps) {
     });
   };
 
-  // Auto-scroll on new message if user is at bottom
+  // Auto-scroll on new message or streaming content if user is at bottom
   useEffect(() => {
     const newMessageAdded = messages.length > prevMessageCountRef.current;
+    const lastMessage = messages[messages.length - 1];
+    const lastContent = lastMessage?.content || '';
+    const contentChanged = lastContent !== prevLastContentRef.current;
+    
     prevMessageCountRef.current = messages.length;
+    prevLastContentRef.current = lastContent;
 
-    if (newMessageAdded && isAtBottom) {
+    if ((newMessageAdded || contentChanged) && isAtBottom) {
       // Small delay to ensure DOM has updated
       setTimeout(() => scrollToBottom(), 100);
     }
-  }, [messages.length, isAtBottom]);
+  }, [messages, isAtBottom]);
 
   // Initial scroll to bottom
   useEffect(() => {
@@ -97,6 +103,7 @@ export function ChatMessageList({ messages, projectId }: ChatMessageListProps) {
           onClick={() => scrollToBottom()}
           size="icon"
           className="absolute bottom-4 right-4 rounded-full shadow-lg bg-accent hover:bg-accent/90"
+          aria-label="Scroll to bottom"
         >
           <ArrowDown className="h-4 w-4" />
         </Button>

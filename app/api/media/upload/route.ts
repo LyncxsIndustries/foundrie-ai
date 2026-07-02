@@ -3,16 +3,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { generateUploadSignature } from '@/lib/cloudinary/upload';
-import { getAuthUser } from '@/lib/auth/get-auth-user';
+import { requireAuth, AuthError } from '@/lib/auth/require-auth';
+import { requireProjectMember, ProjectAuthError } from '@/lib/auth/project-access';
 
 export async function POST(request: NextRequest) {
   try {
     // Authenticate user
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+    const user = await requireAuth();
+    
     const body = await request.json();
     const { projectId } = body;
 
@@ -20,11 +18,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Project ID required' }, { status: 400 });
     }
 
+    // Verify project membership
+    await requireProjectMember(projectId, user.id);
+
     // Generate upload signature
     const uploadParams = await generateUploadSignature(projectId);
 
     return NextResponse.json(uploadParams);
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    if (error instanceof ProjectAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('Upload signature generation failed:', error);
     return NextResponse.json(
       { error: 'Failed to generate upload signature' },

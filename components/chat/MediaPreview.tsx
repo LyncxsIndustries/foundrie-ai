@@ -6,6 +6,7 @@
 import { X, File, FileText, FileVideo, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { AttachmentMetadata } from './FileUpload';
+import { formatFileSize } from '@/lib/format';
 
 interface MediaPreviewProps {
   attachment: AttachmentMetadata;
@@ -21,12 +22,6 @@ export function MediaPreview({ attachment, onRemove, size = 'md' }: MediaPreview
   };
 
   const iconSize = size === 'sm' ? 'h-6 w-6' : size === 'md' ? 'h-8 w-8' : 'h-10 w-10';
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
 
   const getFileIcon = () => {
     switch (attachment.type) {
@@ -79,6 +74,7 @@ export function MediaPreview({ attachment, onRemove, size = 'md' }: MediaPreview
           size="icon"
           className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={onRemove}
+          aria-label={`Remove ${attachment.originalName}`}
         >
           <X className="h-4 w-4" />
         </Button>

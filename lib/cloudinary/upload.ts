@@ -11,6 +11,11 @@ export async function generateUploadSignature(projectId: string) {
   const timestamp = Math.round(Date.now() / 1000);
   const folder = `foundrie/${process.env.NODE_ENV}/${projectId}`;
 
+  // Validate required environment variable
+  if (!process.env.CLOUDINARY_API_SECRET) {
+    throw new Error('CLOUDINARY_API_SECRET is not configured');
+  }
+
   const paramsToSign = {
     timestamp,
     folder,
@@ -18,7 +23,7 @@ export async function generateUploadSignature(projectId: string) {
 
   const signature = cloudinary.utils.api_sign_request(
     paramsToSign,
-    process.env.CLOUDINARY_API_SECRET!
+    process.env.CLOUDINARY_API_SECRET
   );
 
   return {

@@ -78,7 +78,7 @@ export function FileUpload({
         const { signature, timestamp, cloudName, apiKey, folder } = await sigResponse.json();
         setProgress(20);
 
-        // Upload to Cloudinary
+        // Upload to Cloudinary with XMLHttpRequest for real progress tracking
         const formData = new FormData();
         formData.append('file', file);
         formData.append('signature', signature);
@@ -86,19 +86,43 @@ export function FileUpload({
         formData.append('api_key', apiKey);
         formData.append('folder', folder);
 
-        const uploadResponse = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
-          {
-            method: 'POST',
-            body: formData,
-          }
-        );
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
 
-        if (!uploadResponse.ok) {
-          throw new Error('Upload to Cloudinary failed');
-        }
+        // Use XMLHttpRequest for upload progress events
+        const result = await new Promise<any>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
 
-        const result = await uploadResponse.json();
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = Math.round((e.loaded / e.total) * 80) + 20; // 20-100%
+              setProgress(percentComplete);
+            }
+          });
+
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                resolve(JSON.parse(xhr.responseText));
+              } catch (e) {
+                reject(new Error('Invalid response from Cloudinary'));
+              }
+            } else {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          });
+
+          xhr.addEventListener('error', () => {
+            reject(new Error('Network error during upload'));
+          });
+
+          xhr.addEventListener('abort', () => {
+            reject(new Error('Upload cancelled'));
+          });
+
+          xhr.open('POST', uploadUrl);
+          xhr.send(formData);
+        });
+
         setProgress(100);
 
         // Determine attachment type
@@ -131,12 +155,19 @@ export function FileUpload({
     [projectId, maxSizeMB, onUploadComplete]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
     accept,
     maxFiles: 1,
     multiple: false,
     disabled: uploading,
+    onDropRejected: (rejections) => {
+      const rejection = rejections[0];
+      if (!rejection) return;
+
+      const errors = rejection.errors.map(e => e.message).join(', ');
+      setError(`File rejected: ${errors}`);
+    },
   });
 
   return (

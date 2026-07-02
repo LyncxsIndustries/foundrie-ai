@@ -189,6 +189,7 @@ model Project {
   user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   members           ProjectMember[]
   conversation      Conversation?
+  conversationMessages ConversationMessage[] @relation("conversationMessages")
   requirements      Requirements?
   diagrams          Diagram[]
   contextFiles      ContextFile[]
@@ -241,6 +242,7 @@ model ConversationMessage {
   metadata       Json?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  project      Project       @relation("conversationMessages", fields: [projectId], references: [id], onDelete: Cascade)
   attachments  Attachment[]
 
   createdAt DateTime @default(now())

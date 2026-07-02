@@ -1,8 +1,9 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Bot, User, FileText, FileVideo, Image as ImageIcon } from 'lucide-react';
+import { Bot, User, FileText, File as FileIcon, Image as ImageIcon } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '@/lib/conversations/chat';
 import ReactMarkdown from 'react-markdown';
+import { formatFileSize } from '@/lib/format';
 
 interface ChatMessageProps {
   message: ChatMessageType & {
@@ -16,10 +17,9 @@ interface ChatMessageProps {
       height?: number;
     }>;
   };
-  isStreaming?: boolean;
 }
 
-export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
+export const ChatMessage = React.memo(function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
 
   const renderAttachment = (attachment: NonNullable<ChatMessageProps['message']['attachments']>[0]) => {
@@ -58,7 +58,7 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
     const icon = attachment.originalName.endsWith('.pdf') ? (
       <FileText className="h-5 w-5" />
     ) : (
-      <FileVideo className="h-5 w-5" />
+      <FileIcon className="h-5 w-5" />
     );
 
     return (
@@ -72,7 +72,7 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">{attachment.originalName}</p>
           <p className="text-xs text-muted">
-            {(attachment.sizeBytes / 1024).toFixed(1)} KB
+            {formatFileSize(attachment.sizeBytes)}
           </p>
         </div>
       </a>
@@ -115,4 +115,4 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
       </div>
     </div>
   );
-}
+});
