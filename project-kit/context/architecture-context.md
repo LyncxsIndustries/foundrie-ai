@@ -55,6 +55,7 @@ The layers communicate over gRPC. The Rust ZIP builder streams (never buffers a 
 | AI providers | Gemini, OpenRouter, Groq, DeepSeek, Anthropic, Kimi | Role-based model orchestration with fallbacks |
 | ZIP generation | Rust streaming pipeline | Server-side ZIP packaging (JSZip is the deprecated legacy reference) |
 | Artifact storage | Vercel Blob | ZIPs, diagram PNGs, canvas snapshots, exported artifacts |
+| Media storage | Cloudinary | User-uploaded discovery media (images, videos, documents), optimized delivery, transformations |
 | Training data | MongoDB Atlas (isolated) | Anonymized session signals only — zero access to Neon |
 | Web research | Tavily | Search, extract, crawl, map when configured |
 | Browser scraping | Obscura | JavaScript-rendered capture and screenshots |
@@ -87,6 +88,9 @@ DIRECT_URL="postgresql://user:pass@ep-xxx.region.aws.neon.tech/neondb?sslmode=re
 
 TRIGGER_SECRET_KEY=...
 BLOB_READ_WRITE_TOKEN=...
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
 NEXT_PUBLIC_APP_URL=https://foundrieai.com
 
 # Scale / training / commercialization
@@ -139,6 +143,137 @@ Foundrie dynamically parses `skills-lock.json` and `.agents/skills/*/SKILL.md` t
 
 Foundrie acts as a dynamic skill installer for generated projects: it parses installed skills, provisions universal baseline capabilities into every project, and provisions stack-dependent skills based on the approved generated `architecture-context.md` (e.g., `clerk-vue-patterns` if the project uses Vue). When research reveals a repeatable workflow, Foundrie generates project-specific skills in `.agents/skills/`.
 
+## Media Storage Architecture (V15.0.0)
+
+### Cloudinary Integration
+
+Foundrie uses Cloudinary as the primary media storage layer for user-uploaded discovery content. All images, videos, documents, and screenshots uploaded during the discovery conversation are stored in Cloudinary and referenced by URL in the database.
+
+**Storage Flow:**
+1. User uploads file via drag-and-drop or file picker in discovery chat
+2. Client validates file type and size (images ≤10MB, videos ≤100MB, documents ≤25MB)
+3. File uploaded directly to Cloudinary via signed upload API
+4. Cloudinary returns secure URL and metadata (public_id, format, dimensions, duration)
+5. URL and metadata stored in Neon database `research_files` table with project association
+6. AI can reference uploaded media during discovery conversation
+
+**Supported File Types:**
+- Images: PNG, JPG, WebP, SVG, GIF
+- Videos: MP4, WebM, MOV
+- Documents: PDF, TXT, MD, DOC, DOCX, PPT, PPTX
+
+**Cloudinary Features Used:**
+- Signed uploads for security (prevents unauthorized uploads)
+- Automatic format detection and optimization
+- Image transformations (thumbnails, responsive sizes)
+- Video transcoding and streaming
+- CDN delivery with global edge caching
+
+### ZIP Export Media Inclusion
+
+When a user downloads the project ZIP, Foundrie downloads all Cloudinary media and includes it in the `/research` folder:
+
+```
+{project-slug}_{timestamp}.zip
+├── research/
+│   ├── inspiration/      # Design inspiration images
+│   ├── wireframes/       # Uploaded wireframes and mockups
+│   ├── branding/         # Logo, brand assets
+│   ├── technical-docs/   # PDF specs, architecture diagrams
+│   ├── competitors/      # Competitor screenshots
+│   └── general/          # Uncategorized uploads
+├── diagrams/
+├── context/
+└── feature-specs/
+```
+
+**Export Process:**
+1. ZIP generation job queries all `research_files` for the project
+2. For each file, download from Cloudinary URL
+3. Place file in appropriate category folder based on metadata tags
+4. Preserve original filename and format
+5. Include `research/FILES.md` manifest with metadata (upload date, tags, AI analysis notes)
+
+This ensures the exported ZIP is fully self-contained with no external dependencies.
+
+### Database Schema
+
+```prisma
+model ResearchFile {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Cloudinary metadata
+  cloudinaryPublicId String
+  cloudinaryUrl      String
+  format             String   // "jpg", "mp4", "pdf"
+  fileType           String   // "image", "video", "document"
+  fileName           String   // Original filename
+  fileSize           Int      // Bytes
+  
+  // Categorization
+  category    String?  // "inspiration", "wireframes", "branding", etc.
+  tags        String[] // User or AI-applied tags
+  
+  // AI analysis (optional, generated on upload)
+  aiDescription String?
+  extractedText String? // OCR/document parsing results
+  
+  createdAt   DateTime @default(now())
+  uploadedBy  String   // User ID who uploaded
+  
+  @@index([projectId])
+  @@index([category])
+}
+```
+
+### Client Component Pattern
+
+```typescript
+// components/discovery/FileUploadZone.tsx
+'use client';
+
+import { CldUploadWidget } from 'next-cloudinary';
+import { useProject } from '@/lib/hooks/use-project';
+
+export function FileUploadZone() {
+  const { project } = useProject();
+  
+  const handleSuccess = async (result: any) => {
+    // Save Cloudinary URL and metadata to database
+    await fetch(`/api/projects/${project.id}/research/files`, {
+      method: 'POST',
+      body: JSON.stringify({
+        cloudinaryPublicId: result.public_id,
+        cloudinaryUrl: result.secure_url,
+        format: result.format,
+        fileType: getFileType(result.resource_type),
+        fileName: result.original_filename,
+        fileSize: result.bytes,
+      }),
+    });
+  };
+  
+  return (
+    <CldUploadWidget
+      uploadPreset="foundrie_discovery"
+      onSuccess={handleSuccess}
+      options={{
+        maxFileSize: 100000000, // 100MB
+        maxFiles: 10,
+        multiple: true,
+        sources: ['local', 'url', 'camera'],
+      }}
+    >
+      {({ open }) => (
+        <button onClick={() => open()}>Upload Files</button>
+      )}
+    </CldUploadWidget>
+  );
+}
+```
+
 ## Artkins Policy and Planning Gate
 
 - Root `ARTKINS_STYLE_GUIDE.md` is the canonical engineering, UX, security, scalability, and no-AI-slope policy, exported verbatim into every generated package.
@@ -156,6 +291,7 @@ Foundrie acts as a dynamic skill installer for generated projects: it parses ins
 - `lib/diagrams` — diagram categories, shape libraries, generation planning, sequential runner, layout helpers, validation.
 - `lib/db` or `lib/prisma.ts` — Prisma client singleton and database helpers.
 - `lib/storage` — Vercel Blob helpers for ZIP, PNG, canvas, generated Markdown artifacts.
+- `lib/media` — Cloudinary upload, transformation, and download helpers; ResearchFile CRUD operations.
 - `lib/research` — research ingestion, Tavily/Obscura/Firecrawl/Context7 source capture, visual asset analysis, synthesis, export helpers.
 - `lib/auth` — Clerk session mapping, ownership scoping, plan limits, admin gate, project-access helpers.
 - `trigger` — durable Trigger.dev jobs: diagram generation, context generation, feature-spec generation, ZIP generation.
@@ -339,7 +475,7 @@ Provider adapters belong in `lib/ai/providers/`. Direct calls to external AI API
 - **Phase 2 — Requirements surfacing**: deep reasoning extracts functional, non-functional, hidden, scale, and security requirements and proposes approaches with trade-offs.
 - **Phase 3 — Architecture proposal**: orchestrator proposes a high-level architecture, records ADRs, and prepares the System Context Diagram.
 - **Phase 4 — Sequential diagram generation (diagram-first gate)**: the planner creates an ordered job list; jobs run one at a time, render to canvas, capture as PNG, persist, and version. No spec is written until all diagrams are approved.
-- **Phase 5 — Context and feature specs**: structured generation writes the six context files, root AGENTS.md, the Feature Dependency Graph, and N ordered feature specs traced to diagrams, with file ownership and proactive warnings.
+- **Phase 5 — Context and feature specs**: structured generation writes the 9+ specialized context files, root AGENTS.md, the Feature Dependency Graph, and N ordered feature specs traced to diagrams, with file ownership and proactive warnings.
 - **Research phase (continuous)**: collects assets, frame ZIPs, extracted frames, documents, scraped sources, Context7 findings, and notes into the research corpus; later phases cite relevant `research/` paths.
 
 ## Diagram System

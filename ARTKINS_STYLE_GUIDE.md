@@ -492,6 +492,276 @@ import Image from 'next/image';
 
 ---
 
+## 4A. PREMIUM UI STANDARDS (FOUNDRIE AI & AWARD-WINNING PROJECTS)
+
+These standards apply to Foundrie AI itself and to projects that target award-winning, premium interfaces (Awwwards, FWA, CSS Design Awards). Based on Kargul Studios design patterns and Lynx Theme Pro aesthetic.
+
+### 4A.1 Lynx Theme Pro Dark Aesthetic
+
+**Primary Color Palette:**
+```typescript
+export const lynxTheme = {
+  // Background layers
+  background:     '#0f0f0f',  // Base canvas
+  surface:        '#1a1a1a',  // Elevated cards/panels
+  surfaceElevated: '#2a2a2a', // Hover/active states
+  
+  // Primary accent (electric green)
+  primary:        '#00e676',  // Lynx signature green
+  primaryHover:   '#00c962',
+  primaryMuted:   'rgba(0, 230, 118, 0.1)',
+  
+  // Text hierarchy
+  textPrimary:    '#f5f5f5',  // Headlines, primary content
+  textSecondary:  '#b0b0b0',  // Labels, secondary content
+  textMuted:      '#6b7280',  // Placeholders, disabled
+  
+  // Borders & dividers
+  border:         '#2a2a2a',
+  borderSubtle:   '#1f1f1f',
+  
+  // Status colors
+  success:        '#10b981',
+  warning:        '#f59e0b',
+  error:          '#ef4444',
+  info:           '#3b82f6',
+};
+```
+
+### 4A.2 Premium Depth & Hierarchy
+
+**Layered Shadows:**
+```css
+/* Subtle elevation (cards, buttons) */
+.shadow-subtle {
+  box-shadow: 
+    0 1px 3px rgba(0,0,0,0.4),
+    0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Medium elevation (modals, dropdowns) */
+.shadow-medium {
+  box-shadow:
+    0 4px 6px -1px rgba(0,0,0,0.5),
+    0 2px 4px -1px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* High elevation (tooltips, popovers) */
+.shadow-high {
+  box-shadow:
+    0 20px 25px -5px rgba(0,0,0,0.7),
+    0 10px 10px -5px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* Glow effect (primary actions, accents) */
+.glow-primary {
+  box-shadow:
+    0 0 20px rgba(0, 230, 118, 0.4),
+    0 0 40px rgba(0, 230, 118, 0.2);
+}
+```
+
+**Backdrop Blur (glass morphism):**
+```css
+.glass {
+  background: rgba(26, 26, 26, 0.7);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+```
+
+### 4A.3 Premium GSAP Animations
+
+All animation-heavy interfaces must use GSAP for professional motion design.
+
+**Scroll-Triggered Reveals:**
+```typescript
+// Example: Stagger-in elements on scroll
+gsap.from('.card', {
+  scrollTrigger: {
+    trigger: '.cards-container',
+    start: 'top 80%',
+    end: 'bottom 20%',
+    toggleActions: 'play none none reverse'
+  },
+  y: 60,
+  opacity: 0,
+  duration: 0.8,
+  stagger: 0.15,
+  ease: 'power3.out'
+});
+```
+
+**Video Frame Scrolling:**
+```typescript
+// Scrub through video frames based on scroll position
+gsap.to(videoElement, {
+  scrollTrigger: {
+    trigger: '.video-section',
+    start: 'top top',
+    end: '+=200%',
+    scrub: 1,
+    pin: true,
+    onUpdate: (self) => {
+      const frame = Math.floor(self.progress * (totalFrames - 1));
+      videoElement.currentTime = (frame / fps);
+    }
+  }
+});
+```
+
+**Magnetic Hover Effects:**
+```typescript
+// Buttons follow cursor within bounds
+const button = document.querySelector('.magnetic-button');
+
+button.addEventListener('mousemove', (e) => {
+  const rect = button.getBoundingClientRect();
+  const x = e.clientX - rect.left - rect.width / 2;
+  const y = e.clientY - rect.top - rect.height / 2;
+  
+  gsap.to(button, {
+    x: x * 0.3,
+    y: y * 0.3,
+    duration: 0.3,
+    ease: 'power2.out'
+  });
+});
+
+button.addEventListener('mouseleave', () => {
+  gsap.to(button, { x: 0, y: 0, duration: 0.5, ease: 'elastic.out(1, 0.5)' });
+});
+```
+
+### 4A.4 Premium Typography
+
+**Font Stack:**
+```css
+/* Headings — geometric sans with authority */
+--font-heading: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
+
+/* Body — highly legible, neutral */
+--font-body: 'Inter', 'SF Pro Text', -apple-system, sans-serif;
+
+/* Code — monospace with ligatures */
+--font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+```
+
+**Type Scale (1.25 ratio):**
+```typescript
+export const typography = {
+  xs:   { size: '0.75rem',  lineHeight: '1rem',    weight: 400 },  // 12px
+  sm:   { size: '0.875rem', lineHeight: '1.25rem', weight: 400 },  // 14px
+  base: { size: '1rem',     lineHeight: '1.5rem',  weight: 400 },  // 16px
+  lg:   { size: '1.125rem', lineHeight: '1.75rem', weight: 500 },  // 18px
+  xl:   { size: '1.25rem',  lineHeight: '1.75rem', weight: 600 },  // 20px
+  '2xl': { size: '1.5rem',   lineHeight: '2rem',    weight: 700 },  // 24px
+  '3xl': { size: '1.875rem', lineHeight: '2.25rem', weight: 700 },  // 30px
+  '4xl': { size: '2.25rem',  lineHeight: '2.5rem',  weight: 800 },  // 36px
+  '5xl': { size: '3rem',     lineHeight: '1',       weight: 900 },  // 48px
+};
+```
+
+### 4A.5 Premium Interactions
+
+**Micro-interactions — Every interaction has feedback:**
+```typescript
+// Button press feedback
+<button
+  onPointerDown={() => gsap.to(ref.current, { scale: 0.95, duration: 0.1 })}
+  onPointerUp={() => gsap.to(ref.current, { scale: 1, duration: 0.2, ease: 'back.out(1.7)' })}
+>
+  Click me
+</button>
+
+// Success confirmation animation
+const showSuccess = () => {
+  gsap.timeline()
+    .to('.icon', { scale: 0, duration: 0.15 })
+    .to('.icon', { scale: 1.2, duration: 0.4, ease: 'back.out(2)' })
+    .to('.icon', { scale: 1, duration: 0.2 });
+};
+```
+
+**Progressive Disclosure:**
+- Content reveals as user scrolls or hovers
+- Advanced options hidden behind "Show more" until needed
+- Complexity introduced gradually, not all at once
+
+**Haptic Feedback (when available):**
+```typescript
+// Web Vibration API for mobile
+const hapticFeedback = (type: 'light' | 'medium' | 'heavy') => {
+  if ('vibrate' in navigator) {
+    const patterns = {
+      light: 10,
+      medium: 20,
+      heavy: [20, 10, 20]
+    };
+    navigator.vibrate(patterns[type]);
+  }
+};
+```
+
+### 4A.6 Motion-Sites Style Master Prompts
+
+For frontend/UI-focused projects, Foundrie generates comprehensive "master prompts" that enable one-command project recreation (similar to https://motionsites.ai/).
+
+**Master Prompt Structure:**
+```markdown
+# Master Prompt: [Project Name]
+
+You are a Principal Creative Technologist with expertise in [tech stack].
+
+## Objective
+[Complete description of what to build]
+
+## Tech Stack
+[Exact versions and libraries]
+
+## Design Tokens
+[All colors, typography, spacing, radius, motion values]
+
+## Components
+[Every component with props, behavior, styling rules]
+
+## Animations
+[All GSAP/Framer Motion animations with exact timing/easing]
+
+## Pages & Routes
+[Every page/route with layout and content structure]
+
+## Assets
+[All media assets with Cloudinary URLs or placeholders]
+
+## Implementation Order
+[Step-by-step build sequence]
+```
+
+Master prompts stored in `/prompts/master-prompt.md` within the exported ZIP.
+
+### 4A.7 Award-Winning Project Checklist
+
+For projects targeting Awwwards, FWA, or CSS Design Awards:
+
+- [ ] Custom cursor with context-aware states
+- [ ] Page transition animations (route changes)
+- [ ] Scroll-triggered reveals with GSAP ScrollTrigger
+- [ ] At least one "hero moment" (3D, video frames, or canvas animation)
+- [ ] Magnetic or parallax interactions
+- [ ] Premium typography with proper hierarchy
+- [ ] Glass morphism or depth-layered surfaces
+- [ ] Smooth scroll implementation (Lenis or similar)
+- [ ] Preloader with brand animation
+- [ ] Sound design (optional but impactful)
+- [ ] Mobile-optimized gestures and touch interactions
+- [ ] Performance budget: LCP < 2.5s, FID < 100ms, CLS < 0.1
+- [ ] Accessibility: WCAG 2.1 AA minimum (AAA where possible)
+
+---
+
 ## 5. CODING STANDARDS
 
 ### 5.1 TypeScript Rules

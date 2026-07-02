@@ -17,7 +17,7 @@ Implementation is strictly one feature spec at a time. Roadmap phase labels are 
 2. Read `ARTKINS_STYLE_GUIDE.md`.
 3. Read `research/PROJECT_RESEARCH.md` and any research files/assets referenced by the current feature.
 4. Read `research/FOUNDRIE_RESEARCH.md` (and the relevant versioned `FOUNDRIE_V*.md` when you need the changelog or exact wording).
-5. Read all six context files in order.
+5. Read all 9+ specialized context files in order (project-overview, architecture-context, build-plan, code-standards, library-docs, ui-tokens, ui-rules, ui-registry, ai-workflow-rules, progress-tracker).
 6. Read the current feature spec.
 7. Read `progress-tracker.md`.
 8. Use Context7 for current docs for every framework, SDK, CLI, or cloud service the feature touches.
@@ -86,6 +86,179 @@ Key skill groups include:
 - For Foundrie's own generation features and for every generated project, no feature spec is written before all applicable diagrams are generated and approved.
 - The System Context Diagram is generated and approved first; the Feature Dependency Graph drives spec ordering.
 - A downstream agent (RUWA) reads diagrams before context files and never implements a database table, API route, or component absent from the corresponding diagram — it reports the discrepancy instead. The diagram is the truth; the spec is an instruction derived from it.
+
+## Semantic Phase Detection Rules (V15.0.0)
+
+Foundrie V15 introduces dynamic phase completion detection. The discovery protocol is no longer fixed at 8 phases. Instead, the AI classifies projects as SIMPLE, STANDARD, or COMPLEX and adapts the phase flow accordingly.
+
+### Project Complexity Classification
+
+**SIMPLE** (3-4 phases, 5-10 messages)
+- Landing pages, portfolios, marketing sites, single-feature tools
+- Limited backend, mostly static content with forms
+- Examples: "Build a portfolio site with dark theme", "Landing page for SaaS product"
+
+**STANDARD** (6-7 phases, 15-25 messages)
+- SaaS applications, CRUD apps, content platforms
+- Full-stack with database, auth, API, moderate complexity
+- Examples: "Task management app with teams", "Blog platform with CMS"
+
+**COMPLEX** (8+ phases, 30+ messages)
+- Enterprise platforms, multi-tenant systems, real-time collaboration
+- Advanced architecture, microservices, scaling concerns, integrations
+- Examples: "Real-time collaboration platform", "Multi-tenant analytics dashboard"
+
+### Classification Signals
+
+Analyze the initial project description for these signals:
+
+**SIMPLE indicators:**
+- Keywords: "landing page", "portfolio", "marketing site", "single page", "static"
+- No mention of user accounts, database, or API
+- Focus on design/branding over functionality
+- Timeline: "quick", "simple", "minimal"
+
+**STANDARD indicators:**
+- Keywords: "app", "platform", "dashboard", "CRUD", "users"
+- Mentions authentication, database, forms, basic API
+- Multiple user roles but simple hierarchy (user/admin)
+- Standard tech stack (Next.js + Prisma + Clerk)
+
+**COMPLEX indicators:**
+- Keywords: "enterprise", "multi-tenant", "microservices", "real-time", "collaboration"
+- Mentions scaling, integrations, webhooks, background jobs
+- Complex user hierarchies (organizations, teams, roles, permissions)
+- Advanced tech requirements (event streaming, graph databases, ML inference)
+
+### Phase Completion Confidence Scoring
+
+For each phase, assign a confidence score (0-100) based on semantic analysis of the conversation:
+
+**Phase 1: Problem & Users**
+- ✅ High confidence (85-100): Clear problem statement, specific user personas, measurable success criteria, timeline mentioned
+- ⚠️ Medium confidence (60-84): Problem stated but vague, user types mentioned but not detailed, success implied but not explicit
+- ❌ Low confidence (<60): Problem unclear, users not identified, no success criteria
+
+**Phase 2: Core Flows**
+- ✅ High confidence: Happy path described step-by-step, edge cases mentioned, data flow clear
+- ⚠️ Medium confidence: Main flow described but incomplete, edge cases not discussed
+- ❌ Low confidence: Vague workflow description, missing key steps
+
+**Phase 3: Scope & Constraints** (STANDARD/COMPLEX only)
+- ✅ High confidence: Explicit out-of-scope items, constraints mentioned (time/team/budget), design references provided
+- ⚠️ Medium confidence: Some constraints mentioned but incomplete
+- ❌ Low confidence: No scope boundaries, no constraints discussed
+
+**Phase 4: Technical Direction** (STANDARD/COMPLEX only)
+- ✅ High confidence: Stack preferences stated, deployment target mentioned, non-functional requirements clear
+- ⚠️ Medium confidence: Some tech preferences but not comprehensive
+- ❌ Low confidence: No technical preferences, unknown deployment target
+
+### Phase Transition Rules
+
+**Auto-advance (confidence ≥ 85%):**
+```
+System: We've covered [phase name] thoroughly. Moving to [next phase name]...
+```
+
+No explicit user confirmation needed. Log transition with confidence score.
+
+**Explicit prompt (confidence 60-84%):**
+```
+System: We have the core [phase topic] mapped out. Would you like to:
+1. Continue to [next phase] (recommended)
+2. Dive deeper into [current phase aspect]
+3. Review what we've covered so far
+```
+
+Wait for user selection before proceeding.
+
+**Hold for clarification (confidence <60%):**
+```
+System: To move forward, I need more details about [missing information]. Specifically:
+- [Required detail 1]
+- [Required detail 2]
+- [Required detail 3]
+
+Could you elaborate on these points?
+```
+
+Do not advance until confidence reaches at least 60%.
+
+### Conversation Tone Adaptation
+
+Adjust conversation formality based on complexity:
+
+**SIMPLE projects:**
+- Casual, encouraging tone
+- Short questions (1-2 sentences)
+- Fewer technical terms
+- Example: "Great! What's the main action you want visitors to take on this page?"
+
+**STANDARD projects:**
+- Professional, balanced tone
+- Medium-length questions (2-4 sentences)
+- Standard technical vocabulary
+- Example: "Now let's talk about user authentication. Will users sign up with email/password, or do you prefer social logins (Google, GitHub)?"
+
+**COMPLEX projects:**
+- Formal, precise tone
+- Detailed questions (3-6 sentences)
+- Advanced technical terminology
+- Example: "Given the multi-tenant architecture requirements, we need to decide on a tenant isolation strategy. Will you use row-level security with a shared schema, separate databases per tenant, or separate schemas within a shared database? Each approach has different trade-offs for scalability, cost, and data isolation."
+
+### Phase Transition Logging
+
+Every phase transition must log:
+```typescript
+{
+  projectId: string;
+  fromPhase: string | null;
+  toPhase: string;
+  confidence: number;
+  transitionType: 'auto' | 'explicit' | 'hold';
+  messageCount: number;
+  timestamp: Date;
+  complexity: 'SIMPLE' | 'STANDARD' | 'COMPLEX';
+}
+```
+
+### Special Cases
+
+**User explicitly requests to skip ahead:**
+```
+User: "Let's skip to the tech stack discussion."
+System: [Acknowledge, then ask missing critical info from skipped phases]
+```
+
+**User provides comprehensive initial description:**
+- May auto-advance through multiple phases if confidence high for all
+- Always confirm before skipping to diagrams: "Based on your detailed description, I have clarity on [phase 1], [phase 2], and [phase 3]. Should we proceed to architecture diagramming, or would you like to review any of these areas first?"
+
+**User contradicts earlier statements:**
+- Lower confidence for affected phases
+- Re-confirm: "Earlier you mentioned [X], but now it sounds like [Y]. Which direction should we go?"
+
+### Implementation Requirements
+
+1. **Phase detector module:** `lib/ai/phase-detector.ts`
+   - `classifyProject(description: string): Promise<ProjectComplexity>`
+   - `analyzePhaseCompletion(phase: Phase, messages: Message[]): Promise<ConfidenceScore>`
+   - `determineTransitionType(confidence: number): TransitionType`
+
+2. **System prompt updates:**
+   - Include phase detection logic
+   - Include confidence thresholds
+   - Include transition templates
+
+3. **Database schema:**
+   - `Project.complexity: Enum('SIMPLE', 'STANDARD', 'COMPLEX')`
+   - `ProjectPhaseTransition` model with all logged fields
+
+4. **UI indicators:**
+   - Show current phase and progress (e.g., "Phase 2/4" for SIMPLE, "Phase 3/8" for COMPLEX)
+   - Show confidence score when in 60-84% range
+   - Visual timeline adapts to project complexity
 
 ## Feature Spec Shape
 
