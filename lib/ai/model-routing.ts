@@ -88,7 +88,10 @@ export type AITask =
   | "feature_specs_generation"
   | "cicd_scaffolding_generation"
   | "agentic_security_generation"
-  | "scope_change_impact_analysis";
+  | "scope_change_impact_analysis"
+  // Phase completion detection (Feature 53) -> unified-rotation
+  | "project_complexity_classification"
+  | "phase_completion_analysis";
 
 /**
  * Task -> model key. This is the canonical routing table; do not select models
@@ -166,6 +169,9 @@ export const TASK_MODEL_MAP: Record<AITask, ModelKey> = {
   cicd_scaffolding_generation: "unified-rotation",
   agentic_security_generation: "unified-rotation",
   scope_change_impact_analysis: "unified-rotation",
+  // Phase completion detection (Feature 53)
+  project_complexity_classification: "unified-rotation",
+  phase_completion_analysis: "unified-rotation",
 };
 
 /** Resolve a task to its default model key. */

@@ -110,6 +110,13 @@ enum ProjectMemberRole {
   COLLABORATOR
 }
 
+// Project complexity classification for adaptive discovery (Feature 53).
+enum ProjectComplexity {
+  SIMPLE    // Landing pages, portfolios: 3-4 phases, 5-10 messages
+  STANDARD  // SaaS apps, marketplaces: 6-7 phases, 15-25 messages
+  COMPLEX   // Enterprise platforms: 8 phases, 30+ messages
+}
+
 // ----------------------------------------------------------------------------
 // Models
 // ----------------------------------------------------------------------------
@@ -157,6 +164,13 @@ model Project {
   lastZipFileName    String?
   lastZipGeneratedAt DateTime?
 
+  // Adaptive discovery (Feature 53): project complexity and phase tracking.
+  complexity        ProjectComplexity @default(STANDARD)
+  estimatedPhases   Int               @default(8)
+  estimatedMessages Int               @default(20)
+  requiredPhases    String[]          // JSON array of phase IDs
+  phaseCompletions  Json?             // Coverage data per phase
+
   user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   members           ProjectMember[]
   conversation      Conversation?
@@ -186,6 +200,10 @@ model Conversation {
 
   // Whole-document JSON: the ordered message transcript. Never selected in lists.
   messages Json @default("[]")
+
+  // Phase completion tracking (Feature 53).
+  phaseCompletionData Json?    // Store completion analysis per phase
+  autoAdvanced        Boolean @default(false) // Track if phase auto-advanced
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
