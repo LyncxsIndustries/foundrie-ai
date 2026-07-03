@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const user = await requireAuth();
     
     const body = await request.json();
-    const { projectId } = body;
+    const { projectId, mimeType } = body;
 
     if (!projectId) {
       return NextResponse.json({ error: 'Project ID required' }, { status: 400 });
@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
     // Verify project membership
     await requireProjectMember(projectId, user.id);
 
-    // Generate upload signature
-    const uploadParams = await generateUploadSignature(projectId);
+    // Generate upload signature with optional mimeType for folder organization
+    const uploadParams = await generateUploadSignature(projectId, mimeType);
 
     return NextResponse.json(uploadParams);
   } catch (error) {
