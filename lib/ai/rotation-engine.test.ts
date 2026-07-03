@@ -11,6 +11,7 @@ import { ProviderCallError } from "./providers/types";
 vi.mock("@/lib/utils/rate-limiter", () => ({
   globalRateLimiter: {
     checkLimit: vi.fn().mockResolvedValue(undefined),
+    throttle: vi.fn(async (fn) => fn()), // Mock throttle to just execute function
   },
   retryWithBackoff: vi.fn(async (fn) => fn()), // No retry delays in tests
 }));
