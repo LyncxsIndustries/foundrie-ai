@@ -1,27 +1,16 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FileCard } from "./FileCard";
 import { CategoryFilter } from "./CategoryFilter";
 import { BulkActionsBar } from "./BulkActionsBar";
 import { MediaCategory } from "@/lib/media/categories";
+import { MediaFile } from "@/lib/media/types";
 import { Search, Grid3x3, CheckSquare } from "lucide-react";
 import { SurfaceEmpty } from "@/components/shells/surface-states";
-
-interface MediaFile {
-  id: string;
-  fileName: string;
-  storageUrl: string;
-  mimeType?: string | null;
-  category?: string | null;
-  tags?: string[];
-  aiDescription?: string | null;
-  fileSize?: number | null;
-  createdAt: Date;
-}
+import { logger, generateTraceId } from "@/lib/logger";
 
 interface MediaGalleryProps {
   files: MediaFile[];
@@ -105,7 +94,13 @@ export function MediaGallery({ files, projectId, onRefresh }: MediaGalleryProps)
       onRefresh();
       handleClearSelection();
     } catch (error) {
-      console.error("Bulk category change error:", error);
+      logger.error("Bulk category change failed", {
+        trace_id: generateTraceId(),
+        project_id: projectId,
+        error: error instanceof Error ? error.message : String(error),
+        event: "bulk_category_change_error",
+        selected_count: selectedFiles.size,
+      });
       alert("Failed to update category. Please try again.");
     }
   };
@@ -127,7 +122,13 @@ export function MediaGallery({ files, projectId, onRefresh }: MediaGalleryProps)
       onRefresh();
       handleClearSelection();
     } catch (error) {
-      console.error("Bulk add tags error:", error);
+      logger.error("Bulk add tags failed", {
+        trace_id: generateTraceId(),
+        project_id: projectId,
+        error: error instanceof Error ? error.message : String(error),
+        event: "bulk_add_tags_error",
+        selected_count: selectedFiles.size,
+      });
       alert("Failed to add tags. Please try again.");
     }
   };
@@ -148,7 +149,13 @@ export function MediaGallery({ files, projectId, onRefresh }: MediaGalleryProps)
       onRefresh();
       handleClearSelection();
     } catch (error) {
-      console.error("Bulk analyze error:", error);
+      logger.error("Bulk analyze failed", {
+        trace_id: generateTraceId(),
+        project_id: projectId,
+        error: error instanceof Error ? error.message : String(error),
+        event: "bulk_analyze_error",
+        selected_count: selectedFiles.size,
+      });
       alert("Failed to analyze files. Please try again.");
     }
   };
@@ -169,7 +176,13 @@ export function MediaGallery({ files, projectId, onRefresh }: MediaGalleryProps)
       onRefresh();
       handleClearSelection();
     } catch (error) {
-      console.error("Bulk delete error:", error);
+      logger.error("Bulk delete failed", {
+        trace_id: generateTraceId(),
+        project_id: projectId,
+        error: error instanceof Error ? error.message : String(error),
+        event: "bulk_delete_error",
+        selected_count: selectedFiles.size,
+      });
       alert("Failed to delete files. Please try again.");
     }
   };
@@ -191,7 +204,13 @@ export function MediaGallery({ files, projectId, onRefresh }: MediaGalleryProps)
       
       onRefresh();
     } catch (error) {
-      console.error("Category change error:", error);
+      logger.error("Category change failed", {
+        trace_id: generateTraceId(),
+        project_id: projectId,
+        file_id: id,
+        error: error instanceof Error ? error.message : String(error),
+        event: "category_change_error",
+      });
       alert("Failed to update category. Please try again.");
     }
   };
@@ -213,14 +232,20 @@ export function MediaGallery({ files, projectId, onRefresh }: MediaGalleryProps)
       
       onRefresh();
     } catch (error) {
-      console.error("Delete error:", error);
+      logger.error("Delete failed", {
+        trace_id: generateTraceId(),
+        project_id: projectId,
+        file_id: id,
+        error: error instanceof Error ? error.message : String(error),
+        event: "delete_error",
+      });
       alert("Failed to delete file. Please try again.");
     }
   };
 
   const handleView = (id: string) => {
-    // TODO: Open lightbox/preview modal
-    console.log("View file:", id);
+    // TODO: Implement lightbox/preview modal
+    // Tracked in Feature 55 follow-up for media viewer
   };
 
   if (files.length === 0) {

@@ -7,10 +7,11 @@ import {
   BulkOperation,
 } from "@/lib/media/bulk-operations";
 import { VALID_CATEGORIES, MediaCategory } from "@/lib/media/categories";
+import { logger, generateTraceId } from "@/lib/logger";
 
 const BulkOperationSchema = z.object({
-  operation: z.enum(["update-category", "add-tags", "analyze", "delete"]),
-  fileIds: z.array(z.string()).min(1, "At least one file ID is required"),
+  operation: z.enum(["update-category", "add-tags", "delete"]),
+  fileIds: z.array(z.string()).min(1, "At least one file ID is required").max(200, "Too many files in one request"),
   data: z
     .object({
       category: z.enum(VALID_CATEGORIES as [string, ...string[]]).optional(),
@@ -23,6 +24,7 @@ export async function POST(
   req: NextRequest,
   context: { params: Promise<{ projectId: string }> }
 ) {
+  let projectId: string | undefined;
   try {
     // Auth check
     const user = await getAuthUser();
@@ -30,7 +32,8 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { projectId } = await context.params;
+    const params = await context.params;
+    projectId = params.projectId;
 
     // Project membership check (returns 404 on failure per spec)
     try {
@@ -62,7 +65,6 @@ export async function POST(
     const result = await executeBulkOperation({
       projectId,
       fileIds,
-      userId: user.id,
       operation: operation as BulkOperation,
       data: data as { category?: MediaCategory; tags?: string[] },
     });
@@ -82,7 +84,13 @@ export async function POST(
       updatedCount: result.updatedCount,
     });
   } catch (error) {
-    console.error("[BULK_OPERATION_ERROR]", error);
+    const traceId = generateTraceId();
+    logger.error("Bulk operation error", {
+      trace_id: traceId,
+      project_id: projectId,
+      error: error instanceof Error ? error.message : String(error),
+      event: "bulk_operation_error",
+    });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

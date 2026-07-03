@@ -12,20 +12,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MEDIA_CATEGORIES, MediaCategory } from "@/lib/media/categories";
+import { MediaFile } from "@/lib/media/types";
 import { Badge } from "@/components/ui/badge";
 
 interface FileCardProps {
-  file: {
-    id: string;
-    fileName: string;
-    storageUrl: string;
-    mimeType?: string | null;
-    category?: string | null;
-    tags?: string[];
-    aiDescription?: string | null;
-    fileSize?: number | null;
-    createdAt: Date;
-  };
+  file: MediaFile;
   isSelected: boolean;
   isSelectionMode: boolean;
   onSelect: (id: string) => void;
@@ -56,7 +47,7 @@ export function FileCard({
     return `${mb.toFixed(1)} MB`;
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -85,6 +76,15 @@ export function FileCard({
       <div
         className="relative aspect-square w-full cursor-pointer overflow-hidden rounded-md bg-background"
         onClick={() => onView(file.id)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onView(file.id);
+          }
+        }}
+        aria-label={`View ${file.fileName}`}
       >
         {isImage ? (
           <Image

@@ -4,12 +4,35 @@
 import { cloudinary } from './client';
 
 /**
+ * Determine media type subfolder based on MIME type.
+ */
+function getMediaTypeFolder(mimeType: string): string {
+  if (mimeType.startsWith('image/')) return 'images';
+  if (mimeType.startsWith('video/')) return 'videos';
+  if (mimeType === 'text/markdown' || mimeType.endsWith('.md')) return 'markdown';
+  // PDFs, Word docs, text files, etc.
+  return 'documents';
+}
+
+/**
  * Generate upload signature for secure client-side uploads.
  * Returns signature and required parameters for Cloudinary upload.
+ * 
+ * Folder structure: Foundrie AI Files/{projectId}/{mediaType}/
  */
-export async function generateUploadSignature(projectId: string) {
+export async function generateUploadSignature(
+  projectId: string,
+  mimeType?: string
+) {
   const timestamp = Math.round(Date.now() / 1000);
-  const folder = `foundrie/${process.env.NODE_ENV}/${projectId}`;
+  
+  // Organize files by project and media type
+  // If mimeType is provided, use specific subfolder; otherwise use root project folder
+  let folder = `Foundrie AI Files/${projectId}`;
+  if (mimeType) {
+    const mediaTypeFolder = getMediaTypeFolder(mimeType);
+    folder = `${folder}/${mediaTypeFolder}`;
+  }
 
   // Validate required environment variable
   if (!process.env.CLOUDINARY_API_SECRET) {

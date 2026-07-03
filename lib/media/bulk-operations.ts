@@ -4,13 +4,11 @@ import { MediaCategory, isValidCategory } from "./categories";
 export type BulkOperation =
   | "update-category"
   | "add-tags"
-  | "analyze"
   | "delete";
 
 export interface BulkOperationOptions {
   projectId: string;
   fileIds: string[];
-  userId: string;
   operation: BulkOperation;
   data?: {
     category?: MediaCategory;
@@ -25,7 +23,11 @@ export interface BulkOperationResult {
 }
 
 /**
- * Execute bulk operations on research assets with ownership verification
+ * Execute bulk operations on research assets.
+ * 
+ * NOTE: This function does NOT verify project ownership/membership.
+ * Callers must authorize the request (via requireProjectMember) before
+ * invoking this function.
  */
 export async function executeBulkOperation(
   options: BulkOperationOptions
@@ -102,12 +104,6 @@ export async function executeBulkOperation(
         });
 
         return { success: true, updatedCount: result.count };
-      }
-
-      case "analyze": {
-        // Analysis is handled by the analyze route, not here
-        // This operation type is used to trigger the analyze endpoint
-        return { success: true, updatedCount: 0 };
       }
 
       default:

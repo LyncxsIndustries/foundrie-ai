@@ -76,7 +76,10 @@ export function FileUpload({
         const sigResponse = await fetch('/api/media/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectId }),
+          body: JSON.stringify({ 
+            projectId,
+            mimeType: file.type, // Pass mimeType for folder organization
+          }),
         });
 
         if (!sigResponse.ok) {

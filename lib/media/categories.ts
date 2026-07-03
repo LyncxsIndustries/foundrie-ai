@@ -10,37 +10,37 @@ import {
 
 export const MEDIA_CATEGORIES = [
   {
-    id: "inspiration",
+    id: "INSPIRATION" as const,
     label: "Inspiration",
     icon: Sparkles,
     description: "Design inspiration, mood boards, reference sites",
   },
   {
-    id: "wireframes",
+    id: "WIREFRAMES" as const,
     label: "Wireframes",
     icon: Layout,
     description: "Sketches, wireframes, mockups, prototypes",
   },
   {
-    id: "branding",
+    id: "BRANDING" as const,
     label: "Branding",
     icon: Palette,
     description: "Logos, brand guidelines, color palettes, typography",
   },
   {
-    id: "technical-docs",
+    id: "TECHNICAL_DOCS" as const,
     label: "Technical Docs",
     icon: FileText,
     description: "API docs, architecture diagrams, spec sheets",
   },
   {
-    id: "competitors",
+    id: "COMPETITORS" as const,
     label: "Competitors",
     icon: TrendingUp,
     description: "Competitor screenshots, feature comparisons",
   },
   {
-    id: "general",
+    id: "GENERAL" as const,
     label: "General",
     icon: Folder,
     description: "Uncategorized research files",
