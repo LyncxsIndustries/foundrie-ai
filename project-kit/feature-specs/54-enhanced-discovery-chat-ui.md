@@ -109,7 +109,7 @@ A premium chat interface for the discovery phase that supports rich media upload
 
 Files are automatically organized by project and media type:
 
-```
+```text
 Foundrie AI Files/
   ├── {projectId}/
   │   ├── images/       (JPG, PNG, GIF, WebP, SVG)
@@ -138,6 +138,8 @@ The `mimeType` passed during upload automatically determines the subfolder:
 - Documents: PDF, DOCX, TXT, MD (up to 5MB)
 - Videos: MP4, WEBM, MOV (up to 50MB)
 - Design files: Figma links, Sketch files (via URL reference)
+
+**Note:** Folder routing is based solely on MIME type (`file.type`). Most browsers correctly report `text/markdown` for `.md` files, but some may report `text/plain`, causing markdown files to be stored in the `documents/` folder. This is acceptable as the functional behavior (storage, retrieval, download) is identical; only the organizational folder differs.
 
 ### 3. Premium Chat UI
 
@@ -1134,7 +1136,7 @@ When Feature 68 (Voice Messages) ships:
 - Size limits enforced before upload starts
 - Uploaded files scoped to project folder: `Foundrie AI Files/{projectId}/{mediaType}/`
 - Each media type isolated in its own subfolder for organization
-- Row-level security: only project members can see attachments
+- Application-layer authorization: only project members can see attachments
 - MIME type validation prevents malicious file uploads disguised as allowed types
 
 ---
