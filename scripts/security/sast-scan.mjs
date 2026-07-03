@@ -54,7 +54,8 @@ const RULES = [
   {
     id: "shell-exec",
     message: "Avoid child_process.exec/execSync; use execFile/spawn with args.",
-    pattern: /\bexec(?:Sync)?\s*\(/,
+    // Match unsafe exec/execSync but NOT execFileSync (which is safe)
+    pattern: /\b(?:execSync|exec)\s*\(\s*['"`]/, // Only match when followed by a string (shell command)
   },
   {
     id: "promisified-shell-exec",

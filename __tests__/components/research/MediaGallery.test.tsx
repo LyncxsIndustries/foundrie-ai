@@ -87,9 +87,8 @@ describe("MediaGallery", () => {
       />
     );
 
-    // Click category filter - implementation may vary based on UI library
-    // This is a placeholder test structure
-    const categoryFilter = screen.getByRole("combobox");
+    // Find category filter specifically by text content
+    const categoryFilter = screen.getByRole("combobox", { name: /all categories/i });
     fireEvent.click(categoryFilter);
 
     // Select wireframes category

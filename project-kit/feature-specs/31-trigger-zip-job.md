@@ -58,9 +58,25 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 
 - The download UI (Feature 32) and the ZIP structure itself (Feature 30).
 
+## Implemented Enhancements
+
+The following limitations have been implemented as working features:
+
+1. **✅ Task Cancellation** - Users can now cancel ZIP generation tasks mid-execution via the cancel button in the download UI. The cancel endpoint (`/api/tasks/[runId]/cancel`) calls Trigger.dev's `tasks.cancel()` API and updates the UI to show cancelled state.
+   - Implementation: Feature 02 (Task Cancellation API & UI)
+   - Files: `app/api/tasks/[runId]/cancel/route.ts`, `components/project/TaskProgressTracker.tsx`
+
+2. **✅ Progress History** - Task progress is now persisted to the database via the `TaskProgressLog` model. Users can view historical progress with timestamps, stages, progress percentages, and expandable metadata JSON for debugging.
+   - Implementation: Feature 01 (TaskProgressLog Model) + Feature 05 (Progress History Viewer)
+   - Files: `prisma/schema.prisma`, `app/api/tasks/history/[taskId]/route.ts`, `components/project/ProgressHistoryViewer.tsx`
+
+3. **⏳ Polling-based progress tracking** (500ms interval in download UI) - The current implementation uses HTTP polling to check task status. This works well but has a small latency window.
+   - **Future Enhancement**: Migrate to WebSocket streaming or Trigger.dev Realtime SDK for instant progress updates without polling latency (deferred to Post-V1).
+
 ## Future Modifications
 
 - Feature 32: The download flow triggers this job and polls its status.
+- **WebSocket Progress** (Post-V1): Replace polling with WebSocket streaming for instant progress updates (optional enhancement, not a blocker).
 
 ## Quality Gates
 

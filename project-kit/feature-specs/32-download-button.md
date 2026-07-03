@@ -62,9 +62,29 @@ MODIFY: `app/(app)/projects/[projectId]/export/page.tsx` - mount the export UI a
 
 - The ZIP build itself (Features 30–31).
 
+## Implemented Enhancements
+
+The following limitations have been implemented as working features:
+
+1. **✅ Task Cancellation** - Users can now cancel ZIP generation via the cancel button in `TaskProgressTracker`. The UI calls `/api/tasks/[runId]/cancel` which invokes Trigger.dev's `tasks.cancel()` API. Component shows "Cancelling..." during request and displays cancelled state with XCircle icon.
+   - Implementation: Feature 02 (Task Cancellation API & UI)
+   - Files: `app/api/tasks/[runId]/cancel/route.ts`, `components/project/TaskProgressTracker.tsx`
+
+2. **✅ Progress History** - Task progress logs are persisted to database via `TaskProgressLog` model. Users can view historical progress with timestamps, stages, percentages, and expandable metadata. Accessible via `ProgressHistoryViewer` component and `/api/tasks/history/[taskId]` endpoint.
+   - Implementation: Feature 01 (TaskProgressLog Model) + Feature 05 (Progress History Viewer)
+   - Files: `prisma/schema.prisma`, `app/api/tasks/history/[taskId]/route.ts`, `components/project/ProgressHistoryViewer.tsx`
+
+3. **✅ Retry Limit Tracking** - Download button now tracks retry attempts with `retryCount` state. Shows warning message after 3 failed attempts, displays "Contact Support" link after 5 failures. Retry count resets on successful download.
+   - Implementation: Feature 06 (Retry Limit Tracking)
+   - Files: `components/project/DownloadZipButton.tsx`
+
+4. **⏳ Polling-based progress (500ms interval)** - The download button polls task status every 500ms. This works well but has small latency.
+   - **Future Enhancement**: Migrate to WebSocket streaming or Trigger.dev Realtime SDK for instant progress updates (deferred to Post-V1).
+
 ## Future Modifications
 
 - Feature 39+: Collaborators (not just owners) can download via `requireProjectMember`.
+- **WebSocket Progress** (Post-V1): Replace polling with WebSocket/SSE for instant updates (optional enhancement).
 
 ## Quality Gates
 

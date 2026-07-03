@@ -90,7 +90,7 @@ describe("Bulk Operations API", () => {
       body: JSON.stringify({
         operation: "update-category",
         fileIds: ["file1", "file2", "file3"],
-        data: { category: "wireframes" },
+        data: { category: "WIREFRAMES" },
       }),
     });
 

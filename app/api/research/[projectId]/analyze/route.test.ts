@@ -19,7 +19,11 @@ vi.mock("@/lib/projects/auth", () => ({
 
 vi.mock("@/lib/db", () => ({
   db: {
-    researchAsset: { findUnique: vi.fn() },
+    researchAsset: { 
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+    },
   },
 }));
 
@@ -53,13 +57,15 @@ describe("POST /api/research/[projectId]/analyze", () => {
     vi.mocked(requireAuth).mockResolvedValue({ id: "user_1", plan: "FREE" } as never);
     vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj_1" } as never);
 
-    vi.mocked(db.researchAsset.findUnique).mockResolvedValue({
+    vi.mocked(db.researchAsset.findMany).mockResolvedValue([{
       id: "asset_1",
       projectId: "proj_1",
       assetType: "FRAME_ZIP",
-    } as never);
+    }] as never);
+    
+    vi.mocked(db.researchAsset.update).mockResolvedValue({} as never);
 
-    vi.mocked(analyzeMotionAsset).mockResolvedValue({ id: "doc_1" } as never);
+    vi.mocked(analyzeMotionAsset).mockResolvedValue({ id: "doc_1", content: "Motion analysis result" } as never);
 
     const req = new NextRequest("http://localhost/api/research/proj_1/analyze", {
       method: "POST",
@@ -69,7 +75,8 @@ describe("POST /api/research/[projectId]/analyze", () => {
     const res = await POST(req, { params: Promise.resolve({ projectId: "proj_1" }) });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.doc.id).toBe("doc_1");
+    expect(body.doc.fileId).toBe("asset_1");
+    expect(body.doc.status).toBe("success");
     expect(analyzeMotionAsset).toHaveBeenCalledWith("proj_1", "asset_1", "FREE");
   });
 
@@ -77,13 +84,15 @@ describe("POST /api/research/[projectId]/analyze", () => {
     vi.mocked(requireAuth).mockResolvedValue({ id: "user_1", plan: "FREE" } as never);
     vi.mocked(requireProjectMember).mockResolvedValue({ id: "proj_1" } as never);
 
-    vi.mocked(db.researchAsset.findUnique).mockResolvedValue({
+    vi.mocked(db.researchAsset.findMany).mockResolvedValue([{
       id: "asset_1",
       projectId: "proj_1",
       assetType: "IMAGE_ASSET",
-    } as never);
+    }] as never);
+    
+    vi.mocked(db.researchAsset.update).mockResolvedValue({} as never);
 
-    vi.mocked(analyzeVisualAsset).mockResolvedValue({ id: "doc_1" } as never);
+    vi.mocked(analyzeVisualAsset).mockResolvedValue({ id: "doc_1", content: "Visual analysis result" } as never);
 
     const req = new NextRequest("http://localhost/api/research/proj_1/analyze", {
       method: "POST",

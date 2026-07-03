@@ -39,6 +39,7 @@ export function DownloadZipButton({ projectId }: DownloadZipButtonProps) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
+  const [retryCount, setRetryCount] = useState<number>(0);
 
   // Polling effect
   useEffect(() => {
@@ -61,6 +62,7 @@ export function DownloadZipButton({ projectId }: DownloadZipButtonProps) {
           setFileName(data.fileName);
           setState("ready");
           setProgress(100);
+          setRetryCount(0); // Reset on success
           clearInterval(pollInterval);
         } else if (data.status === "failed") {
           setState("error");
@@ -103,6 +105,7 @@ export function DownloadZipButton({ projectId }: DownloadZipButtonProps) {
         setFileName(data.fileName);
         setState("ready");
         setProgress(100);
+        setRetryCount(0); // Reset on success
         
         // Trigger browser download
         const link = document.createElement("a");
@@ -121,6 +124,7 @@ export function DownloadZipButton({ projectId }: DownloadZipButtonProps) {
     } catch (err) {
       setState("error");
       setError("Failed to prepare download");
+      setRetryCount(prev => prev + 1); // Increment on error
     }
   };
 
@@ -142,21 +146,58 @@ export function DownloadZipButton({ projectId }: DownloadZipButtonProps) {
     document.body.removeChild(link);
 
     // Reset to idle after download
-    setTimeout(() => setState("idle"), 2000);
+    setTimeout(() => {
+      setState("idle");
+      setRetryCount(0); // Reset retry count after successful download
+    }, 2000);
   };
 
   if (state === "error") {
     return (
-      <div className="flex items-center gap-3 rounded-lg border border-border-error bg-surface-error/10 p-4">
-        <AlertCircle className="h-5 w-5 text-text-error" />
-        <div className="flex-1">
-          <p className="text-sm font-medium text-text-error">
-            {error || "Download failed"}
-          </p>
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 rounded-lg border border-border-error bg-surface-error/10 p-4">
+          <AlertCircle className="h-5 w-5 text-text-error" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-text-error">
+              {error || "Download failed"}
+            </p>
+            {retryCount > 0 && (
+              <p className="text-xs text-text-tertiary mt-1">
+                Retry attempt {retryCount}
+              </p>
+            )}
+          </div>
+          <Button onClick={handleRetry} variant="outline" size="sm">
+            Retry
+          </Button>
         </div>
-        <Button onClick={handleRetry} variant="outline" size="sm">
-          Retry
-        </Button>
+
+        {/* Warning after 3 attempts */}
+        {retryCount >= 3 && retryCount < 5 && (
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
+            <p className="text-sm text-yellow-800">
+              <strong>Multiple retries detected.</strong> If the issue persists, try refreshing
+              the page or check your network connection.
+            </p>
+          </div>
+        )}
+
+        {/* Support link after 5 attempts */}
+        {retryCount >= 5 && (
+          <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
+            <p className="text-sm text-orange-800 mb-2">
+              <strong>Still having trouble?</strong> This might be a server issue.
+            </p>
+            <a
+              href="/support"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-orange-600 hover:text-orange-700 underline"
+            >
+              Contact Support →
+            </a>
+          </div>
+        )}
       </div>
     );
   }

@@ -2,7 +2,15 @@
 
 ## Contract Synchronization Gate
 
-Any implementation change that corrects or changes a contract must be reflected in the same branch across the affected feature spec, dependent future specs, relevant context files, root AGENTS.md, and progress-tracker.md. Contracts include Prisma fields and relations, route signatures, auth helper signatures, AI task names and callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, and file ownership. A feature is not ready for review while later specs or context still describe stale fields, old API shapes, or invalid contracts.
+**CRITICAL:** Any implementation change that corrects or changes a contract must be reflected in the same branch across the affected feature spec, dependent future specs, relevant context files, root AGENTS.md, and progress-tracker.md. Contracts include Prisma fields and relations, route signatures, auth helper signatures, AI task names and callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, and file ownership.
+
+**VERIFICATION GATE:** Before any commit, push, or PR, these scripts MUST pass:
+- `npm run sync:check` — verifies contract synchronization
+- `npm run security:all` — SAST, dependency audit, secret detection
+- `npm run test` — all tests must pass
+- `npm run build` — build must succeed with no errors
+
+These gates are enforced in `package.json` scripts and `.husky/pre-commit` hook. A feature is not ready for review while later specs or context still describe stale fields, old API shapes, or invalid contracts.
 
 
 ## General

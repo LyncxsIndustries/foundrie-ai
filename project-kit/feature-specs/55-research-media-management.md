@@ -208,7 +208,7 @@ Generate `/research/FILES.md` manifest:
 Verify `ResearchFile` model has required fields:
 
 ```prisma
-model ResearchFile {
+model ResearchAsset {
   id                 String   @id @default(cuid())
   projectId          String
   project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)

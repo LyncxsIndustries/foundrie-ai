@@ -28,6 +28,11 @@ describe("Bulk Operations", () => {
   });
 
   describe("executeBulkOperation", () => {
+    beforeEach(() => {
+      // Mock project access verification
+      vi.mocked(db.project.findFirst).mockResolvedValue({ id: "proj1" } as any);
+    });
+
     it("updates category for multiple files", async () => {
       vi.mocked(db.researchAsset.updateMany).mockResolvedValue({ count: 3 });
 

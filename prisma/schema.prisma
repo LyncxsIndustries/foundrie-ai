@@ -209,6 +209,7 @@ model Project {
   researchSources   ResearchSource[]
   agentSkills       ProjectAgentSkill[]
   executionPlans    ExecutionPlan[]
+  taskProgressLogs  TaskProgressLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -515,4 +516,28 @@ model ProjectMember {
   @@unique([projectId, userId])
   @@index([userId])
   @@index([projectId, role])
+}
+
+// Task progress history for replay, debugging, and support (Feature 55 enhancement).
+// Stores snapshots of task metadata during execution for timeline visualization.
+model TaskProgressLog {
+  id String @id @default(cuid())
+
+  taskId String // Trigger.dev run ID
+  projectId String
+  taskType String // "generate-project-zip", "generate-diagrams", etc.
+  
+  // Progress snapshot
+  stage String // "initializing", "building-zip", "uploading", etc.
+  progress Int // 0-100
+  message String
+  metadata Json? // Additional metadata snapshot (buildSteps, errors, etc.)
+  
+  timestamp DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([projectId, timestamp(sort: Desc)])
+  @@index([projectId, taskType, timestamp(sort: Desc)])
 }

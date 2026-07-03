@@ -10,10 +10,14 @@ import { generateRootFolderName, buildZipPath } from './zip-structure';
 import { ContextFileType } from '@/lib/generated/prisma/enums';
 import { get } from '@vercel/blob';
 import { getCategoryInfo } from '@/lib/media/categories';
+import type { ZipBuildOptions } from '@/trigger/types';
 
-interface BuildZipOptions {
+interface BuildZipOptionsLegacy {
   includeResearchAssets?: boolean;
 }
+
+// Merge legacy options with new progress-enabled options
+type BuildZipOptionsComplete = BuildZipOptionsLegacy & ZipBuildOptions;
 
 /**
  * Error placeholder for missing diagram PNGs
@@ -89,13 +93,24 @@ async function downloadBlobAsset(blobUrl: string): Promise<Buffer | null> {
  */
 export async function buildProjectZip(
   projectId: string,
-  options: BuildZipOptions = {}
+  options: BuildZipOptionsComplete = {}
 ): Promise<Buffer> {
-  const { includeResearchAssets = true } = options;
+  const { includeResearchAssets = true, onProgress } = options;
+  
+  // Helper to report progress
+  const reportProgress = (step: string, percent: number) => {
+    if (onProgress) {
+      onProgress(step, percent);
+    }
+  };
+  
+  reportProgress("Starting ZIP build...", 0);
 
   // Fetch all data in a consistent snapshot
+  reportProgress("Fetching project data...", 5);
   const projectData = await db.$transaction(
     async (tx) => {
+      reportProgress("Loading project metadata...", 10);
       const project = await tx.project.findUnique({
         where: { id: projectId },
         select: {
@@ -181,18 +196,24 @@ export async function buildProjectZip(
     }
   );
 
+  reportProgress("Creating ZIP structure...", 15);
+  
   // Create ZIP instance
   const zip = new JSZip();
   const rootFolder = generateRootFolderName(projectData.slug);
   const root = zip.folder(rootFolder);
   if (!root) throw new Error('Failed to create root folder');
 
+  reportProgress("Adding root files...", 20);
+  
   // Add root files
   root.file('AGENTS.md', generateAgentsMd(projectData));
   root.file('ARTKINS_STYLE_GUIDE.md', getArtkinsStyeGuide());
   root.file('.env.example', generateEnvExample());
   root.file('.npmrc', 'save-exact=true\nengine-strict=true\n');
 
+  reportProgress("Adding context files...", 25);
+  
   // Add context files
   const contextFolder = root.folder('context');
   if (contextFolder) {
@@ -202,6 +223,8 @@ export async function buildProjectZip(
     }
   }
 
+  reportProgress("Adding feature specifications...", 30);
+  
   // Add feature specs
   const specsFolder = root.folder('feature-specs');
   if (specsFolder) {
@@ -211,9 +234,14 @@ export async function buildProjectZip(
     }
   }
 
+  reportProgress("Processing diagrams...", 35);
+  
   // Add diagrams (mandatory - ZIP is invalid without this folder)
   const diagramsFolder = root.folder('diagrams');
   if (diagramsFolder) {
+    const totalDiagrams = projectData.diagrams.length;
+    let processedDiagrams = 0;
+    
     for (const diagram of projectData.diagrams) {
       const categoryFolder = diagramsFolder.folder(diagram.category);
       if (!categoryFolder) continue;
@@ -250,14 +278,23 @@ export async function buildProjectZip(
       // are generated on-demand in Feature 21 and stored as separate files.
       // They are not part of the Diagram model in the database.
       // Future enhancement could add these as separate related records.
+      
+      // Report diagram progress (35-50% range)
+      processedDiagrams++;
+      const diagramPercent = 35 + Math.floor((processedDiagrams / totalDiagrams) * 15);
+      reportProgress(`Processing diagram ${processedDiagrams}/${totalDiagrams}...`, diagramPercent);
     }
   }
 
+  reportProgress("Adding research files...", 50);
+  
   // Add research folder
   const researchFolder = root.folder('research');
   if (researchFolder) {
     researchFolder.file('PROJECT_RESEARCH.md', generateProjectResearchMd(projectData));
 
+    reportProgress("Adding research documents...", 55);
+    
     // Add research documents
     if (projectData.researchDocuments.length > 0) {
       const docsFolder = researchFolder.folder('documents');
@@ -271,6 +308,8 @@ export async function buildProjectZip(
       }
     }
 
+    reportProgress("Downloading research assets...", 60);
+    
     // Add research assets (organized by category)
     if (includeResearchAssets && projectData.researchAssets.length > 0) {
       const assetsFolder = researchFolder.folder('assets');
@@ -284,6 +323,9 @@ export async function buildProjectZip(
           }
           assetsByCategory.get(category)!.push(asset);
         }
+
+        const totalAssets = projectData.researchAssets.length;
+        let processedAssets = 0;
 
         // Create category folders and add assets
         for (const [category, assets] of assetsByCategory.entries()) {
@@ -307,6 +349,11 @@ export async function buildProjectZip(
                 createAssetPlaceholder(asset.fileName, asset.storageUrl, 'Download failed')
               );
             }
+            
+            // Report asset progress (60-70% range)
+            processedAssets++;
+            const assetPercent = 60 + Math.floor((processedAssets / totalAssets) * 10);
+            reportProgress(`Downloading asset ${processedAssets}/${totalAssets}...`, assetPercent);
           }
         }
 
@@ -316,6 +363,8 @@ export async function buildProjectZip(
     }
   }
 
+  reportProgress("Adding requirements folder...", 70);
+  
   // Add requirements folder
   const requirementsFolder = root.folder('requirements');
   if (requirementsFolder) {
@@ -342,18 +391,24 @@ export async function buildProjectZip(
     }
   }
 
+  reportProgress("Adding documentation folders...", 72);
+  
   // Add docs folder (placeholder structure for now)
   const docsFolder = root.folder('docs');
   if (docsFolder) {
     docsFolder.file('README.md', '# Documentation\n\nProduction documentation will be added in future features.\n');
   }
 
+  reportProgress("Adding GitHub configuration...", 74);
+  
   // Add .github folder
   const githubFolder = root.folder('.github');
   if (githubFolder) {
     githubFolder.file('CODEOWNERS', '# Code owners will be configured per project\n');
   }
 
+  reportProgress("Adding agent skills...", 76);
+  
   // Conditional: Add agent skills if present
   if (projectData.agentSkills.length > 0) {
     const agentsFolder = root.folder('.agents');
@@ -370,12 +425,18 @@ export async function buildProjectZip(
     }
   }
 
+  reportProgress("Compressing ZIP file...", 80);
+  
   // Generate the ZIP buffer
-  return await zip.generateAsync({
+  const zipBuffer = await zip.generateAsync({
     type: 'nodebuffer',
     compression: 'DEFLATE',
     compressionOptions: { level: 6 },
   });
+
+  reportProgress("ZIP generation complete!", 100);
+  
+  return zipBuffer;
 }
 
 /**
