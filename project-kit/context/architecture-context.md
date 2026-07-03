@@ -149,13 +149,40 @@ Foundrie acts as a dynamic skill installer for generated projects: it parses ins
 
 Foundrie uses Cloudinary as the primary media storage layer for user-uploaded discovery content. All images, videos, documents, and screenshots uploaded during the discovery conversation are stored in Cloudinary and referenced by URL in the database.
 
+**Folder Organization:**
+
+Files are automatically organized by project and media type in a structured hierarchy:
+
+```
+Foundrie AI Files/
+  ├── {projectId}/
+  │   ├── images/       (JPG, PNG, GIF, WebP, SVG)
+  │   ├── videos/       (MP4, WebM, MOV)
+  │   ├── markdown/     (MD files)
+  │   └── documents/    (PDF, DOCX, TXT, etc.)
+```
+
+The folder structure is determined automatically during upload:
+- MIME type `image/*` → `Foundrie AI Files/{projectId}/images/`
+- MIME type `video/*` → `Foundrie AI Files/{projectId}/videos/`
+- MIME type `text/markdown` → `Foundrie AI Files/{projectId}/markdown/`
+- All other documents → `Foundrie AI Files/{projectId}/documents/`
+
+This organization ensures:
+- Clear separation between media types for easy browsing in Cloudinary dashboard
+- Isolated project storage (all files for a project in one top-level folder)
+- Type-safe queries when fetching specific media categories
+- Predictable paths for ZIP export organization
+
 **Storage Flow:**
 1. User uploads file via drag-and-drop or file picker in discovery chat
 2. Client validates file type and size (images ≤10MB, videos ≤100MB, documents ≤25MB)
-3. File uploaded directly to Cloudinary via signed upload API
-4. Cloudinary returns secure URL and metadata (public_id, format, dimensions, duration)
-5. URL and metadata stored in Neon database `research_files` table with project association
-6. AI can reference uploaded media during discovery conversation
+3. Client sends file with `projectId` and `mimeType` to signature endpoint
+4. Server generates signed upload URL with project-specific folder path based on MIME type
+5. File uploads directly to Cloudinary into the appropriate subfolder
+6. Cloudinary returns secure URL and metadata (public_id, format, dimensions, duration)
+7. URL and metadata stored in Neon database `research_files` table with project association
+8. AI can reference uploaded media during discovery conversation
 
 **Supported File Types:**
 - Images: PNG, JPG, WebP, SVG, GIF
@@ -168,6 +195,7 @@ Foundrie uses Cloudinary as the primary media storage layer for user-uploaded di
 - Image transformations (thumbnails, responsive sizes)
 - Video transcoding and streaming
 - CDN delivery with global edge caching
+- Folder-based organization for project isolation
 
 ### ZIP Export Media Inclusion
 

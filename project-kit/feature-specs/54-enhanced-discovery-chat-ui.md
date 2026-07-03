@@ -105,12 +105,33 @@ A premium chat interface for the discovery phase that supports rich media upload
 - CDN included
 - Better economics than Vercel Blob for media-heavy use
 
+**Folder Organization:**
+
+Files are automatically organized by project and media type:
+
+```
+Foundrie AI Files/
+  ├── {projectId}/
+  │   ├── images/       (JPG, PNG, GIF, WebP, SVG)
+  │   ├── videos/       (MP4, WebM, MOV)
+  │   ├── markdown/     (MD files)
+  │   └── documents/    (PDF, DOCX, TXT, etc.)
+```
+
+The `mimeType` passed during upload automatically determines the subfolder:
+- `image/*` → `images/`
+- `video/*` → `videos/`
+- `text/markdown` → `markdown/`
+- All other documents → `documents/`
+
 **Upload Flow:**
 1. User clicks attachment icon or drags file into chat
 2. File validated client-side (type, size)
-3. Upload to Cloudinary via signed upload widget
-4. Cloudinary URL saved to DB with message
-5. AI can "see" images (vision model) or reference documents
+3. Component requests signed upload signature from `/api/media/upload` with `projectId` and `mimeType`
+4. Server generates signature with project-specific folder path
+5. File uploads directly to Cloudinary into the appropriate subfolder
+6. Cloudinary URL saved to DB with message
+7. AI can "see" images (vision model) or reference documents
 
 **Supported File Types:**
 - Images: JPG, PNG, GIF, WEBP, SVG (up to 10MB)
@@ -181,9 +202,40 @@ export { cloudinary };
 // lib/cloudinary/upload.ts
 import { cloudinary } from './client';
 
-export async function generateUploadSignature(projectId: string) {
+/**
+ * Determine media type subfolder based on MIME type.
+ * Organizes uploads into images/, videos/, markdown/, or documents/
+ */
+function getMediaTypeFolder(mimeType: string): string {
+  if (mimeType.startsWith('image/')) return 'images';
+  if (mimeType.startsWith('video/')) return 'videos';
+  if (mimeType === 'text/markdown' || mimeType.endsWith('.md')) return 'markdown';
+  // PDFs, Word docs, text files, etc.
+  return 'documents';
+}
+
+/**
+ * Generate upload signature for secure client-side uploads.
+ * 
+ * Folder structure: Foundrie AI Files/{projectId}/{mediaType}/
+ * - Images → Foundrie AI Files/{projectId}/images/
+ * - Videos → Foundrie AI Files/{projectId}/videos/
+ * - Markdown → Foundrie AI Files/{projectId}/markdown/
+ * - Documents → Foundrie AI Files/{projectId}/documents/
+ */
+export async function generateUploadSignature(
+  projectId: string,
+  mimeType?: string
+) {
   const timestamp = Math.round(Date.now() / 1000);
-  const folder = `foundrie/${process.env.NODE_ENV}/${projectId}`;
+  
+  // Organize files by project and media type
+  // If mimeType is provided, use specific subfolder; otherwise use root project folder
+  let folder = `Foundrie AI Files/${projectId}`;
+  if (mimeType) {
+    const mediaTypeFolder = getMediaTypeFolder(mimeType);
+    folder = `${folder}/${mediaTypeFolder}`;
+  }
   
   // Validate required environment variable
   if (!process.env.CLOUDINARY_API_SECRET) {
@@ -349,7 +401,10 @@ export function FileUpload({
       const sigResponse = await fetch('/api/media/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId }),
+        body: JSON.stringify({ 
+          projectId,
+          mimeType: file.type, // Pass mimeType for folder organization
+        }),
       });
 
       if (!sigResponse.ok) {
@@ -1077,8 +1132,10 @@ When Feature 68 (Voice Messages) ships:
 - Signed URLs expire after 1 hour
 - File type validation on both client and Cloudinary side
 - Size limits enforced before upload starts
-- Uploaded files scoped to project folder: `foundrie/{env}/{projectId}/`
-- Row-level security: only project owner can see attachments
+- Uploaded files scoped to project folder: `Foundrie AI Files/{projectId}/{mediaType}/`
+- Each media type isolated in its own subfolder for organization
+- Row-level security: only project members can see attachments
+- MIME type validation prevents malicious file uploads disguised as allowed types
 
 ---
 
