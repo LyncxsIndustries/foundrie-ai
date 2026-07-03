@@ -181,16 +181,21 @@ export { cloudinary };
 // lib/cloudinary/upload.ts
 import { cloudinary } from './client';
 
-export async function generateUploadSignature() {
+export async function generateUploadSignature(projectId: string) {
   const timestamp = Math.round(Date.now() / 1000);
-  const folder = `foundrie/${process.env.NODE_ENV}`;
+  const folder = `foundrie/${process.env.NODE_ENV}/${projectId}`;
+  
+  // Validate required environment variable
+  if (!process.env.CLOUDINARY_API_SECRET) {
+    throw new Error('CLOUDINARY_API_SECRET is not configured');
+  }
   
   const signature = cloudinary.utils.api_sign_request(
     {
       timestamp,
       folder,
     },
-    process.env.CLOUDINARY_API_SECRET!
+    process.env.CLOUDINARY_API_SECRET
   );
 
   return {
@@ -216,18 +221,24 @@ export function getOptimizedImageUrl(publicId: string, width: number = 800) {
 ### 2. Database Schema
 
 ```prisma
+// Individual message in a conversation (Feature 54).
 model ConversationMessage {
-  id          String   @id @default(cuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  role        MessageRole
-  content     String   @db.Text
-  phaseId     String?
-  metadata    Json?
-  attachments Attachment[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String       @id @default(cuid())
+  conversationId String
+  projectId      String       // Denormalized for query performance
+  role           MessageRole
+  content        String       @db.Text
+  phaseId        String?
+  metadata       Json?
 
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  project      Project       @relation("conversationMessages", fields: [projectId], references: [id], onDelete: Cascade)
+  attachments  Attachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([conversationId, createdAt])
   @@index([projectId, createdAt])
 }
 
@@ -263,6 +274,11 @@ enum MessageRole {
 }
 ```
 
+**Schema Notes:**
+- `ConversationMessage.projectId` has a foreign key constraint to `Project` for data integrity
+- Queries fetching conversation messages include a `take: 200` limit to prevent unbounded result sets
+- The `AttachmentType` enum is used throughout for type safety (no raw strings)
+
 ### 3. File Upload Component
 
 ```typescript
@@ -275,7 +291,9 @@ import { Upload, X, File, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface FileUploadProps {
-  onUploadComplete: (url: string, metadata: AttachmentMetadata) => void;
+  projectId: string;
+  onUploadComplete: (metadata: AttachmentMetadata) => void;
+  onCancel?: () => void;
   maxSizeMB?: number;
   accept?: Record<string, string[]>;
 }
@@ -292,37 +310,56 @@ interface AttachmentMetadata {
 }
 
 export function FileUpload({ 
+  projectId,
   onUploadComplete, 
+  onCancel,
   maxSizeMB = 10,
   accept = {
-    'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
+    'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'],
     'application/pdf': ['.pdf'],
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
     'text/plain': ['.txt'],
     'text/markdown': ['.md'],
+    'video/mp4': ['.mp4'],
+    'video/webm': ['.webm'],
+    'video/quicktime': ['.mov'],
   }
 }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
 
+    setError(null);
+
     // Validate size
     if (file.size > maxSizeMB * 1024 * 1024) {
-      alert(`File too large. Max size: ${maxSizeMB}MB`);
+      setError(`File too large. Max size: ${maxSizeMB}MB`);
       return;
     }
 
     setUploading(true);
+    setProgress(10);
 
     try {
-      // Get upload signature from API
-      const sigResponse = await fetch('/api/media/upload/signature');
-      const { signature, timestamp, cloudName, apiKey, folder } = await sigResponse.json();
+      // Get upload signature from API (includes project auth check)
+      const sigResponse = await fetch('/api/media/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
 
-      // Upload to Cloudinary
+      if (!sigResponse.ok) {
+        throw new Error('Failed to get upload signature');
+      }
+
+      const { signature, timestamp, cloudName, apiKey, folder } = await sigResponse.json();
+      setProgress(20);
+
+      // Upload to Cloudinary with XMLHttpRequest for real progress tracking
       const formData = new FormData();
       formData.append('file', file);
       formData.append('signature', signature);
@@ -330,15 +367,44 @@ export function FileUpload({
       formData.append('api_key', apiKey);
       formData.append('folder', folder);
 
-      const uploadResponse = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
 
-      const result = await uploadResponse.json();
+      // Use XMLHttpRequest for upload progress events
+      const result = await new Promise<any>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 80) + 20; // 20-100%
+            setProgress(percentComplete);
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (e) {
+              reject(new Error('Invalid response from Cloudinary'));
+            }
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error('Network error during upload'));
+        });
+
+        xhr.addEventListener('abort', () => {
+          reject(new Error('Upload cancelled'));
+        });
+
+        xhr.open('POST', uploadUrl);
+        xhr.send(formData);
+      });
+
+      setProgress(100);
 
       // Determine attachment type
       const type = file.type.startsWith('image/') 
@@ -358,55 +424,95 @@ export function FileUpload({
         height: result.height,
       };
 
-      onUploadComplete(result.secure_url, metadata);
-      setPreview(null);
+      onUploadComplete(metadata);
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Upload failed. Please try again.');
+      setError(error instanceof Error ? error.message : 'Upload failed. Please try again.');
     } finally {
       setUploading(false);
+      setProgress(0);
     }
-  }, [maxSizeMB, onUploadComplete]);
+  }, [projectId, maxSizeMB, onUploadComplete]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
     accept,
     maxFiles: 1,
     multiple: false,
+    disabled: uploading,
+    onDropRejected: (rejections) => {
+      const rejection = rejections[0];
+      if (!rejection) return;
+
+      const errors = rejection.errors.map(e => e.message).join(', ');
+      setError(`File rejected: ${errors}`);
+    },
   });
 
   return (
-    <div
-      {...getRootProps()}
-      className={`
-        border-2 border-dashed rounded-lg p-4 cursor-pointer transition-colors
-        ${isDragActive ? 'border-accent bg-accent/10' : 'border-border hover:border-accent/50'}
-        ${uploading ? 'opacity-50 pointer-events-none' : ''}
-      `}
-    >
-      <input {...getInputProps()} />
-      <div className="flex flex-col items-center gap-2 text-center">
-        {uploading ? (
-          <>
-            <Upload className="h-8 w-8 animate-bounce text-accent" />
-            <p className="text-sm text-muted">Uploading...</p>
-          </>
-        ) : (
-          <>
-            <Upload className="h-8 w-8 text-muted" />
-            <p className="text-sm text-text">
-              {isDragActive ? 'Drop file here' : 'Click or drag file to upload'}
-            </p>
-            <p className="text-xs text-muted">
-              Images, PDFs, docs (max {maxSizeMB}MB)
-            </p>
-          </>
-        )}
+    <div className="border border-border rounded-lg p-4 bg-surface">
+      <div
+        {...getRootProps()}
+        className={`
+          border-2 border-dashed rounded-lg p-8 cursor-pointer transition-colors
+          ${isDragActive ? 'border-accent bg-accent/10' : 'border-border hover:border-accent/50'}
+          ${uploading ? 'opacity-50 pointer-events-none' : ''}
+        `}
+      >
+        <input {...getInputProps()} />
+        <div className="flex flex-col items-center gap-3 text-center">
+          {uploading ? (
+            <>
+              <Upload className="h-10 w-10 animate-bounce text-accent" />
+              <div className="w-full max-w-xs">
+                <div className="h-2 bg-border rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-accent transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className="text-sm text-muted mt-2">Uploading... {progress}%</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <Upload className="h-10 w-10 text-muted" />
+              <div>
+                <p className="text-sm text-text">
+                  {isDragActive ? 'Drop file here' : 'Click or drag file to upload'}
+                </p>
+                <p className="text-xs text-muted mt-1">
+                  Images, PDFs, videos, docs (max {maxSizeMB}MB)
+                </p>
+              </div>
+            </>
+          )}
+        </div>
       </div>
+
+      {error && (
+        <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
+
+      {onCancel && !uploading && (
+        <div className="mt-3 flex justify-end">
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
 ```
+
+**FileUpload Notes:**
+- Uses XMLHttpRequest instead of fetch to enable real upload progress tracking
+- Includes `onDropRejected` handler to surface file rejection errors to users
+- Server-side authorization check via `/api/media/upload` which validates project membership
+- Progress bar accurately reflects upload state (20-100% based on actual bytes transferred)
 
 ### 4. Enhanced Chat Layout
 
@@ -472,20 +578,36 @@ export function ChatMessageList({ messages, projectId }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const prevMessageCountRef = useRef(messages.length);
+  const prevLastContentRef = useRef('');
 
-  const scrollToBottom = () => {
+  const scrollToBottom = (smooth = true) => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
-      behavior: 'smooth',
+      behavior: smooth ? 'smooth' : 'auto',
     });
   };
 
-  // Auto-scroll on new message if user is at bottom
+  // Auto-scroll on new message or streaming content if user is at bottom
   useEffect(() => {
-    if (isAtBottom) {
-      scrollToBottom();
+    const newMessageAdded = messages.length > prevMessageCountRef.current;
+    const lastMessage = messages[messages.length - 1];
+    const lastContent = lastMessage?.content || '';
+    const contentChanged = lastContent !== prevLastContentRef.current;
+    
+    prevMessageCountRef.current = messages.length;
+    prevLastContentRef.current = lastContent;
+
+    if ((newMessageAdded || contentChanged) && isAtBottom) {
+      // Small delay to ensure DOM has updated
+      setTimeout(() => scrollToBottom(), 100);
     }
-  }, [messages.length, isAtBottom]);
+  }, [messages, isAtBottom]);
+
+  // Initial scroll to bottom
+  useEffect(() => {
+    scrollToBottom(false);
+  }, []);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
@@ -510,10 +632,10 @@ export function ChatMessageList({ messages, projectId }) {
       {/* Scroll to Bottom Button */}
       {showScrollButton && (
         <Button
-          onClick={scrollToBottom}
+          onClick={() => scrollToBottom()}
           size="icon"
-          className="absolute bottom-4 right-4 rounded-full shadow-lg"
-          variant="default"
+          className="absolute bottom-4 right-4 rounded-full shadow-lg bg-accent hover:bg-accent/90"
+          aria-label="Scroll to bottom"
         >
           <ArrowDown className="h-4 w-4" />
         </Button>
@@ -522,6 +644,12 @@ export function ChatMessageList({ messages, projectId }) {
   );
 }
 ```
+
+**ChatMessageList Notes:**
+- Auto-scroll now tracks both message count changes AND last message content changes
+- This ensures streaming responses trigger auto-scroll as content grows
+- ChatMessage component is wrapped in React.memo for performance (prevents re-rendering unchanged messages)
+- Scroll-to-bottom button includes `aria-label` for accessibility
 
 ### 5. Chat Input with File Support
 
@@ -584,10 +712,12 @@ export function ChatInput({ projectId }: { projectId: string }) {
       {showUpload && (
         <div className="mb-4">
           <FileUpload
-            onUploadComplete={(url, metadata) => {
+            projectId={projectId}
+            onUploadComplete={(metadata) => {
               setAttachments([...attachments, metadata]);
               setShowUpload(false);
             }}
+            onCancel={() => setShowUpload(false)}
           />
         </div>
       )}
@@ -595,11 +725,12 @@ export function ChatInput({ projectId }: { projectId: string }) {
       {/* Attachment Previews */}
       {attachments.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
-          {attachments.map((att, i) => (
+          {attachments.map((att) => (
             <MediaPreview
-              key={i}
+              key={att.cloudinaryId}
               attachment={att}
-              onRemove={() => setAttachments(attachments.filter((_, idx) => idx !== i))}
+              size="sm"
+              onRemove={() => setAttachments(attachments.filter((a) => a.cloudinaryId !== att.cloudinaryId))}
             />
           ))}
         </div>
@@ -612,6 +743,8 @@ export function ChatInput({ projectId }: { projectId: string }) {
           size="icon"
           onClick={() => setShowUpload(!showUpload)}
           className="flex-shrink-0"
+          disabled={sending}
+          aria-label="Attach file"
         >
           <Paperclip className="h-5 w-5" />
         </Button>
@@ -624,6 +757,7 @@ export function ChatInput({ projectId }: { projectId: string }) {
           placeholder="Type your message... (Cmd/Ctrl+Enter to send)"
           className="flex-1 min-h-[48px] max-h-[200px] resize-none"
           rows={1}
+          disabled={sending}
         />
 
         <Button
@@ -631,18 +765,270 @@ export function ChatInput({ projectId }: { projectId: string }) {
           disabled={sending || (!content.trim() && attachments.length === 0)}
           size="icon"
           className="flex-shrink-0 bg-accent hover:bg-accent/90"
+          aria-label="Send message"
         >
           <Send className="h-5 w-5" />
         </Button>
       </div>
 
       <p className="text-xs text-muted mt-2">
-        Cmd/Ctrl+Enter to send • {attachments.length > 0 ? `${attachments.length} file(s) attached` : 'Upload images, PDFs, or documents'}
+        {sending ? 'Sending...' : (
+          <>
+            Cmd/Ctrl+Enter to send • {attachments.length > 0 ? `${attachments.length} file(s) attached` : 'Upload images, PDFs, or documents'}
+          </>
+        )}
       </p>
     </div>
   );
 }
 ```
+
+**ChatInput Notes:**
+- Attachment previews use `att.cloudinaryId` as stable React key instead of array index
+- Paperclip and Send buttons include `aria-label` for accessibility
+- File removal uses cloudinaryId matching instead of index-based filtering
+
+---
+
+### 6. Media Preview and Shared Utilities
+
+```typescript
+// lib/format.ts
+/**
+ * File formatting utilities (Feature 54).
+ * Shared helpers for consistent file size and media display formatting.
+ */
+
+/**
+ * Format bytes to human-readable file size.
+ * Returns B, KB, or MB depending on magnitude.
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+```
+
+```typescript
+// components/chat/MediaPreview.tsx
+'use client';
+
+import { X, File, FileText, Image as ImageIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { formatFileSize } from '@/lib/format';
+import type { AttachmentMetadata } from './FileUpload';
+
+interface MediaPreviewProps {
+  attachment: AttachmentMetadata;
+  onRemove?: () => void;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+export function MediaPreview({ attachment, onRemove, size = 'md' }: MediaPreviewProps) {
+  const sizeClasses = {
+    sm: 'h-16 w-16',
+    md: 'h-24 w-24',
+    lg: 'h-32 w-32',
+  };
+
+  const iconSize = size === 'sm' ? 'h-6 w-6' : size === 'md' ? 'h-8 w-8' : 'h-10 w-10';
+
+  const getFileIcon = () => {
+    switch (attachment.type) {
+      case 'image':
+        return <ImageIcon className={iconSize} />;
+      case 'document':
+        return attachment.mimeType === 'application/pdf' ? (
+          <FileText className={iconSize} />
+        ) : (
+          <File className={iconSize} />
+        );
+      default:
+        return <File className={iconSize} />;
+    }
+  };
+
+  return (
+    <div className="relative group">
+      <div
+        className={`
+          ${sizeClasses[size]} rounded-lg border border-border overflow-hidden
+          bg-surface-secondary flex items-center justify-center
+        `}
+      >
+        {attachment.type === 'image' ? (
+          <img
+            src={attachment.cloudinaryUrl}
+            alt={attachment.originalName}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center p-2 text-center">
+            {getFileIcon()}
+          </div>
+        )}
+      </div>
+
+      {/* File info overlay */}
+      <div className="mt-1 text-xs text-muted truncate max-w-[120px]">
+        <p className="truncate">{attachment.originalName}</p>
+        <p>{formatFileSize(attachment.sizeBytes)}</p>
+      </div>
+
+      {/* Remove button */}
+      {onRemove && (
+        <Button
+          variant="destructive"
+          size="icon"
+          className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={onRemove}
+          aria-label={`Remove ${attachment.originalName}`}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  );
+}
+```
+
+**MediaPreview Notes:**
+- Uses shared `formatFileSize` utility from `lib/format.ts` for consistent B/KB/MB formatting
+- Remove button includes `aria-label` with attachment name for accessibility
+- Correctly distinguishes between PDF (FileText icon) and other documents (generic File icon)
+
+---
+
+### 7. Enhanced ChatMessage Component
+
+```typescript
+// components/chat/ChatMessage.tsx
+import React from 'react';
+import { cn } from '@/lib/utils';
+import { Bot, User, FileText, File as FileIcon, Image as ImageIcon } from 'lucide-react';
+import type { ChatMessage as ChatMessageType } from '@/lib/conversations/chat';
+import ReactMarkdown from 'react-markdown';
+import { formatFileSize } from '@/lib/format';
+
+interface ChatMessageProps {
+  message: ChatMessageType & {
+    attachments?: Array<{
+      id: string;
+      type: 'image' | 'document' | 'video';
+      cloudinaryUrl: string;
+      originalName: string;
+      sizeBytes: number;
+      width?: number;
+      height?: number;
+    }>;
+  };
+}
+
+export const ChatMessage = React.memo(function ChatMessage({ message }: ChatMessageProps) {
+  const isUser = message.role === 'user';
+
+  const renderAttachment = (attachment: NonNullable<ChatMessageProps['message']['attachments']>[0]) => {
+    if (attachment.type === 'image') {
+      return (
+        <a
+          href={attachment.cloudinaryUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block mt-2 rounded-lg overflow-hidden border border-border hover:opacity-90 transition-opacity"
+        >
+          <img
+            src={attachment.cloudinaryUrl}
+            alt={attachment.originalName}
+            className="max-w-full h-auto max-h-[400px] object-contain"
+          />
+        </a>
+      );
+    }
+
+    if (attachment.type === 'video') {
+      return (
+        <div className="mt-2 rounded-lg overflow-hidden border border-border">
+          <video
+            src={attachment.cloudinaryUrl}
+            controls
+            className="max-w-full h-auto max-h-[400px]"
+          >
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      );
+    }
+
+    // Document attachment - use correct icon for non-PDF documents
+    const icon = attachment.originalName.endsWith('.pdf') ? (
+      <FileText className="h-5 w-5" />
+    ) : (
+      <FileIcon className="h-5 w-5" />
+    );
+
+    return (
+      <a
+        href={attachment.cloudinaryUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-2 flex items-center gap-2 p-3 rounded-lg border border-border hover:bg-surface-secondary transition-colors"
+      >
+        {icon}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{attachment.originalName}</p>
+          <p className="text-xs text-muted">
+            {formatFileSize(attachment.sizeBytes)}
+          </p>
+        </div>
+      </a>
+    );
+  };
+
+  return (
+    <div
+      className={cn(
+        'flex w-full items-start gap-4 py-4',
+        isUser ? 'flex-row-reverse' : 'flex-row'
+      )}
+    >
+      <div
+        className={cn(
+          'flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border shadow-sm',
+          isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
+        )}
+      >
+        {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+      </div>
+      <div
+        className={cn(
+          'flex min-w-[120px] max-w-[80%] flex-col gap-2 rounded-lg px-4 py-3 text-sm',
+          isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
+        )}
+      >
+        <div className="prose prose-sm dark:prose-invert break-words">
+          <ReactMarkdown>{message.content}</ReactMarkdown>
+        </div>
+
+        {/* Render attachments */}
+        {message.attachments && message.attachments.length > 0 && (
+          <div className="space-y-2">
+            {message.attachments.map((attachment) => (
+              <div key={attachment.id}>{renderAttachment(attachment)}</div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+```
+
+**ChatMessage Notes:**
+- Wrapped in `React.memo` to prevent unnecessary re-renders during streaming
+- Uses shared `formatFileSize` utility for consistent file size display
+- Non-PDF documents now correctly use `FileIcon` instead of `FileVideo`
+- Removed unused `isStreaming` prop
 
 ---
 
@@ -713,3 +1099,42 @@ CLOUDINARY_API_SECRET=your_api_secret
 npm install react-dropzone
 ```
 Standard drag-and-drop library for file uploads. Documentation: https://react-dropzone.js.org/
+
+---
+
+## Implementation Notes (CodeRabbit Review Fixes)
+
+The following improvements were applied during implementation to ensure production quality:
+
+### Performance Optimizations
+- **ChatMessage memoization**: Wrapped in `React.memo` to prevent re-rendering unchanged messages during streaming
+- **Stable React keys**: Attachment previews use `cloudinaryId` instead of array index to prevent DOM state mismatches
+- **Query pagination**: Message history queries limited to 200 messages to prevent unbounded result sets
+
+### Type Safety
+- **Typed attachments**: `IncomingAttachment` interface uses Prisma `AttachmentType` enum instead of string literals
+- **Typed message fetching**: DiscoveryChat message normalization uses proper `Message` type instead of `any`
+
+### User Experience
+- **Real upload progress**: FileUpload uses `XMLHttpRequest.upload.onprogress` for accurate progress tracking (20-100%)
+- **File rejection feedback**: `onDropRejected` handler surfaces validation errors when files are rejected
+- **Streaming auto-scroll**: ChatMessageList tracks both message count AND last message content for smooth streaming UX
+- **Correct file icons**: Non-PDF documents use `FileIcon` instead of incorrect `FileVideo` icon
+
+### Accessibility
+- All icon-only buttons include `aria-label` attributes:
+  - Paperclip button: `aria-label="Attach file"`
+  - Send button: `aria-label="Send message"`
+  - Scroll-to-bottom button: `aria-label="Scroll to bottom"`
+  - Remove attachment button: `aria-label="Remove {filename}"`
+
+### Data Integrity
+- **Foreign key constraint**: `ConversationMessage.projectId` has FK to `Project` for referential integrity
+- **Environment validation**: `CLOUDINARY_API_SECRET` explicitly validated before signing uploads
+
+### Shared Utilities
+- **File size formatting**: Created `lib/format.ts` with `formatFileSize()` used by both `MediaPreview` and `ChatMessage` for consistent B/KB/MB display
+
+### Authorization
+- Upload route already includes `requireProjectMember()` check before generating Cloudinary signatures
+- Chat persistence uses best-effort error handling with detailed logging (legacy JSON remains source of truth)

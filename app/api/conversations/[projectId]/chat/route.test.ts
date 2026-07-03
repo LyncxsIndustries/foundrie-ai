@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import { requireProjectMember } from "@/lib/projects/auth";
 import { getDiscoveryConversation, appendConversationMessage } from "@/lib/conversations/chat";
 import { callAIStream } from "@/lib/ai/rotation-engine";
+import { db } from "@/lib/db";
 
 vi.mock("@/lib/auth/require-auth", () => ({
   requireAuth: vi.fn(),
@@ -30,6 +31,17 @@ vi.mock("@/lib/ai/rotation-engine", () => ({
   callAIStream: vi.fn(),
 }));
 
+vi.mock("@/lib/db", () => ({
+  db: {
+    conversation: {
+      findUnique: vi.fn(),
+    },
+    conversationMessage: {
+      create: vi.fn(),
+    },
+  },
+}));
+
 describe("Discovery Chat Route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -54,6 +66,7 @@ describe("Discovery Chat Route", () => {
     it("should process a message and return a stream", async () => {
       vi.mocked(requireAuth).mockResolvedValue({ id: "user-1", email: "test@test.com", role: "USER", plan: "FREE" } as any);
       vi.mocked(appendConversationMessage).mockResolvedValue([{ role: "user", content: "hello" } as any]);
+      vi.mocked(db.conversation.findUnique).mockResolvedValue(null); // No conversation found (best-effort persistence)
       
       const mockIterator = (async function* () {
         yield "Hi ";
@@ -80,6 +93,7 @@ describe("Discovery Chat Route", () => {
     it("should handle exhausted AI providers", async () => {
       vi.mocked(requireAuth).mockResolvedValue({ id: "user-1", email: "test@test.com", role: "USER", plan: "FREE" } as any);
       vi.mocked(appendConversationMessage).mockResolvedValue([{ role: "user", content: "hello" } as any]);
+      vi.mocked(db.conversation.findUnique).mockResolvedValue(null);
       
       vi.mocked(callAIStream).mockResolvedValue({
         status: "queued",
@@ -93,6 +107,58 @@ describe("Discovery Chat Route", () => {
       const response = await POST(request, { params: Promise.resolve({ projectId: "proj-1" }) });
 
       expect(response.status).toBe(503);
+    });
+
+    it("should succeed even if structured persistence succeeds", async () => {
+      vi.mocked(requireAuth).mockResolvedValue({ id: "user-1", email: "test@test.com", role: "USER", plan: "FREE" } as any);
+      vi.mocked(appendConversationMessage).mockResolvedValue([{ role: "user", content: "hello" } as any]);
+      vi.mocked(db.conversation.findUnique).mockResolvedValue({ id: "conv-1" } as any);
+      vi.mocked(db.conversationMessage.create).mockResolvedValue({ id: "msg-1" } as any);
+
+      const mockIterator = (async function* () {
+        yield "response";
+      })();
+
+      vi.mocked(callAIStream).mockResolvedValue({
+        status: "ok",
+        stream: mockIterator,
+      } as any);
+
+      const request = new Request("http://localhost/api/conversations/proj-1/chat", {
+        method: "POST",
+        body: JSON.stringify({ message: { content: "hello" } }),
+      });
+
+      const response = await POST(request, { params: Promise.resolve({ projectId: "proj-1" }) });
+
+      expect(response.status).toBe(200);
+      expect(db.conversationMessage.create).toHaveBeenCalled();
+    });
+
+    it("should succeed even if structured persistence fails", async () => {
+      vi.mocked(requireAuth).mockResolvedValue({ id: "user-1", email: "test@test.com", role: "USER", plan: "FREE" } as any);
+      vi.mocked(appendConversationMessage).mockResolvedValue([{ role: "user", content: "hello" } as any]);
+      vi.mocked(db.conversation.findUnique).mockResolvedValue({ id: "conv-1" } as any);
+      vi.mocked(db.conversationMessage.create).mockRejectedValue(new Error("DB error"));
+
+      const mockIterator = (async function* () {
+        yield "response";
+      })();
+
+      vi.mocked(callAIStream).mockResolvedValue({
+        status: "ok",
+        stream: mockIterator,
+      } as any);
+
+      const request = new Request("http://localhost/api/conversations/proj-1/chat", {
+        method: "POST",
+        body: JSON.stringify({ message: { content: "hello" } }),
+      });
+
+      const response = await POST(request, { params: Promise.resolve({ projectId: "proj-1" }) });
+
+      expect(response.status).toBe(200);
+      expect(db.conversationMessage.create).toHaveBeenCalled();
     });
   });
 });

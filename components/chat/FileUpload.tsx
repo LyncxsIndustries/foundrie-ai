@@ -3,7 +3,7 @@
 // File upload component with drag-and-drop (Feature 54).
 // Integrates with Cloudinary for secure media storage.
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,13 @@ export interface AttachmentMetadata {
   mimeType: string;
   sizeBytes: number;
   type: 'image' | 'document' | 'video';
+  width?: number;
+  height?: number;
+}
+
+interface CloudinaryUploadResult {
+  public_id: string;
+  secure_url: string;
   width?: number;
   height?: number;
 }
@@ -46,6 +53,7 @@ export function FileUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -78,7 +86,7 @@ export function FileUpload({
         const { signature, timestamp, cloudName, apiKey, folder } = await sigResponse.json();
         setProgress(20);
 
-        // Upload to Cloudinary
+        // Upload to Cloudinary with XMLHttpRequest for real progress tracking
         const formData = new FormData();
         formData.append('file', file);
         formData.append('signature', signature);
@@ -86,19 +94,50 @@ export function FileUpload({
         formData.append('api_key', apiKey);
         formData.append('folder', folder);
 
-        const uploadResponse = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
-          {
-            method: 'POST',
-            body: formData,
-          }
-        );
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
 
-        if (!uploadResponse.ok) {
-          throw new Error('Upload to Cloudinary failed');
-        }
+        // Use XMLHttpRequest for upload progress events
+        const result = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhrRef.current = xhr;
+          
+          xhr.timeout = 30000; // 30s upload timeout
 
-        const result = await uploadResponse.json();
+          xhr.addEventListener('timeout', () => {
+            reject(new Error('Upload timed out'));
+          });
+
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = Math.round((e.loaded / e.total) * 80) + 20; // 20-100%
+              setProgress(percentComplete);
+            }
+          });
+
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                resolve(JSON.parse(xhr.responseText));
+              } catch (e) {
+                reject(new Error('Invalid response from Cloudinary'));
+              }
+            } else {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          });
+
+          xhr.addEventListener('error', () => {
+            reject(new Error('Network error during upload'));
+          });
+
+          xhr.addEventListener('abort', () => {
+            reject(new Error('Upload cancelled'));
+          });
+
+          xhr.open('POST', uploadUrl);
+          xhr.send(formData);
+        });
+
         setProgress(100);
 
         // Determine attachment type
@@ -124,6 +163,7 @@ export function FileUpload({
         console.error('Upload failed:', err);
         setError(err instanceof Error ? err.message : 'Upload failed. Please try again.');
       } finally {
+        xhrRef.current = null;
         setUploading(false);
         setProgress(0);
       }
@@ -131,12 +171,28 @@ export function FileUpload({
     [projectId, maxSizeMB, onUploadComplete]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const handleCancel = () => {
+    if (xhrRef.current) {
+      xhrRef.current.abort();
+    }
+    if (onCancel) {
+      onCancel();
+    }
+  };
+
+  const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
     accept,
     maxFiles: 1,
     multiple: false,
     disabled: uploading,
+    onDropRejected: (rejections) => {
+      const rejection = rejections[0];
+      if (!rejection) return;
+
+      const errors = rejection.errors.map(e => e.message).join(', ');
+      setError(`File rejected: ${errors}`);
+    },
   });
 
   return (
@@ -186,10 +242,10 @@ export function FileUpload({
         </div>
       )}
 
-      {onCancel && !uploading && (
+      {onCancel && (
         <div className="mt-3 flex justify-end">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            Cancel
+          <Button variant="ghost" size="sm" onClick={handleCancel} disabled={!uploading && !onCancel}>
+            {uploading ? 'Cancel Upload' : 'Cancel'}
           </Button>
         </div>
       )}

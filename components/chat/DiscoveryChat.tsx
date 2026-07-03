@@ -23,6 +23,7 @@ interface Message {
     type: 'image' | 'document' | 'video';
     cloudinaryUrl: string;
     originalName: string;
+    mimeType: string;
     sizeBytes: number;
     width?: number;
     height?: number;
@@ -40,7 +41,7 @@ export function DiscoveryChat({ projectId }: DiscoveryChatProps) {
       .then((res) => res.json())
       .then((data) => {
         // Normalize dates to strings
-        const normalized = (data.messages || []).map((msg: any) => ({
+        const normalized = (data.messages || []).map((msg: Message) => ({
           ...msg,
           createdAt: typeof msg.createdAt === 'string' ? msg.createdAt : new Date(msg.createdAt).toISOString(),
         }));
@@ -64,6 +65,7 @@ export function DiscoveryChat({ projectId }: DiscoveryChatProps) {
         type: att.type,
         cloudinaryUrl: att.cloudinaryUrl,
         originalName: att.originalName,
+        mimeType: att.mimeType,
         sizeBytes: att.sizeBytes,
         width: att.width,
         height: att.height,

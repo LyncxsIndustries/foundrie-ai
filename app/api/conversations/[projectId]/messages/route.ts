@@ -16,7 +16,7 @@ export async function GET(
 
     const { projectId } = await params;
 
-    // Get conversation with messages
+    // Get conversation with messages (limited to last 200 for performance)
     const conversation = await db.conversation.findFirst({
       where: {
         projectId,
@@ -35,6 +35,7 @@ export async function GET(
           orderBy: {
             createdAt: 'asc',
           },
+          take: -200, // Negative take fetches last 200 messages
         },
       },
     });
@@ -54,6 +55,7 @@ export async function GET(
           type: att.type.toLowerCase(),
           cloudinaryUrl: att.cloudinaryUrl,
           originalName: att.originalName,
+          mimeType: att.mimeType,
           sizeBytes: att.sizeBytes,
           width: att.width,
           height: att.height,

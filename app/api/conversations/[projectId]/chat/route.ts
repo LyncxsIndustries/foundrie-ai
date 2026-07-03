@@ -5,6 +5,18 @@ import { getDiscoveryConversation, appendConversationMessage, ChatMessage } from
 import { callAIStream } from "@/lib/ai/rotation-engine";
 import { getDiscoverySystemPrompt } from "@/lib/ai/prompts/discovery";
 import { db } from "@/lib/db";
+import { AttachmentType } from "@/lib/generated/prisma/client";
+
+interface IncomingAttachment {
+  type: AttachmentType;
+  cloudinaryId: string;
+  cloudinaryUrl: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  width?: number;
+  height?: number;
+}
 
 // Polyfill Iterator.from or use a custom stream encoder
 function iteratorToStream(iterable: AsyncIterable<string>) {
@@ -71,33 +83,45 @@ export async function POST(
     // Append to legacy JSON storage
     const updatedMessages = await appendConversationMessage(projectId, userMessage);
 
-    // Also persist to structured ConversationMessage table (Feature 54)
-    const conversation = await db.conversation.findUnique({
-      where: { projectId },
-    });
+    // Also persist to structured ConversationMessage table (Feature 54) - best effort
+    let conversation: { id: string } | null = null;
+    try {
+      conversation = await db.conversation.findUnique({
+        where: { projectId },
+        select: { id: true },
+      });
 
-    if (conversation) {
-      await db.conversationMessage.create({
-        data: {
-          conversationId: conversation.id,
-          projectId,
-          role: 'USER',
-          content: message.content,
-          attachments: message.attachments
-            ? {
-                create: message.attachments.map((att: any) => ({
-                  type: att.type,
-                  cloudinaryId: att.cloudinaryId,
-                  cloudinaryUrl: att.cloudinaryUrl,
-                  originalName: att.originalName,
-                  mimeType: att.mimeType,
-                  sizeBytes: att.sizeBytes,
-                  width: att.width,
-                  height: att.height,
-                })),
-              }
-            : undefined,
-        },
+      if (conversation) {
+        await db.conversationMessage.create({
+          data: {
+            conversationId: conversation.id,
+            projectId,
+            role: 'USER',
+            content: message.content,
+            attachments: message.attachments
+              ? {
+                  create: message.attachments.map((att: IncomingAttachment) => ({
+                    type: att.type,
+                    cloudinaryId: att.cloudinaryId,
+                    cloudinaryUrl: att.cloudinaryUrl,
+                    originalName: att.originalName,
+                    mimeType: att.mimeType,
+                    sizeBytes: att.sizeBytes,
+                    width: att.width,
+                    height: att.height,
+                  })),
+                }
+              : undefined,
+          },
+        });
+      }
+    } catch (structuredError) {
+      // Log but don't fail the request - legacy JSON storage is source of truth
+      console.error('Failed to persist structured user message:', {
+        projectId,
+        conversationId: conversation?.id,
+        error: structuredError instanceof Error ? structuredError.message : 'Unknown error',
+        attachmentCount: message.attachments?.length || 0,
       });
     }
 
@@ -159,7 +183,7 @@ export async function POST(
             console.error("Failed to append AI message", err);
           });
           
-          // Also persist to structured storage (Feature 54)
+          // Also persist to structured storage (Feature 54) - best effort
           if (conversation) {
             await db.conversationMessage.create({
               data: {
@@ -169,7 +193,11 @@ export async function POST(
                 content: aiFullText,
               },
             }).catch(err => {
-              console.error("Failed to append structured AI message", err);
+              console.error("Failed to persist structured AI message:", {
+                projectId,
+                conversationId: conversation.id,
+                error: err instanceof Error ? err.message : 'Unknown error',
+              });
             });
           }
         }
