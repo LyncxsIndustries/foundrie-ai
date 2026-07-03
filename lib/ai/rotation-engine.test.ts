@@ -7,6 +7,14 @@ import type {
 } from "./providers/types";
 import { ProviderCallError } from "./providers/types";
 
+// Mock rate limiter to avoid delays in tests
+vi.mock("@/lib/utils/rate-limiter", () => ({
+  globalRateLimiter: {
+    checkLimit: vi.fn().mockResolvedValue(undefined),
+  },
+  retryWithBackoff: vi.fn(async (fn) => fn()), // No retry delays in tests
+}));
+
 // Mock the provider registry so the engine resolves to controllable fakes
 // instead of real adapters. getFallbackChain still reads the real model.yaml,
 // so these tests also exercise real chain resolution.

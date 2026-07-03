@@ -64,6 +64,21 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 - The docs package (Feature 49) and project-management docs (Feature 48).
 - Actually running CI (that happens in the generated project's repo, not in Foundrie).
 
+## Implemented Enhancements
+
+The following limitation has been implemented as a working feature:
+
+1. **✅ Verification Script False Positives Fixed** - The `scripts/verify-sync-enhanced.ts` now includes whitelists and refined pattern matching to eliminate false positives:
+   - **External icon libraries** (e.g., `Upload`, `Send`, `CheckCircle` from lucide-react, heroicons, react-icons) are whitelisted in `EXTERNAL_ICONS` Set with 40+ common icon names.
+   - **Built-in TypeScript types** (e.g., `HTMLDivElement`, `NodeJS`, `Buffer`, `Promise`, `ReactNode`) are whitelisted in `BUILTIN_TYPES` Set with 30+ standard library types.
+   - **CLI flag support**: Added `--errors-only` flag to suppress warnings in CI/CD pipelines (`npm run sync:check:ci`).
+   - The `searchCodebase()` function now checks whitelists before flagging missing components/types.
+   
+   **Implementation**: Feature 04 (Fix Verification Script False Positives)
+   **Files**: `scripts/verify-sync-enhanced.ts`, `package.json` (added sync:check:ci script)
+   
+   **Result**: Verification output is now actionable with minimal false positives. Errors indicate real contract drift (missing files, routes, models), while warnings are suppressed in CI via `--errors-only` mode.
+
 ## Future Modifications
 
 - Feature 30: the ZIP builder includes `.github/`, and (for agentic projects) `tools/` and `evals/`.

@@ -154,6 +154,7 @@ export async function POST(req: NextRequest): Promise<Response> {
           name,
           slug: "",
           description: parsed.data.description || null,
+          requiredPhases: [], // Feature 53: will be populated during discovery
         },
         select: { id: true },
       });

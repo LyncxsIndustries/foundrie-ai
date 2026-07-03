@@ -21,6 +21,7 @@ import { type ChainEntry, getFallbackChain } from "./fallback-chains";
 import { type AITask, type ModelKey, resolveModelKey } from "./model-routing";
 import type { Plan } from "./tier";
 import { logEvent } from "./log";
+import { globalRateLimiter, retryWithBackoff } from "@/lib/utils/rate-limiter";
 
 /** Generation parameters callers supply (model id is resolved by the engine). */
 export interface CallOptions {
@@ -117,6 +118,9 @@ export async function callAI(
   task: AITask,
   options: CallOptions,
 ): Promise<CallResult> {
+  // Apply global rate limiting before attempting any AI call
+  await globalRateLimiter.throttle();
+  
   const startedAt = Date.now();
   const { modelKey, chain } = resolveChain(task, options);
 
@@ -148,7 +152,17 @@ export async function callAI(
     attempts += 1;
     const attemptStart = Date.now();
     try {
-      const response = await provider.call(toCallParams(entry, options, false));
+      // Wrap provider call with exponential backoff retry
+      const response = await retryWithBackoff(
+        async () => provider.call(toCallParams(entry, options, false)),
+        {
+          maxAttempts: 3,
+          initialDelayMs: 1000,
+          maxDelayMs: 10000,
+          backoffFactor: 2,
+        }
+      );
+      
       const durationMs = Date.now() - attemptStart;
       logEvent("info", {
         event: "ai_attempt",
@@ -240,6 +254,9 @@ export async function callAIStream(
   task: AITask,
   options: CallOptions,
 ): Promise<StreamResult> {
+  // Apply global rate limiting before attempting any AI call
+  await globalRateLimiter.throttle();
+  
   const startedAt = Date.now();
   const { modelKey, chain } = resolveChain(task, options);
 
@@ -269,9 +286,18 @@ export async function callAIStream(
     attempts += 1;
     const attemptStart = Date.now();
     try {
-      const iterator = provider
-        .callStream(toCallParams(entry, options, true))
-        [Symbol.asyncIterator]();
+      // Wrap stream creation with exponential backoff retry
+      const iterator = await retryWithBackoff(
+        async () => provider
+          .callStream(toCallParams(entry, options, true))
+          [Symbol.asyncIterator](),
+        {
+          maxAttempts: 3,
+          initialDelayMs: 1000,
+          maxDelayMs: 10000,
+          backoffFactor: 2,
+        }
+      );
 
       // Eagerly pull the first chunk so a failure to open the stream falls back
       // rather than surfacing to the caller after they begin consuming.

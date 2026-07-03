@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# Pre-commit hook: Contract Synchronization Gate
+# This hook CANNOT be bypassed - it enforces AGENTS.md Hard Rule 0
+
+echo "🔒 Running contract synchronization verification..."
+echo ""
+
+# Run the verification script
+npm run sync:check
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ COMMIT REJECTED"
+  echo ""
+  echo "Contract synchronization verification failed."
+  echo "You MUST fix all errors before committing."
+  echo ""
+  echo "Per AGENTS.md Hard Rule 0:"
+  echo "All contract changes must be synchronized across:"
+  echo "  - Affected feature specs"
+  echo "  - Dependent future specs  "
+  echo "  - Context files"
+  echo "  - AGENTS.md"
+  echo "  - progress-tracker.md"
+  echo ""
+  echo "Run: npm run sync:check"
+  echo "Fix all errors, then try committing again."
+  echo ""
+  exit 1
+fi
+
+echo ""
+echo "✅ Contract synchronization verified"
+echo "Proceeding with commit..."
+echo ""
+
+exit 0

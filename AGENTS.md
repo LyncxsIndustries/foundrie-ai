@@ -75,7 +75,37 @@ Never skip ahead, batch specs, or mark a spec done before the GitHub review loop
 
 ## Hard Rules
 
-0. **Contract synchronization is a hard gate.** Whenever an implementation changes or corrects any project contract — database schema fields/relations, route signatures, authorization helper signatures, AI task names or `callAI`/`callAIStream` request/response shapes, status enums, storage paths, ZIP structure, generated file contents, package versions, environment variables, or ownership/file boundaries — update the same branch's affected feature spec, every later feature spec that depends on that contract, all relevant context files, this `AGENTS.md`, and `progress-tracker.md` before tests/build/review. Do not leave future specs with stale names, old API shapes, or invalid fields. If a needed contract is missing or ambiguous, record the correction instead of inventing behavior silently.
+0. **Contract synchronization is a hard gate that CANNOT be bypassed under ANY circumstances.** Whenever an implementation changes or corrects any project contract — database schema fields/relations, route signatures, authorization helper signatures, AI task names or `callAI`/`callAIStream` request/response shapes, status enums, storage paths, ZIP structure, generated file contents, package versions, environment variables, or ownership/file boundaries — you MUST immediately:
+
+   a. **Update the current feature spec** with the actual implementation (correct field names, actual types, real signatures, final enums).
+   
+   b. **Update every future spec** that depends on that contract (fix stale references, update dependencies, correct API shapes).
+   
+   c. **Update all relevant context files**:
+      - `architecture-context.md` for stack, storage, database, API contracts
+      - `code-standards.md` for coding patterns, helpers, utilities
+      - `ui-tokens.md`, `ui-rules.md`, `ui-registry.md` for design system changes
+      - `library-docs.md` for third-party integration updates
+      - `build-plan.md` for phase/milestone adjustments
+   
+   d. **Update this `AGENTS.md`** if the change affects agent workflow, hard rules, or responsibilities.
+   
+   e. **Update `progress-tracker.md`** session notes with what changed and why.
+   
+   f. **Regenerate derived artifacts** (run `npm run db:generate` if Prisma schema changed).
+   
+   **ABSOLUTE VERIFICATION GATE - NO EXCEPTIONS:** Before any commit, push, or PR, the following scripts MUST pass in this exact order:
+   1. `npm run sync:check` — verifies contract synchronization across ALL files
+   2. `npm run security:all` — SAST, dependency audit, secret detection
+   3. `npm run test` — all tests must pass with zero failures
+   4. `npm run build` — build must succeed with no errors
+   
+   **These gates are MANDATORY and automatically enforced:**
+   - In `package.json` via `pretest` and `prebuild` hooks
+   - In `.husky/pre-commit` hook (blocks commits)
+   - In CI/CD pipeline (blocks merges)
+   
+   **NEVER bypass, skip, or disable these gates.** Any attempt to commit without passing all gates will be rejected. Do not leave future specs with stale names, old API shapes, or invalid fields. If a needed contract is missing or ambiguous, record the correction instead of inventing behavior silently. **This rule applies to Foundrie itself and EVERY project it generates.** Generated projects MUST include these same gates in their package.json and git hooks.
 
 1. Root `AGENTS.md` is the only active agent entry point. Do not create duplicate context-level AGENTS files.
 2. `ARTKINS_STYLE_GUIDE.md` is mandatory and must be preserved verbatim in Foundrie and every generated project export — never summarized.
@@ -95,11 +125,45 @@ Never skip ahead, batch specs, or mark a spec done before the GitHub review loop
 16. The exported ZIP structure is a product contract. Do not rename folders or omit required files without updating the architecture context. Generated packages must include root `AGENTS.md`, root `ARTKINS_STYLE_GUIDE.md`, `context/`, `feature-specs/`, `diagrams/`, `requirements/`, `project-management/`, `docs/`, and `research/PROJECT_RESEARCH.md`. Include `.agents/skills/`, `tools/`, `evals/`, and research subfolders only when populated.
 17. Research artifacts are part of the implementation contract. Feature specs reference relevant `research/` files and assets when design, motion, source, or technical decisions depend on them. Foundrie's own features must also use `research/` as input whenever research influenced the architecture or spec.
 18. Every recommendation cites a source (benchmark, case study, documented failure mode, or cited best practice). Foundrie never says "best practice" without a reference.
-19. Update `context/progress-tracker.md` after meaningful implementation changes, and at the end of every feature update it to point at the next feature to implement (current spec → Completed/DONE, In Progress cleared, Current Goal and Next Up set to the next spec, session note added). Commit and push this tracker update on the feature branch with the implementation — never directly to `master` — so a merged branch always lands a tracker that already points to the next feature. If a requirement is missing, record it in `progress-tracker.md` before inventing behavior — do not invent product behavior that is not documented.
+19. Update `context/progress-tracker.md` after meaningful implementation changes, and at the end of every feature update it to point at the next feature to implement (current spec → Completed/DONE, In Progress cleared, Current Goal and Next Up set to the next spec, session note added). Commit and push this tracker update on the feature branch with the implementation — never directly to `master` — so a merged branch always lands a tracker that already points to the next feature. **Before committing, ensure `npm run sync:check` passes** — Hard Rule 0 verification gates MUST NOT be bypassed. If a requirement is missing, record it in `progress-tracker.md` before inventing behavior — do not invent product behavior that is not documented.
 20. A configured test harness is mandatory and baked in from the first feature, in Foundrie and in every generated project. The TypeScript layer uses Vitest + React Testing Library + jsdom with `test`/`test:watch`/`test:coverage` scripts (`npm run test` is a non-watch single run); generated non-TS stacks use the idiomatic equivalent (`pytest`, `cargo test`, `go test`) selected through research and recorded in the architecture context. A feature is done only when its new logic has tests and `npm run test` and `npm run build` both pass. Never copy Foundrie's runner into a project that does not use that stack, and never defer the harness to a later feature.
 21. Any file or directory that should not be committed to GitHub (e.g. `.agents`, `.github`, API keys, local logs) MUST be explicitly added to `.gitignore` within the feature spec that introduces them.
 22. Every feature spec MUST explicitly include this instruction: "For any technology, tool, or package we are using in this spec, if it requires creating an account, getting API keys, or external setup, instruct the AI agent to give step-by-step instructions on how to get started with it and how to get everything needed."
 23. Every feature spec MUST ensure that everything implemented and corrected in Foundrie as of now (e.g. structured logging, exact pinned versions, Next.js 16 proxy middleware, Prisma 7 driver adapters, Tailwind v4 tokens, executable `npm run security:all` gates) is also baked into the generated projects, ensuring they are premium products.
+24. **AI agents MUST read AGENTS.md before, during, and after every operation.** The agent must verify compliance with all hard rules before starting work, check for updates during implementation, and confirm synchronization requirements before any commit or push. This file is the binding contract for all agent behavior.
+25. **API THROTTLING PREVENTION AND RECOVERY (CRITICAL):** AI agents operating through CLI interfaces (like Kiro CLI) are subject to strict API rate limits from the underlying LLM provider (e.g., Anthropic Claude: ~60 requests/minute, token limits per minute). **When you encounter "The request was throttled by the service" errors:**
+
+   **IMMEDIATE RECOVERY STEPS:**
+   1. **PAUSE EXECUTION:** Immediately stop making tool calls
+   2. **WAIT:** Execute `sleep 5` command to wait 5 seconds minimum
+   3. **BATCH OPERATIONS:** When resuming, combine multiple small operations into fewer, larger ones
+   4. **VERIFY BEFORE CONTINUING:** Check that the last operation completed successfully before starting the next
+   
+   **PREVENTION STRATEGIES (MANDATORY):**
+   - **Batch file operations:** Read/write multiple related files in single operations rather than sequential individual calls
+   - **Use glob patterns:** Instead of reading files one-by-one, use glob to find all files then batch-read them
+   - **Consolidate writes:** Plan all file changes, then execute writes in a batch rather than incrementally
+   - **Strategic pauses:** For operations requiring 10+ tool calls, insert deliberate 2-3 second pauses every 5 calls
+   - **Prefer shell commands:** For bulk operations (grep, find, sed), use single shell commands instead of multiple tool calls
+   - **Check state first:** Before reading a file to modify it, verify it needs modification (avoid redundant reads)
+   
+   **ARCHITECTURE CHANGES TO PREVENT THROTTLING:**
+   - Move rapid-iteration work into **executable scripts** that run in a single shell call rather than via multiple tool invocations
+   - Use **batch APIs** when available (e.g., `write` tool supports `strReplaceAll` to update multiple occurrences at once)
+   - Create **intermediate files** for multi-step transformations instead of holding everything in memory across tool calls
+   - **Checkpoint progress:** Write incremental changes to disk so recovery doesn't require re-reading everything
+   
+   **WHAT TO TELL THE USER:**
+   When throttled, respond: "Hit API rate limit. Pausing 5 seconds to recover, then will continue with [specific next action]. I've batched the remaining [N] operations to prevent future throttling."
+   
+   **NEVER:**
+   - Make 10+ rapid sequential tool calls without pauses
+   - Retry immediately after throttling (this makes it worse)
+   - Read the same file multiple times in quick succession
+   - Write files one line at a time when you can write the whole file at once
+   - Give up after one throttle error — implement recovery and continue
+   
+   This rule applies to ALL AI agents in ALL contexts: Foundrie's own development, generated project development, and any agent-assisted workflow. Throttling prevention is a **hard requirement** for agent reliability.
 
 
 ## When To Split A Task

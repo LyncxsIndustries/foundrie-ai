@@ -1,18 +1,5 @@
-import { task, logger } from "@trigger.dev/sdk";
-import { put } from "@vercel/blob";
-import { db } from "@/lib/db";
-import { buildProjectZip } from "@/lib/zip/build-project-zip";
-
-interface GenerateZipPayload {
-  projectId: string;
-  userId: string;
-}
-
-interface GenerateZipResult {
-  fileName: string;
-  url: string;
-  size: number;
-}
+import { task, logger, metadata } from "@trigger.dev/sdk";
+import type { GenerateZipPayload, GenerateZipResult } from "./types";
 
 const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -28,9 +15,28 @@ export const generateProjectZip = task({
   run: async (payload: GenerateZipPayload): Promise<GenerateZipResult> => {
     const { projectId, userId } = payload;
 
+    // Dynamic imports to reduce cold start time
+    const [{ db }, { buildProjectZip }, { put }] = await Promise.all([
+      import("@/lib/db"),
+      import("@/lib/zip/build-project-zip"),
+      import("@vercel/blob"),
+    ]);
+
     logger.info("Starting ZIP generation", { projectId, userId });
+    
+    // Initialize progress tracking
+    metadata
+      .set("stage", "initializing")
+      .set("progress", 0)
+      .set("message", "Initializing ZIP generation...")
+      .set("startTime", new Date().toISOString());
 
     // Fetch project with ownership check
+    metadata
+      .set("stage", "fetching-project")
+      .set("progress", 5)
+      .set("message", "Checking project access...");
+      
     const project = await db.project.findFirst({
       where: { id: projectId, userId },
       select: {
@@ -44,10 +50,15 @@ export const generateProjectZip = task({
 
     if (!project) {
       logger.error("Project not found or access denied", { projectId, userId });
+      metadata.set("stage", "error").set("message", "Access denied");
       throw new Error("Project not found or access denied");
     }
 
     // Check 10-minute cache
+    metadata
+      .set("stage", "checking-cache")
+      .set("progress", 10)
+      .set("message", "Checking for cached ZIP...");
     if (
       project.lastZipGeneratedAt &&
       project.lastZipUrl &&
@@ -60,6 +71,11 @@ export const generateProjectZip = task({
           cacheAgeMs: cacheAge,
           fileName: project.lastZipFileName,
         });
+        
+        metadata
+          .set("stage", "cache-hit")
+          .set("progress", 100)
+          .set("message", "Using cached ZIP (< 10 min old)");
 
         // Fetch size from blob metadata
         const response = await fetch(project.lastZipUrl, { method: "HEAD" });
@@ -73,11 +89,28 @@ export const generateProjectZip = task({
       }
     }
 
-    // Build ZIP
+    // Build ZIP with progress tracking
     const startTime = Date.now();
     logger.info("Building ZIP", { projectId });
+    
+    metadata
+      .set("stage", "building-zip")
+      .set("progress", 20)
+      .set("message", "Fetching project data...");
 
-    const zipBuffer = await buildProjectZip(projectId);
+    const zipBuffer = await buildProjectZip(projectId, {
+      onProgress: (step: string, percent: number) => {
+        // Map build steps to 20-80% progress range
+        const mappedProgress = 20 + Math.floor(percent * 0.6);
+        metadata
+          .set("progress", mappedProgress)
+          .set("message", step)
+          .append("buildSteps", `${percent}%: ${step}`);
+        
+        logger.info("ZIP build progress", { projectId, step, percent });
+      },
+    });
+    
     const buildDuration = Date.now() - startTime;
 
     logger.info("ZIP built", {
@@ -85,6 +118,11 @@ export const generateProjectZip = task({
       buildDurationMs: buildDuration,
       sizeBytes: zipBuffer.length,
     });
+    
+    metadata
+      .set("stage", "uploading")
+      .set("progress", 85)
+      .set("message", `Uploading ZIP (${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB)...`);
 
     // Generate filename with timestamp
     const timestamp = new Date()
@@ -107,6 +145,11 @@ export const generateProjectZip = task({
       uploadDurationMs: uploadDuration,
       url: blob.url,
     });
+    
+    metadata
+      .set("stage", "finalizing")
+      .set("progress", 95)
+      .set("message", "Saving ZIP metadata...");
 
     // Update project metadata
     await db.project.update({
@@ -123,6 +166,13 @@ export const generateProjectZip = task({
       fileName,
       totalDurationMs: Date.now() - startTime,
     });
+    
+    metadata
+      .set("stage", "complete")
+      .set("progress", 100)
+      .set("message", "ZIP ready for download")
+      .set("endTime", new Date().toISOString())
+      .set("totalDurationMs", Date.now() - startTime);
 
     return {
       fileName,

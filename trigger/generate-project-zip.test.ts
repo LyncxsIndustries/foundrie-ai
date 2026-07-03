@@ -26,6 +26,11 @@ vi.mock("@trigger.dev/sdk", () => ({
     info: vi.fn(),
     error: vi.fn(),
   },
+  metadata: {
+    set: vi.fn().mockReturnThis(),
+    append: vi.fn().mockReturnThis(),
+    del: vi.fn().mockReturnThis(),
+  },
 }));
 
 global.fetch = vi.fn();
