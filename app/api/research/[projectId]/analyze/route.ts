@@ -68,48 +68,55 @@ export async function POST(
       return NextResponse.json({ error: "No assets found" }, { status: 404 });
     }
 
-    // Process each asset
-    const results = await Promise.allSettled(
-      assets.map(async (asset) => {
-        try {
-          let doc;
-          if (asset.assetType === "FRAME_ZIP" || asset.assetType === "FRAME") {
-            doc = await analyzeMotionAsset(projectId, asset.id, user.plan);
-          } else {
-            doc = await analyzeVisualAsset(projectId, asset.id, user.plan);
-          }
+    // Process assets with concurrency limit to avoid overwhelming AI provider
+    const CONCURRENCY_LIMIT = 5;
+    const results: PromiseSettledResult<any>[] = [];
+    
+    for (let i = 0; i < assets.length; i += CONCURRENCY_LIMIT) {
+      const batch = assets.slice(i, i + CONCURRENCY_LIMIT);
+      const batchResults = await Promise.allSettled(
+        batch.map(async (asset) => {
+          try {
+            let doc;
+            if (asset.assetType === "FRAME_ZIP" || asset.assetType === "FRAME") {
+              doc = await analyzeMotionAsset(projectId, asset.id, user.plan);
+            } else {
+              doc = await analyzeVisualAsset(projectId, asset.id, user.plan);
+            }
 
-          // Update the asset with AI description
-          if (doc && doc.content) {
-            // Extract first 500 chars as description
-            const description = doc.content.substring(0, 500);
-            
-            await db.researchAsset.update({
-              where: { id: asset.id },
-              data: {
-                aiDescription: description,
-                extractedText: doc.content,
-              },
-            });
-          }
+            // Update the asset with AI description
+            if (doc && doc.content) {
+              // Extract first 500 chars as description
+              const description = doc.content.substring(0, 500);
+              
+              await db.researchAsset.update({
+                where: { id: asset.id },
+                data: {
+                  aiDescription: description,
+                  extractedText: doc.content,
+                },
+              });
+            }
 
-          return {
-            fileId: asset.id,
-            aiDescription: doc?.content ? doc.content.substring(0, 500) : null,
-            extractedText: doc?.content || null,
-            status: "success" as const,
-          };
-        } catch (error: any) {
-          return {
-            fileId: asset.id,
-            aiDescription: null,
-            extractedText: null,
-            status: "error" as const,
-            error: error.message || "Analysis failed",
-          };
-        }
-      })
-    );
+            return {
+              fileId: asset.id,
+              aiDescription: doc?.content ? doc.content.substring(0, 500) : null,
+              extractedText: doc?.content || null,
+              status: "success" as const,
+            };
+          } catch (error: any) {
+            return {
+              fileId: asset.id,
+              aiDescription: null,
+              extractedText: null,
+              status: "error" as const,
+              error: error.message || "Analysis failed",
+            };
+          }
+        })
+      );
+      results.push(...batchResults);
+    }
 
     // Map results
     const analysisResults = results.map((result) =>

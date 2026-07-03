@@ -68,7 +68,7 @@ Choose based on your needs:
 
 Set the OAuth callback URL to:
 
-```
+```text
 https://your-foundrie-domain.com/api/github/callback
 ```
 
@@ -86,7 +86,7 @@ Leave blank unless you want a custom post-installation flow.
 
 ### Webhook URL
 
-```
+```text
 https://your-foundrie-domain.com/api/webhooks/github
 ```
 
@@ -147,9 +147,7 @@ Add these variables to your `.env.local` file:
 GITHUB_APP_ID="123456"
 GITHUB_CLIENT_ID="Iv1.abc123def456"
 GITHUB_CLIENT_SECRET="your_client_secret_here"
-GITHUB_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
-...your private key content...
------END RSA PRIVATE KEY-----"
+GITHUB_PRIVATE_KEY="<PASTE_YOUR_PRIVATE_KEY_HERE>"
 GITHUB_WEBHOOK_SECRET="your_webhook_secret_here"
 ```
 
@@ -158,17 +156,18 @@ GITHUB_WEBHOOK_SECRET="your_webhook_secret_here"
 You can format it in one line with `\n`:
 
 ```bash
-GITHUB_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\nMIIE...your key...\n-----END RSA PRIVATE KEY-----"
+GITHUB_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n<YOUR_KEY_CONTENT>\n-----END RSA PRIVATE KEY-----"
 ```
 
-Or use the actual PEM file format (recommended):
+Or use the actual PEM file format:
 
 ```bash
 GITHUB_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
-MIIEpAIBAAKCAQEA1234567890...
-...rest of your key...
+<YOUR_MULTILINE_KEY_CONTENT>
 -----END RSA PRIVATE KEY-----"
 ```
+
+**Security Note:** Store the private key in a secure secret manager (e.g., AWS Secrets Manager, HashiCorp Vault, or Vercel Environment Variables) rather than committing it to `.env.local`. Never commit private keys to version control.
 
 ## Step 9: Install the App
 
@@ -184,7 +183,7 @@ MIIEpAIBAAKCAQEA1234567890...
 
 Share your app's public installation URL:
 
-```
+```text
 https://github.com/apps/YOUR_APP_NAME/installations/new
 ```
 

@@ -59,13 +59,15 @@ describe("ZIP Export - Category Organization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Mock db transaction
-    vi.mocked(db.$transaction).mockImplementation(async (callback: any) => {
+    // Mock db transaction with proper typing
+    type TransactionCallback<T> = (tx: unknown) => Promise<T>;
+    
+    vi.mocked(db.$transaction).mockImplementation(async <T>(callback: TransactionCallback<T>) => {
       return await callback({});
     });
 
     // Mock findUnique to return mock data
-    vi.mocked(db.$transaction).mockImplementation(async (callback: any) => {
+    vi.mocked(db.$transaction).mockImplementation(async <T>(callback: TransactionCallback<T>) => {
       const mockTx = {
         project: {
           findUnique: vi.fn().mockResolvedValue(mockProjectData),
@@ -74,7 +76,16 @@ describe("ZIP Export - Category Organization", () => {
       return await callback(mockTx);
     });
 
-    // Mock Vercel Blob get
+    // Mock Vercel Blob get with proper typing
+    interface BlobGetResponse {
+      statusCode: number;
+      stream: {
+        getReader: () => {
+          read: () => Promise<{ done: boolean; value?: Uint8Array }>;
+        };
+      };
+    }
+    
     vi.mocked(get).mockResolvedValue({
       statusCode: 200,
       stream: {
@@ -90,7 +101,7 @@ describe("ZIP Export - Category Organization", () => {
             }),
         }),
       },
-    } as any);
+    } as BlobGetResponse);
   });
 
   it("organizes assets by category folders", async () => {

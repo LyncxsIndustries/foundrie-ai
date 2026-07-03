@@ -9,6 +9,7 @@ import { db } from '@/lib/db';
 import { generateRootFolderName, buildZipPath } from './zip-structure';
 import { ContextFileType } from '@/lib/generated/prisma/enums';
 import { get } from '@vercel/blob';
+import { getCategoryInfo } from '@/lib/media/categories';
 
 interface BuildZipOptions {
   includeResearchAssets?: boolean;
@@ -450,9 +451,17 @@ See \`assets/FILES.md\` for a complete manifest organized by category.
 /**
  * Helper: Generate FILES.md manifest for research assets
  */
-function generateFilesManifest(assets: any[]): string {
+interface ManifestAsset {
+  fileName: string;
+  mimeType: string | null;
+  category: string | null;
+  tags: string[];
+  aiDescription: string | null;
+}
+
+function generateFilesManifest(assets: ManifestAsset[]): string {
   // Group by category
-  const byCategory = new Map<string, any[]>();
+  const byCategory = new Map<string, ManifestAsset[]>();
   for (const asset of assets) {
     const category = asset.category || 'general';
     if (!byCategory.has(category)) {
@@ -473,7 +482,11 @@ This manifest provides an organized view of all research assets included in this
 `;
 
   for (const [category, categoryAssets] of Array.from(byCategory.entries()).sort()) {
-    manifest += `## ${category.charAt(0).toUpperCase() + category.slice(1)}\n\n`;
+    // Use canonical category label from MEDIA_CATEGORIES
+    const categoryInfo = getCategoryInfo(category);
+    const categoryLabel = categoryInfo?.label ?? category.charAt(0).toUpperCase() + category.slice(1);
+    
+    manifest += `## ${categoryLabel}\n\n`;
     manifest += `**Count**: ${categoryAssets.length}\n\n`;
 
     for (const asset of categoryAssets) {

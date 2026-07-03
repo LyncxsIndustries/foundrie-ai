@@ -81,6 +81,16 @@ enum ResearchAssetType {
   SCRAPE_CAPTURE
 }
 
+// Media/research asset categories for organization (Feature 55).
+enum MediaCategory {
+  INSPIRATION      // Design inspiration, mood boards, reference sites
+  WIREFRAMES       // Sketches, wireframes, mockups, prototypes
+  BRANDING         // Logos, brand guidelines, color palettes, typography
+  TECHNICAL_DOCS   // API docs, architecture diagrams, spec sheets
+  COMPETITORS      // Competitor screenshots, feature comparisons
+  GENERAL          // Uncategorized research files
+}
+
 enum ResearchSourceProvider {
   MANUAL
   CONTEXT7
@@ -411,11 +421,11 @@ model ResearchAsset {
   metadata Json?
 
   // Feature 55: Category-based organization and AI analysis
-  category       String?  // "inspiration", "wireframes", "branding", "technical-docs", "competitors", "general"
-  tags           String[] // Custom user tags for filtering
-  order          Int      @default(0) // For drag-and-drop reordering within category
-  aiDescription  String?  // AI-generated visual description
-  extractedText  String?  @db.Text // OCR/document text extraction
+  category       MediaCategory? // Organized by media type
+  tags           String[]       // Custom user tags for filtering
+  order          Int            @default(0) // For drag-and-drop reordering within category
+  aiDescription  String?        // AI-generated visual description
+  extractedText  String?        @db.Text // OCR/document text extraction
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
