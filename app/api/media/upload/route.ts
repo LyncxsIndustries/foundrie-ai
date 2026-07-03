@@ -18,6 +18,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Project ID required' }, { status: 400 });
     }
 
+    if (mimeType !== undefined && typeof mimeType !== 'string') {
+      return NextResponse.json({ error: 'mimeType must be a string' }, { status: 400 });
+    }
+
     // Verify project membership
     await requireProjectMember(projectId, user.id);
 

@@ -24,6 +24,7 @@ SET category = CASE
   WHEN category = 'technical-docs' THEN 'TECHNICAL_DOCS'
   WHEN category = 'competitors' THEN 'COMPETITORS'
   WHEN category = 'general' THEN 'GENERAL'
+  WHEN category IN ('INSPIRATION', 'WIREFRAMES', 'BRANDING', 'TECHNICAL_DOCS', 'COMPETITORS', 'GENERAL') THEN category
   ELSE 'GENERAL'  -- Default any other values to GENERAL
 END
 WHERE category IS NOT NULL;
