@@ -147,8 +147,16 @@ export async function buildProjectZip(
               fileName: true,
               storageUrl: true,
               mimeType: true,
+              category: true,
+              tags: true,
+              aiDescription: true,
+              order: true,
             },
-            orderBy: { createdAt: 'asc' },
+            orderBy: [
+              { category: 'asc' },
+              { order: 'asc' },
+              { createdAt: 'asc' },
+            ],
           },
           agentSkills: {
             select: {
@@ -262,28 +270,47 @@ export async function buildProjectZip(
       }
     }
 
-    // Add research assets (images, references)
+    // Add research assets (organized by category)
     if (includeResearchAssets && projectData.researchAssets.length > 0) {
       const assetsFolder = researchFolder.folder('assets');
       if (assetsFolder) {
+        // Group assets by category
+        const assetsByCategory = new Map<string, typeof projectData.researchAssets>();
         for (const asset of projectData.researchAssets) {
-          try {
-            const buffer = await downloadBlobAsset(asset.storageUrl);
-            if (buffer) {
-              assetsFolder.file(asset.fileName, buffer);
-            } else {
-              assetsFolder.file(
+          const category = asset.category || 'general';
+          if (!assetsByCategory.has(category)) {
+            assetsByCategory.set(category, []);
+          }
+          assetsByCategory.get(category)!.push(asset);
+        }
+
+        // Create category folders and add assets
+        for (const [category, assets] of assetsByCategory.entries()) {
+          const categoryFolder = assetsFolder.folder(category);
+          if (!categoryFolder) continue;
+
+          for (const asset of assets) {
+            try {
+              const buffer = await downloadBlobAsset(asset.storageUrl);
+              if (buffer) {
+                categoryFolder.file(asset.fileName, buffer);
+              } else {
+                categoryFolder.file(
+                  `${asset.fileName}-placeholder.txt`,
+                  createAssetPlaceholder(asset.fileName, asset.storageUrl, 'Could not download from storage')
+                );
+              }
+            } catch (error) {
+              categoryFolder.file(
                 `${asset.fileName}-placeholder.txt`,
-                createAssetPlaceholder(asset.fileName, asset.storageUrl, 'Could not download from storage')
+                createAssetPlaceholder(asset.fileName, asset.storageUrl, 'Download failed')
               );
             }
-          } catch (error) {
-            assetsFolder.file(
-              `${asset.fileName}-placeholder.txt`,
-              createAssetPlaceholder(asset.fileName, asset.storageUrl, 'Download failed')
-            );
           }
         }
+
+        // Generate FILES.md manifest
+        assetsFolder.file('FILES.md', generateFilesManifest(projectData.researchAssets));
       }
     }
   }
@@ -415,7 +442,60 @@ ${projectData.researchDocuments.map((doc: any) => `- ${doc.title} (${doc.sourceT
 ## Research Assets
 
 ${projectData.researchAssets.length} asset(s) included in the assets/ folder.
+
+See \`assets/FILES.md\` for a complete manifest organized by category.
 `;
+}
+
+/**
+ * Helper: Generate FILES.md manifest for research assets
+ */
+function generateFilesManifest(assets: any[]): string {
+  // Group by category
+  const byCategory = new Map<string, any[]>();
+  for (const asset of assets) {
+    const category = asset.category || 'general';
+    if (!byCategory.has(category)) {
+      byCategory.set(category, []);
+    }
+    byCategory.get(category)!.push(asset);
+  }
+
+  // Build manifest
+  let manifest = `# Research Asset Manifest
+
+This manifest provides an organized view of all research assets included in this export.
+
+**Total Assets**: ${assets.length}
+
+---
+
+`;
+
+  for (const [category, categoryAssets] of Array.from(byCategory.entries()).sort()) {
+    manifest += `## ${category.charAt(0).toUpperCase() + category.slice(1)}\n\n`;
+    manifest += `**Count**: ${categoryAssets.length}\n\n`;
+
+    for (const asset of categoryAssets) {
+      manifest += `### ${asset.fileName}\n\n`;
+      manifest += `- **Location**: \`${category}/${asset.fileName}\`\n`;
+      manifest += `- **Type**: ${asset.mimeType || 'Unknown'}\n`;
+      
+      if (asset.tags && asset.tags.length > 0) {
+        manifest += `- **Tags**: ${asset.tags.join(', ')}\n`;
+      }
+      
+      if (asset.aiDescription) {
+        manifest += `- **Description**: ${asset.aiDescription}\n`;
+      }
+      
+      manifest += '\n';
+    }
+
+    manifest += '---\n\n';
+  }
+
+  return manifest;
 }
 
 /**
