@@ -98,7 +98,10 @@ Generated projects also receive `research/PROJECT_RESEARCH.md`. Supporting resea
 
 Raw animation files are rejected. Users provide extracted frames or frame ZIPs.
 
-Files live in Vercel Blob. Neon stores metadata, extracted text, summaries, tags, source attribution, ownership, and Blob paths.
+**Media Storage:**
+- User-uploaded discovery files (images, videos, documents) are stored in Cloudinary, organized by project in folders: `Foundrie AI Files/{projectId}/{images|videos|markdown|documents}/`
+- Generated artifacts (ZIPs, diagram PNGs, canvas snapshots) are stored in Vercel Blob
+- Neon stores metadata, Cloudinary URLs, extracted text, summaries, tags, source attribution, and ownership
 
 ## Context Files
 
@@ -193,7 +196,8 @@ Foundrie AI itself uses this stack. Generated projects do not inherit it by defa
 - Neon Postgres with Prisma.
 - Runtime DB traffic uses pooled `DATABASE_URL`.
 - Prisma CLI and migrations use direct `DIRECT_URL`.
-- Vercel Blob stores assets and generated artifacts.
+- Vercel Blob stores generated artifacts (ZIPs, diagram PNGs, canvas snapshots).
+- Cloudinary stores user-uploaded media (images, videos, documents) with automatic optimization and CDN delivery.
 - Trigger.dev handles durable long-running work.
 - React Flow and Liveblocks power the canvas.
 - Tavily, Obscura, and Context7 enrich research when configured.

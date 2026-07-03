@@ -59,14 +59,9 @@ describe("ZIP Export - Category Organization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Mock db transaction with proper typing
+    // Mock db transaction with proper typing and mock data
     type TransactionCallback<T> = (tx: unknown) => Promise<T>;
     
-    vi.mocked(db.$transaction).mockImplementation(async <T>(callback: TransactionCallback<T>) => {
-      return await callback({});
-    });
-
-    // Mock findUnique to return mock data
     vi.mocked(db.$transaction).mockImplementation(async <T>(callback: TransactionCallback<T>) => {
       const mockTx = {
         project: {

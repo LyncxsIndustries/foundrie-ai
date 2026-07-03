@@ -9,7 +9,7 @@ import { cloudinary } from './client';
 function getMediaTypeFolder(mimeType: string): string {
   if (mimeType.startsWith('image/')) return 'images';
   if (mimeType.startsWith('video/')) return 'videos';
-  if (mimeType === 'text/markdown' || mimeType.endsWith('.md')) return 'markdown';
+  if (mimeType === 'text/markdown') return 'markdown';
   // PDFs, Word docs, text files, etc.
   return 'documents';
 }

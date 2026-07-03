@@ -23,11 +23,11 @@ class Logger {
 
   private log(level: LogLevel, message: string, context?: LogContext): void {
     const logEntry = {
+      ...context,
       timestamp: this.getTimestamp(),
       level,
       message,
       trace_id: context?.trace_id || randomUUID(),
-      ...context,
     };
 
     // Output as JSON to stdout/stderr
@@ -41,7 +41,11 @@ class Logger {
   }
 
   debug(message: string, context?: LogContext): void {
-    this.log("debug", message, context);
+    // Honor LOG_LEVEL env var - only emit debug in development or when explicitly enabled
+    const logLevel = process.env.LOG_LEVEL?.toLowerCase();
+    if (logLevel === 'debug' || process.env.NODE_ENV === 'development') {
+      this.log("debug", message, context);
+    }
   }
 
   info(message: string, context?: LogContext): void {
