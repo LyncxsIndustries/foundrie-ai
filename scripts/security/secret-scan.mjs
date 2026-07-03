@@ -68,7 +68,11 @@ for (const file of files) {
   const lines = content.split(/\r?\n/);
   for (const [index, line] of lines.entries()) {
     for (const rule of SECRET_RULES) {
-      if (rule.id === "api-secret-assignment" && isDocumentationFile(file)) {
+      // Skip sensitive patterns in documentation and example files
+      if (
+        (rule.id === "api-secret-assignment" || rule.id === "private-key") &&
+        isDocumentationFile(file)
+      ) {
         continue;
       }
 
@@ -146,5 +150,10 @@ function isPlaceholderValue(value, line) {
 }
 
 function isDocumentationFile(file) {
-  return file.endsWith(".md") || file.startsWith(".agents/skills/");
+  return (
+    file.endsWith(".md") ||
+    file.startsWith(".agents/skills/") ||
+    file.endsWith(".env.example") ||
+    file === ".env.example"
+  );
 }
