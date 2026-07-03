@@ -9,6 +9,11 @@ import { analyzeMotionAsset } from "@/lib/research/motion-plan";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
 
+const AnalyzeRequestSchema = z.object({
+  fileIds: z.array(z.string()).min(1, "At least one file ID is required"),
+  analysisType: z.enum(["vision", "ocr", "full"]).optional().default("full"),
+});
+
 function unauthorized(message: string): Response {
   return NextResponse.json({ error: message }, { status: 401 });
 }
@@ -28,28 +33,103 @@ export async function POST(
     await requireProjectMember(projectId, user.id);
 
     const body = await req.json().catch(() => null);
-    if (!body || !body.assetId) {
-      return NextResponse.json({ error: "assetId is required" }, { status: 400 });
+    
+    // Support both old single assetId format and new batch fileIds format
+    let fileIds: string[];
+    if (body?.assetId) {
+      // Legacy single asset format
+      fileIds = [body.assetId];
+    } else if (body?.fileIds) {
+      // New batch format
+      const validationResult = AnalyzeRequestSchema.safeParse(body);
+      if (!validationResult.success) {
+        return NextResponse.json(
+          { error: "Invalid request", details: validationResult.error.issues },
+          { status: 400 }
+        );
+      }
+      fileIds = validationResult.data.fileIds;
+    } else {
+      return NextResponse.json(
+        { error: "assetId or fileIds is required" },
+        { status: 400 }
+      );
     }
 
-    const { assetId } = body;
-
-    const asset = await db.researchAsset.findUnique({
-      where: { id: assetId, projectId },
+    // Fetch all assets
+    const assets = await db.researchAsset.findMany({
+      where: {
+        id: { in: fileIds },
+        projectId,
+      },
     });
 
-    if (!asset) {
-      return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+    if (assets.length === 0) {
+      return NextResponse.json({ error: "No assets found" }, { status: 404 });
     }
 
-    let doc;
-    if (asset.assetType === "FRAME_ZIP" || asset.assetType === "FRAME") {
-      doc = await analyzeMotionAsset(projectId, assetId, user.plan);
-    } else {
-      doc = await analyzeVisualAsset(projectId, assetId, user.plan);
+    // Process each asset
+    const results = await Promise.allSettled(
+      assets.map(async (asset) => {
+        try {
+          let doc;
+          if (asset.assetType === "FRAME_ZIP" || asset.assetType === "FRAME") {
+            doc = await analyzeMotionAsset(projectId, asset.id, user.plan);
+          } else {
+            doc = await analyzeVisualAsset(projectId, asset.id, user.plan);
+          }
+
+          // Update the asset with AI description
+          if (doc && doc.content) {
+            // Extract first 500 chars as description
+            const description = doc.content.substring(0, 500);
+            
+            await db.researchAsset.update({
+              where: { id: asset.id },
+              data: {
+                aiDescription: description,
+                extractedText: doc.content,
+              },
+            });
+          }
+
+          return {
+            fileId: asset.id,
+            aiDescription: doc?.content ? doc.content.substring(0, 500) : null,
+            extractedText: doc?.content || null,
+            status: "success" as const,
+          };
+        } catch (error: any) {
+          return {
+            fileId: asset.id,
+            aiDescription: null,
+            extractedText: null,
+            status: "error" as const,
+            error: error.message || "Analysis failed",
+          };
+        }
+      })
+    );
+
+    // Map results
+    const analysisResults = results.map((result) =>
+      result.status === "fulfilled" ? result.value : result.reason
+    );
+
+    // Legacy format for single asset (backward compatibility)
+    if (body?.assetId) {
+      const singleResult = analysisResults[0];
+      if (singleResult.status === "error") {
+        return NextResponse.json(
+          { error: "Analysis failed", details: singleResult.error },
+          { status: 500 }
+        );
+      }
+      return NextResponse.json({ doc: singleResult });
     }
 
-    return NextResponse.json({ doc });
+    // New batch format
+    return NextResponse.json({ results: analysisResults });
   } catch (error: any) {
     if (error instanceof AuthError) {
       return unauthorized(error.message);

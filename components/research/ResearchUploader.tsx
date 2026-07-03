@@ -11,9 +11,10 @@ import { Progress } from "@/components/ui/progress";
 
 interface ResearchUploaderProps {
   projectId: string;
+  onUploadComplete?: () => void;
 }
 
-export function ResearchUploader({ projectId }: ResearchUploaderProps) {
+export function ResearchUploader({ projectId, onUploadComplete }: ResearchUploaderProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -59,6 +60,8 @@ export function ResearchUploader({ projectId }: ResearchUploaderProps) {
 
       // Refresh the page data
       router.refresh();
+      // Call optional callback
+      onUploadComplete?.();
       // Reset input
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
