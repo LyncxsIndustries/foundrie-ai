@@ -37,6 +37,26 @@ npm run db:migrate     # applies prisma/migrations/** to the database
 
 `prisma migrate dev` connects over **direct TCP on port 5432**.
 
+### Networks requiring proxy (proxychains)
+
+If your network requires a proxy to reach external services, prefix all Prisma commands with `proxychains4`:
+
+```bash
+proxychains4 npm run db:generate
+proxychains4 npm run db:migrate
+proxychains4 npm run db:push
+proxychains4 npm run db:studio
+```
+
+Or use `npx` for one-off commands:
+
+```bash
+proxychains4 npx prisma migrate reset --force
+proxychains4 npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
+```
+
+**Note:** Ensure `/etc/proxychains.conf` is configured correctly for your proxy setup.
+
 **Neon Free tier scales the compute to zero after ~5 minutes idle.** The first
 connection wakes it, and that wake can take longer than Prisma's default 5s
 connect timeout — which surfaces as `P1001: Can't reach database server`. Two
@@ -92,6 +112,40 @@ CREATE INDEX CONCURRENTLY "idx_diagrams_generating" ON "Diagram" ("projectId", "
 CREATE INDEX CONCURRENTLY "idx_diagrams_has_png" ON "Diagram" ("projectId")
   WHERE "pngStorageUrl" IS NOT NULL;
 ```
+
+## Database drift and migration sync
+
+If you encounter "Drift detected" errors (schema out of sync with migration history), you have two options:
+
+### Option 1: Reset and replay (DESTRUCTIVE - loses all data)
+
+Use this in development when you need a clean slate:
+
+```bash
+# Without proxy
+npm run db:migrate reset --force
+
+# With proxy
+proxychains4 npx prisma migrate reset --force
+```
+
+This drops all data and replays all migrations from scratch.
+
+### Option 2: Manual sync (when migrations were applied out of order)
+
+If you applied schema changes via `db push` before running migrations:
+
+```bash
+# Mark the current migration as applied without running it
+proxychains4 npx prisma migrate resolve --applied <migration-name>
+
+# Example:
+proxychains4 npx prisma migrate resolve --applied 20260703083100_add_research_asset_categories
+```
+
+**When to use Option 1:** Development databases, when you need clean migration history, or when drift is complex.
+
+**When to use Option 2:** When you manually applied a migration and just need to update the history.
 
 ## Query discipline checklist
 
