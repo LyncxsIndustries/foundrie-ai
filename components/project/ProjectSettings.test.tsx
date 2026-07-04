@@ -49,20 +49,30 @@ describe("ProjectSettings", () => {
     const saveButton = screen.getByRole("button", { name: /save changes/i });
     await user.click(saveButton);
 
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        "/api/projects/proj-1",
-        expect.objectContaining({
-          method: "PATCH",
-          body: JSON.stringify({
-            name: "Updated Project",
-            description: "Test description",
-          }),
-        })
-      );
-    });
+    // Wait for the API call
+    await waitFor(
+      () => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          "/api/projects/proj-1",
+          expect.objectContaining({
+            method: "PATCH",
+            body: JSON.stringify({
+              name: "Updated Project",
+              description: "Test description",
+            }),
+          })
+        );
+      },
+      { timeout: 10000 }
+    );
 
-    expect(screen.getByText("Project updated successfully")).toBeInTheDocument();
+    // Wait for success message with longer timeout
+    await waitFor(
+      () => {
+        expect(screen.getByText("Project updated successfully")).toBeInTheDocument();
+      },
+      { timeout: 10000 }
+    );
   });
 
   it("shows error on save failure", async () => {

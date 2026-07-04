@@ -155,13 +155,13 @@ function getCurrentFeature(): number | null {
   const content = fs.readFileSync(trackerPath, 'utf8');
   
   // Look for "In Progress" section
-  const inProgressMatch = content.match(/## In Progress.*?Feature (\d+)/s);
+  const inProgressMatch = content.match(/## In Progress[\s\S]*?Feature (\d+)/);
   if (inProgressMatch) {
     return parseInt(inProgressMatch[1], 10);
   }
 
   // Look for "Current Goal" section
-  const currentGoalMatch = content.match(/## Current Goal.*?Feature (\d+)/s);
+  const currentGoalMatch = content.match(/## Current Goal[\s\S]*?Feature (\d+)/);
   if (currentGoalMatch) {
     return parseInt(currentGoalMatch[1], 10);
   }

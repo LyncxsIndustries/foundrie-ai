@@ -101,7 +101,7 @@ describe("generateProjectZip task", () => {
       userId: "user_123",
     });
 
-    expect(buildProjectZip).toHaveBeenCalledWith("proj_123");
+    expect(buildProjectZip).toHaveBeenCalledWith("proj_123", expect.objectContaining({ onProgress: expect.any(Function) }));
     expect(put).toHaveBeenCalled();
     expect(db.project.update).toHaveBeenCalledWith({
       where: { id: "proj_123" },
@@ -135,7 +135,7 @@ describe("generateProjectZip task", () => {
       userId: "user_123",
     });
 
-    expect(buildProjectZip).toHaveBeenCalledWith("proj_123");
+    expect(buildProjectZip).toHaveBeenCalledWith("proj_123", expect.objectContaining({ onProgress: expect.any(Function) }));
     expect(result.size).toBe(zipBuffer.length);
   });
 
