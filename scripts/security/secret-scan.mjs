@@ -69,9 +69,13 @@ for (const file of files) {
   for (const [index, line] of lines.entries()) {
     for (const rule of SECRET_RULES) {
       // Skip sensitive patterns in documentation and example files
+      // Use basename matching to avoid exempting unintended paths like config/prod.env.example
+      const basename = path.basename(file);
       if (
         (rule.id === "api-secret-assignment" || rule.id === "private-key") &&
-        isDocumentationFile(file)
+        (file.endsWith(".md") ||
+          file.startsWith(".agents/skills/") ||
+          basename === ".env.example")
       ) {
         continue;
       }
@@ -153,7 +157,6 @@ function isDocumentationFile(file) {
   return (
     file.endsWith(".md") ||
     file.startsWith(".agents/skills/") ||
-    file.endsWith(".env.example") ||
-    file === ".env.example"
+    file.endsWith(".env.example")
   );
 }
