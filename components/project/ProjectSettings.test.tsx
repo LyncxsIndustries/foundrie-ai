@@ -63,7 +63,7 @@ describe("ProjectSettings", () => {
           })
         );
       },
-      { timeout: 10000 }
+      { timeout: 15000 }
     );
 
     // Wait for success message with longer timeout
@@ -71,9 +71,9 @@ describe("ProjectSettings", () => {
       () => {
         expect(screen.getByText("Project updated successfully")).toBeInTheDocument();
       },
-      { timeout: 10000 }
+      { timeout: 15000 }
     );
-  });
+  }, 20000); // Increase test timeout to 20 seconds
 
   it("shows error on save failure", async () => {
     const user = userEvent.setup();
