@@ -109,6 +109,7 @@ describe("callAI fallback selection", () => {
       plan: "PRO",
     });
 
+    // Current implementation returns { status: "ok", ...response, modelKey, attempts }
     expect(result.status).toBe("ok");
     if (result.status === "ok") {
       expect(result.provider).toBe("anthropic");
@@ -131,10 +132,11 @@ describe("callAI fallback selection", () => {
       plan: "PRO",
     });
 
+    // Should successfully fallback to gemini after anthropic rate-limits
     expect(result.status).toBe("ok");
     if (result.status === "ok") {
       expect(result.provider).toBe("gemini");
-      expect(result.attempts).toBe(2);
+      expect(result.attempts).toBe(2); // anthropic counted, then gemini succeeded
     }
   });
 
@@ -150,6 +152,7 @@ describe("callAI fallback selection", () => {
       plan: "PRO",
     });
 
+    // Unavailable providers are skipped without incrementing attempts
     expect(result.status).toBe("ok");
     if (result.status === "ok") {
       expect(result.provider).toBe("gemini");
@@ -204,11 +207,13 @@ describe("callAI all-fail behavior", () => {
       plan: "PRO",
     });
 
+    // Current implementation returns { status: "queued", modelKey, attempts, retryable, position, rateLimited, lastError }
     expect(result.status).toBe("queued");
     if (result.status === "queued") {
       expect(result.retryable).toBe(true);
-      expect(result.attempts).toBe(0);
+      expect(result.attempts).toBe(0); // No attempts made when all providers unavailable
       expect(result.position).toBeNull();
+      expect(result.modelKey).toBe("claude-sonnet-4"); // Still reports which model was attempted
     }
   });
 
@@ -227,24 +232,31 @@ describe("callAI all-fail behavior", () => {
       plan: "PRO",
     });
 
+    // When all providers rate-limit, return queued with rateLimited flag
     expect(result.status).toBe("queued");
     if (result.status === "queued") {
       expect(result.rateLimited).toBe(true);
-      expect(result.attempts).toBeGreaterThan(0);
-      expect(result.lastError).toBeTruthy();
+      expect(result.attempts).toBeGreaterThan(0); // Attempts were made
+      expect(result.lastError).toContain("rate limited");
+      expect(result.retryable).toBe(true);
     }
   });
 
   it("does not throw a raw provider error on exhaustion", async () => {
     registry({ anthropic: { mode: "error" }, gemini: { mode: "error" } });
 
-    await expect(
-      callAI("architecture_proposal", {
-        systemPrompt: "s",
-        userPrompt: "u",
-        plan: "PRO",
-      }),
-    ).resolves.toMatchObject({ status: "queued" });
+    // Should return queued state, not throw
+    const result = await callAI("architecture_proposal", {
+      systemPrompt: "s",
+      userPrompt: "u",
+      plan: "PRO",
+    });
+
+    expect(result.status).toBe("queued");
+    if (result.status === "queued") {
+      expect(result.retryable).toBe(true);
+      expect(result.lastError).toBeTruthy();
+    }
   });
 });
 
@@ -258,12 +270,14 @@ describe("callAIStream", () => {
       plan: "PRO",
     });
 
+    // Current implementation returns { status: "ok", modelKey, provider, model, stream }
     expect(result.status).toBe("ok");
     if (result.status === "ok") {
       const chunks: string[] = [];
       for await (const chunk of result.stream) chunks.push(chunk);
       expect(chunks.join("")).toBe("hello stream");
       expect(result.provider).toBe("anthropic");
+      expect(result.modelKey).toBe("claude-sonnet-4");
     }
   });
 
@@ -279,9 +293,13 @@ describe("callAIStream", () => {
       plan: "PRO",
     });
 
+    // Should fallback to gemini after anthropic fails
     expect(result.status).toBe("ok");
     if (result.status === "ok") {
       expect(result.provider).toBe("gemini");
+      const chunks: string[] = [];
+      for await (const chunk of result.stream) chunks.push(chunk);
+      expect(chunks.join("")).toBe("gemini stream");
     }
   });
 
@@ -294,6 +312,11 @@ describe("callAIStream", () => {
       plan: "PRO",
     });
 
+    // Returns same queued structure as callAI
     expect(result.status).toBe("queued");
+    if (result.status === "queued") {
+      expect(result.retryable).toBe(true);
+      expect(result.modelKey).toBe("claude-sonnet-4");
+    }
   });
 });
