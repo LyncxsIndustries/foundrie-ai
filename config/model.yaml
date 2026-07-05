@@ -104,6 +104,8 @@ chains:
     - { provider: deepseek, model: deepseek-reasoner }
     - { provider: openrouter, model: deepseek/deepseek-r1 }
     - { provider: gemini, model: gemini-2.5-pro }
+    - { provider: nvidia, model: meta/llama-3.1-405b-instruct }
+    - { provider: groq, model: llama-3.3-70b-versatile }
     - { provider: openrouter, model: qwen/qwen3-next-80b-a3b-instruct:free } # was: QwQ free
 
   deepseek-v3:
