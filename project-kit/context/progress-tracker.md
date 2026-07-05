@@ -209,3 +209,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - **Root Cleanup**: Removed old scratchpad/summary logs from the root workspace.
 - **Contract Sync**: Updated `02-auth.md` spec to reflect `proxy.ts` (Next 16) and updated file scopes to match the new `__tests__` structure.
 - **Vision Model Routing Fix**: Updated `lib/ai/rotation-engine.ts` to automatically route requests containing media attachments to vision-capable models (`gemini-2.5-pro` for FREE, `claude-sonnet-4` for paid tiers), bypassing the default text-only primary (e.g., `deepseek-r1`) which was silently ignoring uploaded images.
+
+**Session 2026-07-05 (Free Tier Expansion & Dashboard Clone):**
+- **Free Tier Model Rotation**: Expanded the `deepseek-r1` free-tier fallback chain in `config/model.yaml` to include 5 distinct providers (`deepseek`, `openrouter`, `gemini`, `nvidia`, `groq`). This ensures the AI Rotation Engine can gracefully handle rate limits on free API keys without returning immediate 429 errors to the user.
+- **Standalone Dashboard UI Clone**: Implemented a standalone, Awwwards-quality frontend clone of the Dashboard UI at `app/dashboard-clone/page.tsx`, completely powered by static mock data in `lib/mock/database.ts`. Features glassmorphism, advanced GSAP staggering animations, and a user-controlled global motion toggle via `MotionProvider` context.
