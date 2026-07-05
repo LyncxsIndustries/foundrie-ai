@@ -96,7 +96,7 @@ describe("POST /api/projects/[projectId]/download", () => {
       lastZipGeneratedAt: tenMinutesAgo,
     };
 
-    vi.mocked(db.project.findFirst).mockResolvedValue(mockProject);
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue(mockProject);
 
     // Mock HEAD request for size
     global.fetch = vi.fn().mockResolvedValue({
@@ -129,7 +129,7 @@ describe("POST /api/projects/[projectId]/download", () => {
       lastZipGeneratedAt: fifteenMinutesAgo,
     };
 
-    vi.mocked(db.project.findFirst).mockResolvedValue(mockProject);
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue(mockProject);
     vi.mocked(tasks.trigger).mockResolvedValue({ id: "run-123" } as any);
 
     const request = new NextRequest("http://localhost:3000/api/projects/project-1/download", {
@@ -157,7 +157,7 @@ describe("POST /api/projects/[projectId]/download", () => {
       lastZipGeneratedAt: null,
     };
 
-    vi.mocked(db.project.findFirst).mockResolvedValue(mockProject);
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue(mockProject);
     vi.mocked(tasks.trigger).mockResolvedValue({ id: "run-123" } as any);
 
     const request = new NextRequest("http://localhost:3000/api/projects/project-1/download", {
@@ -200,7 +200,7 @@ describe("GET /api/projects/[projectId]/download", () => {
   });
 
   it("returns 400 when runId is missing", async () => {
-    vi.mocked(db.project.findFirst).mockResolvedValue({ id: mockProjectId });
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({ id: mockProjectId });
 
     const request = new NextRequest("http://localhost:3000/api/projects/project-1/download", {
       method: "GET",
@@ -231,7 +231,7 @@ describe("GET /api/projects/[projectId]/download", () => {
   });
 
   it("returns completed status with ZIP metadata", async () => {
-    vi.mocked(db.project.findFirst).mockResolvedValue({ id: mockProjectId });
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({ id: mockProjectId });
     vi.mocked(runs.retrieve).mockResolvedValue({
       id: "run-123",
       status: "COMPLETED",
@@ -259,7 +259,7 @@ describe("GET /api/projects/[projectId]/download", () => {
   });
 
   it("returns generating status with progress", async () => {
-    vi.mocked(db.project.findFirst).mockResolvedValue({ id: mockProjectId });
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({ id: mockProjectId });
     vi.mocked(runs.retrieve).mockResolvedValue({
       id: "run-123",
       status: "EXECUTING",
@@ -281,7 +281,7 @@ describe("GET /api/projects/[projectId]/download", () => {
   });
 
   it("returns failed status when run fails", async () => {
-    vi.mocked(db.project.findFirst).mockResolvedValue({ id: mockProjectId });
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({ id: mockProjectId });
     vi.mocked(runs.retrieve).mockResolvedValue({
       id: "run-123",
       status: "FAILED",

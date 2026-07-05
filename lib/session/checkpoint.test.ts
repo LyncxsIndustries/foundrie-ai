@@ -28,13 +28,13 @@ describe("getSessionCheckpoint", () => {
   });
 
   it("returns no unfinished session if project is missing", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValueOnce(null);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValueOnce(null);
     const result = await getSessionCheckpoint("proj_1");
     expect(result.hasUnfinishedSession).toBe(false);
   });
 
   it("returns unfinished discovery if messages exist", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValueOnce({
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValueOnce({
       id: "proj_1",
       status: ProjectStatus.DISCOVERY,
       updatedAt: new Date("2026-06-23T20:20:00Z"),
@@ -50,7 +50,7 @@ describe("getSessionCheckpoint", () => {
   });
 
   it("returns unfinished architecture if execution plan is proposed", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValueOnce({
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValueOnce({
       id: "proj_1",
       status: ProjectStatus.ARCHITECTURE,
       updatedAt: new Date("2026-06-23T20:20:00Z"),
@@ -66,7 +66,7 @@ describe("getSessionCheckpoint", () => {
   });
 
   it("returns unfinished diagrams if diagrams are generating", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValueOnce({
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValueOnce({
       id: "proj_1",
       status: ProjectStatus.DIAGRAM_GENERATION,
       updatedAt: new Date("2026-06-23T20:20:00Z"),
@@ -88,7 +88,7 @@ describe("discardSession", () => {
   });
 
   it("clears conversation messages if in DISCOVERY", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValueOnce({
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValueOnce({
       id: "proj_1",
       status: ProjectStatus.DISCOVERY,
       executionPlans: [],
@@ -102,7 +102,7 @@ describe("discardSession", () => {
   });
 
   it("deletes pending diagrams if in DIAGRAM_GENERATION", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValueOnce({
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValueOnce({
       id: "proj_1",
       status: ProjectStatus.DIAGRAM_GENERATION,
       executionPlans: [],
@@ -111,7 +111,7 @@ describe("discardSession", () => {
 
     await discardSession("proj_1");
     expect(db.diagram.deleteMany).toHaveBeenCalled();
-    expect(db.project.update).toHaveBeenCalledWith({
+    expect((db.project.update as any)).toHaveBeenCalledWith({
       where: { id: "proj_1" },
       data: { status: ProjectStatus.ARCHITECTURE },
     });

@@ -7,7 +7,6 @@ ENHANCEMENT
 ## What This Delivers
 
 A premium chat interface for the discovery phase that supports rich media uploads (images, screenshots, videos, documents), auto-scrolls to new messages, fixes scrolling so only the chat area scrolls (sidebar and header remain fixed), implements proper session memory and context management, and uses Cloudinary for media storage. The chat feel is clean, professional, and comparable to Claude, ChatGPT, or premium AI interfaces.
-
 ## Dependencies
 
 - Feature 10 (Discovery Chat) provides the base conversation infrastructure

@@ -3,9 +3,17 @@
 // DATABASE_URL (`-pooler` endpoint) so serverless route handlers reuse PgBouncer
 // connections instead of exhausting Neon's direct-connection limit. The client
 // is cached on globalThis in development to survive HMR module reloads.
+import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import ws from "ws";
 
 import { PrismaClient } from "./generated/prisma/client";
+
+// Required for Neon serverless in Node.js environments
+neonConfig.webSocketConstructor = ws;
+// Pipeline the TLS handshake and auth together to cut connection-setup latency.
+neonConfig.pipelineConnect = "password";
+neonConfig.pipelineTLS = true;
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -15,7 +23,17 @@ if (!connectionString) {
   );
 }
 
-const adapter = new PrismaNeon({ connectionString });
+const adapter = new PrismaNeon(
+  { 
+    connectionString,
+    idleTimeoutMillis: 20000,
+    connectionTimeoutMillis: 10000,
+  },
+  {
+    onPoolError: (err) => console.error('Neon Pool Error:', err),
+    onConnectionError: (err) => console.error('Neon Connection Error:', err),
+  }
+);
 
 const createPrismaClient = () =>
   new PrismaClient({

@@ -12,6 +12,7 @@ import {
   requireProjectOwner,
 } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
+import { buildProjectSlug } from "@/lib/projects/slug";
 
 const PROJECT_DETAIL_SELECT = {
   id: true,
@@ -101,9 +102,14 @@ export async function PATCH(
 
     await requireProjectOwner(projectId, user.id);
 
+    const updateData: { name?: string; description?: string | null; slug?: string } = { ...parsed.data };
+    if (updateData.name) {
+      updateData.slug = buildProjectSlug(updateData.name, projectId);
+    }
+
     const result = await db.project.updateMany({
       where: { id: projectId },
-      data: parsed.data,
+      data: updateData,
     });
     if (result.count === 0) {
       return notFound();

@@ -39,7 +39,7 @@ describe("generateRequirementsDocs", () => {
   });
 
   it("should generate and persist three requirement documents", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue({
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue({
       id: projectId,
       requirements: { content: { some: "req" } },
       executionPlans: [{ content: "Plan 1", taskType: "ARCHITECTURE" }],
@@ -74,7 +74,7 @@ describe("generateRequirementsDocs", () => {
   });
 
   it("should throw if AI rotation is exhausted", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue({
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue({
       id: projectId,
       requirements: { content: { some: "req" } },
       executionPlans: [],
@@ -92,12 +92,12 @@ describe("generateRequirementsDocs", () => {
   });
 
   it("should throw if project not found", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(null);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(null);
     await expect(generateRequirementsDocs(projectId, userId)).rejects.toThrow(`Project ${projectId} not found.`);
   });
 
   it("should use requireProjectOwner for authorization", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue({
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue({
       id: projectId,
       requirements: { content: {} },
       executionPlans: [],

@@ -48,7 +48,7 @@ describe("generateCicdScaffolding", () => {
   });
 
   it("should generate and persist CI/CD scaffolding", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(MOCK_PROJECT as any);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(MOCK_PROJECT as any);
 
     vi.mocked(callAI).mockResolvedValue({
       status: "ok",
@@ -82,7 +82,7 @@ describe("generateCicdScaffolding", () => {
   });
 
   it("should throw if AI rotation is exhausted", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(MOCK_PROJECT as any);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(MOCK_PROJECT as any);
 
     vi.mocked(callAI).mockResolvedValue({
       status: "queued",
@@ -97,7 +97,7 @@ describe("generateCicdScaffolding", () => {
   });
 
   it("should throw if project not found", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(null);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(null);
     await expect(generateCicdScaffolding(projectId, userId)).rejects.toThrow(
       `Project ${projectId} not found.`
     );

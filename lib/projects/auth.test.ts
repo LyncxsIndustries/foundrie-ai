@@ -21,7 +21,7 @@ describe("Project Auth Helpers (re-exports)", () => {
 
   describe("requireProjectOwner", () => {
     it("returns project when ownership matches", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue({ id: "proj_123" } as never);
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({ id: "proj_123" } as never);
 
       const result = await requireProjectOwner("proj_123", "user_456");
 
@@ -29,7 +29,7 @@ describe("Project Auth Helpers (re-exports)", () => {
     });
 
     it("throws ProjectAuthError when project does not exist or not owned", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue(null);
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue(null);
 
       await expect(requireProjectOwner("proj_123", "user_456")).rejects.toThrow(
         ProjectAuthError,
@@ -39,7 +39,7 @@ describe("Project Auth Helpers (re-exports)", () => {
 
   describe("requireProjectMember", () => {
     it("returns owner role for project creator", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue({
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
         id: "proj_123",
         userId: "user_456",
         members: [],

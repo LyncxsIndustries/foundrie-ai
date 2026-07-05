@@ -44,7 +44,7 @@ describe("POST /api/projects/[projectId]/clear-zip", () => {
     const { db } = await import("@/lib/db");
 
     vi.mocked(requireAuth).mockResolvedValue({ id: "user-1" });
-    vi.mocked(db.project.updateMany).mockResolvedValue({ count: 0 });
+    vi.mocked((db.project.updateMany as any) as any).mockResolvedValue({ count: 0 });
 
     const request = new Request("http://localhost/api/projects/proj-1/clear-zip");
     const params = Promise.resolve({ projectId: "proj-1" });
@@ -61,7 +61,7 @@ describe("POST /api/projects/[projectId]/clear-zip", () => {
     const { db } = await import("@/lib/db");
 
     vi.mocked(requireAuth).mockResolvedValue({ id: "user-1" });
-    vi.mocked(db.project.updateMany).mockResolvedValue({ count: 1 });
+    vi.mocked((db.project.updateMany as any) as any).mockResolvedValue({ count: 1 });
 
     const request = new Request("http://localhost/api/projects/proj-1/clear-zip");
     const params = Promise.resolve({ projectId: "proj-1" });
@@ -71,7 +71,7 @@ describe("POST /api/projects/[projectId]/clear-zip", () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(db.project.updateMany).toHaveBeenCalledWith({
+    expect((db.project.updateMany as any)).toHaveBeenCalledWith({
       where: { id: "proj-1", userId: "user-1" },
       data: {
         lastZipUrl: null,
@@ -86,14 +86,14 @@ describe("POST /api/projects/[projectId]/clear-zip", () => {
     const { db } = await import("@/lib/db");
 
     vi.mocked(requireAuth).mockResolvedValue({ id: "user-2" });
-    vi.mocked(db.project.updateMany).mockResolvedValue({ count: 1 });
+    vi.mocked((db.project.updateMany as any) as any).mockResolvedValue({ count: 1 });
 
     const request = new Request("http://localhost/api/projects/proj-1/clear-zip");
     const params = Promise.resolve({ projectId: "proj-1" });
 
     await POST(request, { params });
 
-    expect(db.project.updateMany).toHaveBeenCalledWith(
+    expect((db.project.updateMany as any)).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: "proj-1", userId: "user-2" },
       })

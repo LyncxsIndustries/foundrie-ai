@@ -44,10 +44,10 @@ describe("generateProjectZip task", () => {
   });
 
   it("throws when project not found", async () => {
-    vi.mocked(db.project.findFirst).mockResolvedValue(null);
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue(null);
 
     await expect(
-      generateProjectZip.run({ projectId: "proj_123", userId: "user_123" })
+      (generateProjectZip as any).run({ projectId: "proj_123", userId: "user_123" })
     ).rejects.toThrow("Project not found or access denied");
   });
 
@@ -55,7 +55,7 @@ describe("generateProjectZip task", () => {
     const cachedAt = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago
     const cachedUrl = "https://blob.vercel-storage.com/cached.zip";
 
-    vi.mocked(db.project.findFirst).mockResolvedValue({
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
       id: "proj_123",
       slug: "test-project",
       lastZipUrl: cachedUrl,
@@ -67,7 +67,7 @@ describe("generateProjectZip task", () => {
       headers: new Map([["content-length", "1024"]]),
     } as any);
 
-    const result = await generateProjectZip.run({
+    const result = await (generateProjectZip as any).run({
       projectId: "proj_123",
       userId: "user_123",
     });
@@ -82,7 +82,7 @@ describe("generateProjectZip task", () => {
     const expiredAt = new Date(Date.now() - 15 * 60 * 1000); // 15 minutes ago
     const zipBuffer = Buffer.from("mock-zip-content");
 
-    vi.mocked(db.project.findFirst).mockResolvedValue({
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
       id: "proj_123",
       slug: "test-project",
       lastZipUrl: "https://blob.vercel-storage.com/old.zip",
@@ -94,16 +94,16 @@ describe("generateProjectZip task", () => {
     vi.mocked(put).mockResolvedValue({
       url: "https://blob.vercel-storage.com/new.zip",
     } as any);
-    vi.mocked(db.project.update).mockResolvedValue({} as any);
+    vi.mocked((db.project.update as any) as any).mockResolvedValue({} as any);
 
-    const result = await generateProjectZip.run({
+    const result = await (generateProjectZip as any).run({
       projectId: "proj_123",
       userId: "user_123",
     });
 
     expect(buildProjectZip).toHaveBeenCalledWith("proj_123", expect.objectContaining({ onProgress: expect.any(Function) }));
     expect(put).toHaveBeenCalled();
-    expect(db.project.update).toHaveBeenCalledWith({
+    expect((db.project.update as any)).toHaveBeenCalledWith({
       where: { id: "proj_123" },
       data: expect.objectContaining({
         lastZipUrl: "https://blob.vercel-storage.com/new.zip",
@@ -116,7 +116,7 @@ describe("generateProjectZip task", () => {
   it("builds new ZIP when no cache exists", async () => {
     const zipBuffer = Buffer.from("mock-zip-content");
 
-    vi.mocked(db.project.findFirst).mockResolvedValue({
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
       id: "proj_123",
       slug: "test-project",
       lastZipUrl: null,
@@ -128,9 +128,9 @@ describe("generateProjectZip task", () => {
     vi.mocked(put).mockResolvedValue({
       url: "https://blob.vercel-storage.com/new.zip",
     } as any);
-    vi.mocked(db.project.update).mockResolvedValue({} as any);
+    vi.mocked((db.project.update as any) as any).mockResolvedValue({} as any);
 
-    const result = await generateProjectZip.run({
+    const result = await (generateProjectZip as any).run({
       projectId: "proj_123",
       userId: "user_123",
     });
@@ -142,7 +142,7 @@ describe("generateProjectZip task", () => {
   it("is idempotent - same projectId can be called multiple times", async () => {
     const zipBuffer = Buffer.from("mock-zip-content");
 
-    vi.mocked(db.project.findFirst).mockResolvedValue({
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
       id: "proj_123",
       slug: "test-project",
       lastZipUrl: null,
@@ -154,16 +154,16 @@ describe("generateProjectZip task", () => {
     vi.mocked(put).mockResolvedValue({
       url: "https://blob.vercel-storage.com/new.zip",
     } as any);
-    vi.mocked(db.project.update).mockResolvedValue({} as any);
+    vi.mocked((db.project.update as any) as any).mockResolvedValue({} as any);
 
     const payload = { projectId: "proj_123", userId: "user_123" };
     
-    const result1 = await generateProjectZip.run(payload);
-    const result2 = await generateProjectZip.run(payload);
+    const result1 = await (generateProjectZip as any).run(payload);
+    const result2 = await (generateProjectZip as any).run(payload);
 
     // Both calls succeed and return consistent results
     expect(result1.url).toBeDefined();
     expect(result2.url).toBeDefined();
-    expect(db.project.update).toHaveBeenCalled();
+    expect((db.project.update as any)).toHaveBeenCalled();
   });
 });

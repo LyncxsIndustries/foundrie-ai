@@ -20,7 +20,7 @@ describe("lib/db", () => {
   afterEach(() => {
     process.env.DATABASE_URL = originalUrl;
     vi.unstubAllEnvs();
-    process.env.NODE_ENV = originalNodeEnv;
+    Object.defineProperty(process.env, "NODE_ENV", { value: originalNodeEnv });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (globalThis as any).db;
   });

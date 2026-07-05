@@ -9,7 +9,7 @@ import {
 import type { ReactFlowJsonObject } from '@xyflow/react';
 
 describe('lib/diagrams/export-formats', () => {
-  const sampleData: ReactFlowJsonObject = {
+  const sampleData: ReactFlowJsonObject = { viewport: { x: 0, y: 0, zoom: 1 },
     nodes: [
       { id: 'node1', type: 'c4-system', position: { x: 0, y: 0 }, data: { label: 'System A', nodeType: 'system' } },
       { id: 'node2', type: 'c4-container', position: { x: 200, y: 0 }, data: { label: 'Container B', nodeType: 'container' } },
@@ -29,7 +29,7 @@ describe('lib/diagrams/export-formats', () => {
     });
 
     it('exports sequence diagrams to Mermaid', () => {
-      const sequenceData: ReactFlowJsonObject = {
+      const sequenceData: ReactFlowJsonObject = { viewport: { x: 0, y: 0, zoom: 1 },
         nodes: [
           { id: 'user', type: 'sequence-actor', position: { x: 0, y: 0 }, data: { label: 'User' } },
           { id: 'api', type: 'sequence-lifeline', position: { x: 200, y: 0 }, data: { label: 'API' } },
@@ -46,7 +46,7 @@ describe('lib/diagrams/export-formats', () => {
     });
 
     it('exports state machines to Mermaid', () => {
-      const stateData: ReactFlowJsonObject = {
+      const stateData: ReactFlowJsonObject = { viewport: { x: 0, y: 0, zoom: 1 },
         nodes: [
           { id: 'idle', type: 'state', position: { x: 0, y: 0 }, data: { label: 'Idle' } },
           { id: 'active', type: 'state', position: { x: 200, y: 0 }, data: { label: 'Active' } },
@@ -74,7 +74,7 @@ describe('lib/diagrams/export-formats', () => {
 
   describe('exportToDBML', () => {
     it('exports ERD to DBML', () => {
-      const erdData: ReactFlowJsonObject = {
+      const erdData: ReactFlowJsonObject = { viewport: { x: 0, y: 0, zoom: 1 },
         nodes: [
           {
             id: 'user',
@@ -105,7 +105,7 @@ describe('lib/diagrams/export-formats', () => {
 
   describe('exportToOpenAPI', () => {
     it('exports API Map to OpenAPI YAML', () => {
-      const apiData: ReactFlowJsonObject = {
+      const apiData: ReactFlowJsonObject = { viewport: { x: 0, y: 0, zoom: 1 },
         nodes: [
           {
             id: 'get-users',
@@ -128,7 +128,7 @@ describe('lib/diagrams/export-formats', () => {
 
   describe('exportToXState', () => {
     it('exports State Machine to XState JSON', () => {
-      const stateData: ReactFlowJsonObject = {
+      const stateData: ReactFlowJsonObject = { viewport: { x: 0, y: 0, zoom: 1 },
         nodes: [
           { id: 'idle', type: 'state', position: { x: 0, y: 0 }, data: { label: 'Idle' } },
           { id: 'loading', type: 'state', position: { x: 200, y: 0 }, data: { label: 'Loading' } },

@@ -42,7 +42,7 @@ describe("DELETE /api/projects/[projectId]/members/[memberId]", () => {
     vi.clearAllMocks();
     vi.mocked(requireAuth).mockResolvedValue({ id: authUserId } as any);
     vi.mocked(requireProjectMember).mockResolvedValue({ id: projectId, role: ProjectMemberRole.OWNER } as any);
-    vi.mocked(db.project.findUnique).mockResolvedValue({ userId: ownerUserId } as any);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue({ userId: ownerUserId } as any);
     vi.mocked(db.projectMember.findFirst).mockResolvedValue({ userId: "some-other-user" } as any);
   });
 

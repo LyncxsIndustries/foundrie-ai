@@ -63,7 +63,7 @@ describe("generateProjectDocs", () => {
   });
 
   it("should generate and persist docs package for agentic project", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(MOCK_PROJECT as any);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(MOCK_PROJECT as any);
 
     vi.mocked(callAI).mockImplementation(async (taskName) => {
       if (taskName === "docs_adr_md") {
@@ -106,7 +106,7 @@ describe("generateProjectDocs", () => {
   });
 
   it("should not generate RED-TEAM.md for non-agentic projects", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(
       MOCK_NON_AGENTIC_PROJECT as any
     );
 
@@ -131,7 +131,7 @@ describe("generateProjectDocs", () => {
   });
 
   it("should throw if AI rotation is exhausted", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(MOCK_PROJECT as any);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(MOCK_PROJECT as any);
 
     vi.mocked(callAI).mockResolvedValue({
       status: "queued",
@@ -146,14 +146,14 @@ describe("generateProjectDocs", () => {
   });
 
   it("should throw if project not found", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(null);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(null);
     await expect(generateProjectDocs(projectId, userId)).rejects.toThrow(
       `Project ${projectId} not found.`
     );
   });
 
   it("should use requireProjectOwner for authorization", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(MOCK_PROJECT as any);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(MOCK_PROJECT as any);
 
     vi.mocked(callAI).mockImplementation(async (taskName) => {
       if (taskName === "docs_adr_md") {

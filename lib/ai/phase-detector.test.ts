@@ -47,11 +47,11 @@ describe('analyzePhaseCompletion', () => {
       confidenceScore: 88,
       missingItems: [],
       shouldAdvance: true,
-      suggestedQuestion: null,
+      suggestedQuestion: undefined,
     };
 
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({
-      status: 'ok',
+    vi.mocked(rotationEngine.callAI).mockResolvedValue({} as any); // {
+      status: "ok", modelKey: "mock", attempts: 1, provider: "mock", model: "mock",
       text: JSON.stringify(mockResponse),
     });
 
@@ -83,8 +83,8 @@ describe('analyzePhaseCompletion', () => {
       suggestedQuestion: 'What timeline or constraints are you working with?',
     };
 
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({
-      status: 'ok',
+    vi.mocked(rotationEngine.callAI).mockResolvedValue({} as any); // {
+      status: "ok", modelKey: "mock", attempts: 1, provider: "mock", model: "mock",
       text: JSON.stringify(mockResponse),
     });
 
@@ -115,11 +115,11 @@ describe('analyzePhaseCompletion', () => {
       confidenceScore: 92,
       missingItems: [],
       shouldAdvance: false, // 92 < 95 threshold for COMPLEX
-      suggestedQuestion: null,
+      suggestedQuestion: undefined,
     };
 
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({
-      status: 'ok',
+    vi.mocked(rotationEngine.callAI).mockResolvedValue({} as any); // {
+      status: "ok", modelKey: "mock", attempts: 1, provider: "mock", model: "mock",
       text: JSON.stringify(mockResponse),
     });
 
@@ -134,8 +134,8 @@ describe('analyzePhaseCompletion', () => {
   });
 
   it('falls back gracefully when AI unavailable', async () => {
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({
-      status: 'queued',
+    vi.mocked(rotationEngine.callAI).mockResolvedValue({} as any); // {
+      status: "queued", modelKey: "mock", attempts: 1,
       retryable: true,
       position: null,
       rateLimited: false,
