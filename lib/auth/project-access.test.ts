@@ -28,19 +28,19 @@ describe("project-access helpers", () => {
 
   describe("requireProjectOwner", () => {
     it("returns the project when the user is the owner", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue({ id: "proj_123" } as never);
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({ id: "proj_123" } as never);
 
       const result = await requireProjectOwner("proj_123", "user_owner");
 
       expect(result).toEqual({ id: "proj_123" });
-      expect(db.project.findFirst).toHaveBeenCalledWith({
+      expect((db.project.findFirst as any)).toHaveBeenCalledWith({
         where: { id: "proj_123", userId: "user_owner" },
         select: { id: true },
       });
     });
 
     it("throws ProjectAuthError when the project is not owned", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue(null);
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue(null);
 
       await expect(
         requireProjectOwner("proj_123", "user_other"),
@@ -50,7 +50,7 @@ describe("project-access helpers", () => {
 
   describe("requireProjectMember", () => {
     it("returns OWNER when the user created the project", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue({
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
         id: "proj_123",
         userId: "user_owner",
         members: [],
@@ -65,7 +65,7 @@ describe("project-access helpers", () => {
     });
 
     it("returns COLLABORATOR when the user has a membership row", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue({
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
         id: "proj_123",
         userId: "user_owner",
         members: [{ role: ProjectMemberRole.COLLABORATOR }],
@@ -80,7 +80,7 @@ describe("project-access helpers", () => {
     });
 
     it("throws ProjectAuthError when the user is not a member", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue(null);
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue(null);
 
       await expect(
         requireProjectMember("proj_123", "user_other"),
@@ -90,7 +90,7 @@ describe("project-access helpers", () => {
 
   describe("getProjectRole", () => {
     it("returns OWNER for the project creator", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue({
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
         userId: "user_owner",
       } as never);
 
@@ -101,7 +101,7 @@ describe("project-access helpers", () => {
     });
 
     it("returns COLLABORATOR for an explicit member", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue({
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
         userId: "user_owner",
       } as never);
       vi.mocked(db.projectMember.findUnique).mockResolvedValue({
@@ -114,7 +114,7 @@ describe("project-access helpers", () => {
     });
 
     it("returns null when the project does not exist", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue(null);
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue(null);
 
       const role = await getProjectRole("proj_missing", "user_other");
 
@@ -122,7 +122,7 @@ describe("project-access helpers", () => {
     });
 
     it("returns null when the user has no access", async () => {
-      vi.mocked(db.project.findFirst).mockResolvedValue({
+      vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
         userId: "user_owner",
       } as never);
       vi.mocked(db.projectMember.findUnique).mockResolvedValue(null);

@@ -95,12 +95,44 @@ function resolveChain(
   task: AITask,
   options: CallOptions,
 ): { modelKey: ModelKey; chain: ChainEntry[] } {
+  let override = options.overrideModelKey;
+
+  // If the request contains media (images) and no explicit override was provided,
+  // we MUST route to a vision-capable model. The default unified rotation (e.g., deepseek-r1)
+  // is text-only and will either fail or silently ignore the images.
+  if (!override && options.media && options.media.length > 0) {
+    override = options.plan === "FREE" ? "gemini-2.5-pro" : "claude-sonnet-4";
+  }
+
   const modelKey = resolveModelKey(
     task,
     options.plan,
-    options.overrideModelKey,
+    override,
   );
   return { modelKey, chain: getFallbackChain(modelKey) };
+}
+
+/**
+ * Execute a task through the rotation engine (non-streaming).
+ *
+ * Walks the resolved fallback chain. For each entry: skip-and-do-not-count if
+ * the provider is unavailable (no key configured); otherwise call it, log the
+ * attempt with provider/model/task/success/duration, and return on success.
+ * Rate-limit (429) and transient failures continue to the next entry; a
+ * non-retryable failure (e.g. malformed request) also continues but is recorded
+ * so the chain can still find a working provider. When the chain is exhausted,
+ * returns a recoverable `queued` result.
+ */
+async function updateTriggerMetadata(status: string, logMessage: string) {
+  try {
+    const sdk = await import("@trigger.dev/sdk");
+    if (sdk && sdk.metadata) {
+      sdk.metadata.set("status", status);
+      sdk.metadata.append("logs", logMessage);
+    }
+  } catch (e) {
+    // Ignore if not in a Trigger task context
+  }
 }
 
 /**
@@ -151,6 +183,11 @@ export async function callAI(
 
     attempts += 1;
     const attemptStart = Date.now();
+    await updateTriggerMetadata(
+      `Contacting ${entry.provider} (${entry.model})...`,
+      `Attempt ${attempts}: Connecting to ${entry.provider} using model ${entry.model}`
+    );
+
     try {
       // Wrap provider call with exponential backoff retry
       const response = await retryWithBackoff(
@@ -184,6 +221,12 @@ export async function callAI(
         provider: entry.provider,
         model: entry.model,
       });
+      
+      await updateTriggerMetadata(
+        `Response generated`,
+        `Successfully received response from ${entry.provider} (${entry.model})`
+      );
+
       return { status: "ok", ...response, modelKey, attempts };
     } catch (error) {
       const durationMs = Date.now() - attemptStart;
@@ -204,6 +247,11 @@ export async function callAI(
         error: lastError,
         rateLimited,
       });
+
+      await updateTriggerMetadata(
+        `Retrying/Falling back...`,
+        `Attempt ${attempts} failed: ${lastError}. Walking rotation chain...`
+      );
       // Continue to the next fallback regardless of retryable/non-retryable:
       // the goal is to find any working provider in the chain.
     }
@@ -218,6 +266,12 @@ export async function callAI(
     attempts,
     durationMs: Date.now() - startedAt,
   });
+
+  await updateTriggerMetadata(
+    `All providers exhausted`,
+    `Rotation chain exhausted after ${attempts} attempts. Last error: ${lastError}`
+  );
+
   return {
     status: "queued",
     modelKey,
@@ -285,6 +339,11 @@ export async function callAIStream(
 
     attempts += 1;
     const attemptStart = Date.now();
+    await updateTriggerMetadata(
+      `Contacting ${entry.provider} (${entry.model})...`,
+      `Attempt ${attempts}: Connecting to stream on ${entry.provider} (${entry.model})`
+    );
+
     try {
       // Wrap stream creation with exponential backoff retry
       const iterator = await retryWithBackoff(
@@ -324,6 +383,11 @@ export async function callAIStream(
         model: entry.model,
       });
 
+      await updateTriggerMetadata(
+        `Streaming response...`,
+        `Established connection and streaming response from ${entry.provider} (${entry.model})`
+      );
+
       const stream = replayStream(first, iterator);
       return {
         status: "ok",
@@ -349,6 +413,11 @@ export async function callAIStream(
         error: lastError,
         rateLimited,
       });
+
+      await updateTriggerMetadata(
+        `Retrying/Falling back...`,
+        `Attempt ${attempts} failed: ${lastError}. Walking rotation chain...`
+      );
     }
   }
 
@@ -360,6 +429,12 @@ export async function callAIStream(
     attempts,
     durationMs: Date.now() - startedAt,
   });
+
+  await updateTriggerMetadata(
+    `All providers exhausted`,
+    `Rotation chain exhausted after ${attempts} attempts. Last error: ${lastError}`
+  );
+
   return {
     status: "queued",
     modelKey,

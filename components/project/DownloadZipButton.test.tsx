@@ -75,11 +75,24 @@ describe("DownloadZipButton", () => {
   it("polls status and shows ready state when generation completes", async () => {
     // No fake timers
 
-    // POST returns runId
-    vi.mocked(global.fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ cached: false, runId: "run-123" }),
-    } as Response);
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ cached: false, runId: "run-123" }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: "generating", progress: 50 }),
+      } as Response)
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          status: "completed",
+          fileName: "project_2024-01-01.zip",
+          url: "https://blob.vercel-storage.com/zip-123.zip",
+          size: 1024000,
+        }),
+      } as Response);
 
     render(<DownloadZipButton projectId="project-1" />);
 
@@ -90,28 +103,11 @@ describe("DownloadZipButton", () => {
       expect(screen.getByText(/generating package/i)).toBeInTheDocument();
     });
 
-    // First poll: generating
-    vi.mocked(global.fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ status: "generating", progress: 50 }),
-    } as Response);
-
     await new Promise((r) => setTimeout(r, 110));
 
     await waitFor(() => {
       expect(screen.getByText(/progress: 50%/i)).toBeInTheDocument();
     });
-
-    // Second poll: completed
-    vi.mocked(global.fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        status: "completed",
-        fileName: "project_2024-01-01.zip",
-        url: "https://blob.vercel-storage.com/zip-123.zip",
-        size: 1024000,
-      }),
-    } as Response);
 
     await new Promise((r) => setTimeout(r, 110));
 
@@ -142,11 +138,16 @@ describe("DownloadZipButton", () => {
   it("shows error state when polling returns failed status", async () => {
     // No fake timers
 
-    // POST returns runId
-    vi.mocked(global.fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ cached: false, runId: "run-123" }),
-    } as Response);
+    // POST returns runId and Poll returns failed
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ cached: false, runId: "run-123" }),
+      } as Response)
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ status: "failed", error: "Generation failed" }),
+      } as Response);
 
     render(<DownloadZipButton projectId="project-1" />);
 
@@ -156,12 +157,6 @@ describe("DownloadZipButton", () => {
     await waitFor(() => {
       expect(screen.getByText(/generating package/i)).toBeInTheDocument();
     });
-
-    // Poll returns failed
-    vi.mocked(global.fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ status: "failed", error: "Generation failed" }),
-    } as Response);
 
     await new Promise((r) => setTimeout(r, 110));
 

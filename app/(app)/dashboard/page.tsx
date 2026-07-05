@@ -36,7 +36,7 @@ export default async function DashboardPage() {
       nav={<WorkspaceNav />}
       className="min-h-[calc(100svh-3.5rem)]"
     >
-      <div className="min-h-screen bg-background">
+      <div className="bg-background">
         {/* Hero Section */}
         <section className="px-6 py-12 border-b border-border-subtle">
           <div className="flex items-start justify-between">

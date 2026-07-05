@@ -27,7 +27,7 @@ describe("generateProjectSkills", () => {
 
   it("throws error when project not found", async () => {
     const { db } = await import("@/lib/db");
-    vi.mocked(db.project.findFirst).mockResolvedValue(null);
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue(null);
 
     await expect(generateProjectSkills("project-1", "user-1")).rejects.toThrow(
       "Project not found"
@@ -38,7 +38,7 @@ describe("generateProjectSkills", () => {
     const { db } = await import("@/lib/db");
     const { readFile } = await import("fs/promises");
 
-    vi.mocked(db.project.findFirst).mockResolvedValue({
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
       id: "project-1",
       name: "Test Project",
       userId: "user-1",
@@ -72,7 +72,7 @@ describe("generateProjectSkills", () => {
     const { db } = await import("@/lib/db");
     const { readFile } = await import("fs/promises");
 
-    vi.mocked(db.project.findFirst).mockResolvedValue({
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
       id: "project-1",
       name: "Test Project",
       userId: "user-1",

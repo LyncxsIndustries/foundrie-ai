@@ -26,6 +26,9 @@ CLOUDINARY_API_KEY=your-api-key
 CLOUDINARY_API_SECRET=your-api-secret
 ```
 
+> **CRITICAL: Roles & Permissions**
+> For Cloudinary accounts created after May 2026, API Keys default to having no permissions. You MUST assign the **Media Developer** role (or another role with the `create` permission) to the API Key in the Cloudinary Console (Settings -> Access Keys -> Edit Key -> Assigned Roles) to prevent `403 Forbidden` errors during uploads.
+
 ### Upload Preset Configuration
 
 In Cloudinary dashboard, create upload preset `foundrie_discovery`:

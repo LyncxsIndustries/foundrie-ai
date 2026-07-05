@@ -196,7 +196,7 @@ describe("GET /api/projects/[projectId]/members", () => {
   });
 
   it("returns 404 if project is missing from db", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(null);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(null);
 
     const req = createRequest();
     const res = await GET(req, { params: Promise.resolve({ projectId }) });
@@ -205,7 +205,7 @@ describe("GET /api/projects/[projectId]/members", () => {
   });
 
   it("returns list of members including the owner", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue({
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue({
       userId: "owner-user-id",
       createdAt: new Date("2024-01-01T00:00:00Z"),
       user: { id: "owner-user-id", name: "Owner Name", email: "owner@example.com" },

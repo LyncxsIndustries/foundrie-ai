@@ -3,7 +3,6 @@ import { GET, POST } from "./route";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { requireProjectMember } from "@/lib/projects/auth";
 import { getDiscoveryConversation, appendConversationMessage } from "@/lib/conversations/chat";
-import { callAIStream } from "@/lib/ai/rotation-engine";
 import { db } from "@/lib/db";
 
 vi.mock("@/lib/auth/require-auth", () => ({
@@ -27,10 +26,6 @@ vi.mock("@/lib/conversations/chat", () => ({
   appendConversationMessage: vi.fn(),
 }));
 
-vi.mock("@/lib/ai/rotation-engine", () => ({
-  callAIStream: vi.fn(),
-}));
-
 vi.mock("@/lib/db", () => ({
   db: {
     conversation: {
@@ -42,9 +37,23 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
+const mockTrigger = vi.fn();
+const mockCreatePublicToken = vi.fn();
+
+vi.mock("@trigger.dev/sdk", () => ({
+  tasks: {
+    trigger: (...args: unknown[]) => mockTrigger(...args),
+  },
+  auth: {
+    createPublicToken: (...args: unknown[]) => mockCreatePublicToken(...args),
+  },
+}));
+
 describe("Discovery Chat Route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTrigger.mockResolvedValue({ id: "run_test123" });
+    mockCreatePublicToken.mockResolvedValue("pub_token_xyz");
   });
 
   describe("GET", () => {
@@ -63,20 +72,10 @@ describe("Discovery Chat Route", () => {
   });
 
   describe("POST", () => {
-    it("should process a message and return a stream", async () => {
+    it("should trigger a background task and return runId + token", async () => {
       vi.mocked(requireAuth).mockResolvedValue({ id: "user-1", email: "test@test.com", role: "USER", plan: "FREE" } as any);
       vi.mocked(appendConversationMessage).mockResolvedValue([{ role: "user", content: "hello" } as any]);
-      vi.mocked(db.conversation.findUnique).mockResolvedValue(null); // No conversation found (best-effort persistence)
-      
-      const mockIterator = (async function* () {
-        yield "Hi ";
-        yield "there!";
-      })();
-
-      vi.mocked(callAIStream).mockResolvedValue({
-        status: "ok",
-        stream: mockIterator,
-      } as any);
+      vi.mocked(db.conversation.findUnique).mockResolvedValue(null);
 
       const request = new Request("http://localhost/api/conversations/proj-1/chat", {
         method: "POST",
@@ -86,18 +85,23 @@ describe("Discovery Chat Route", () => {
       const response = await POST(request, { params: Promise.resolve({ projectId: "proj-1" }) });
 
       expect(response.status).toBe(200);
-      expect(response.headers.get("Content-Type")).toBe("text/event-stream");
-      expect(callAIStream).toHaveBeenCalled();
+      const data = await response.json();
+      expect(data.runId).toBe("run_test123");
+      expect(data.token).toBe("pub_token_xyz");
+      expect(mockTrigger).toHaveBeenCalledWith("streaming-chat-task", expect.objectContaining({
+        projectId: "proj-1",
+        userPlan: "FREE",
+      }));
+      expect(mockCreatePublicToken).toHaveBeenCalledWith(expect.objectContaining({
+        scopes: { read: { runs: ["run_test123"] } },
+      }));
     });
 
-    it("should handle exhausted AI providers", async () => {
+    it("should return 500 if Trigger.dev fails to trigger", async () => {
       vi.mocked(requireAuth).mockResolvedValue({ id: "user-1", email: "test@test.com", role: "USER", plan: "FREE" } as any);
       vi.mocked(appendConversationMessage).mockResolvedValue([{ role: "user", content: "hello" } as any]);
       vi.mocked(db.conversation.findUnique).mockResolvedValue(null);
-      
-      vi.mocked(callAIStream).mockResolvedValue({
-        status: "queued",
-      } as any);
+      mockTrigger.mockRejectedValue(new Error("Trigger.dev unavailable"));
 
       const request = new Request("http://localhost/api/conversations/proj-1/chat", {
         method: "POST",
@@ -106,24 +110,15 @@ describe("Discovery Chat Route", () => {
 
       const response = await POST(request, { params: Promise.resolve({ projectId: "proj-1" }) });
 
-      expect(response.status).toBe(503);
+      expect(response.status).toBe(500);
     });
 
-    it("should succeed even if structured persistence succeeds", async () => {
+    it("should pass conversationId when structured conversation exists", async () => {
       vi.mocked(requireAuth).mockResolvedValue({ id: "user-1", email: "test@test.com", role: "USER", plan: "FREE" } as any);
       vi.mocked(appendConversationMessage).mockResolvedValue([{ role: "user", content: "hello" } as any]);
       vi.mocked(db.conversation.findUnique).mockResolvedValue({ id: "conv-1" } as any);
       vi.mocked(db.conversationMessage.create).mockResolvedValue({ id: "msg-1" } as any);
 
-      const mockIterator = (async function* () {
-        yield "response";
-      })();
-
-      vi.mocked(callAIStream).mockResolvedValue({
-        status: "ok",
-        stream: mockIterator,
-      } as any);
-
       const request = new Request("http://localhost/api/conversations/proj-1/chat", {
         method: "POST",
         body: JSON.stringify({ message: { content: "hello" } }),
@@ -132,24 +127,17 @@ describe("Discovery Chat Route", () => {
       const response = await POST(request, { params: Promise.resolve({ projectId: "proj-1" }) });
 
       expect(response.status).toBe(200);
-      expect(db.conversationMessage.create).toHaveBeenCalled();
+      expect(mockTrigger).toHaveBeenCalledWith("streaming-chat-task", expect.objectContaining({
+        conversationId: "conv-1",
+      }));
     });
 
-    it("should succeed even if structured persistence fails", async () => {
+    it("should still trigger task even if structured user-message persistence fails", async () => {
       vi.mocked(requireAuth).mockResolvedValue({ id: "user-1", email: "test@test.com", role: "USER", plan: "FREE" } as any);
       vi.mocked(appendConversationMessage).mockResolvedValue([{ role: "user", content: "hello" } as any]);
       vi.mocked(db.conversation.findUnique).mockResolvedValue({ id: "conv-1" } as any);
       vi.mocked(db.conversationMessage.create).mockRejectedValue(new Error("DB error"));
 
-      const mockIterator = (async function* () {
-        yield "response";
-      })();
-
-      vi.mocked(callAIStream).mockResolvedValue({
-        status: "ok",
-        stream: mockIterator,
-      } as any);
-
       const request = new Request("http://localhost/api/conversations/proj-1/chat", {
         method: "POST",
         body: JSON.stringify({ message: { content: "hello" } }),
@@ -157,8 +145,10 @@ describe("Discovery Chat Route", () => {
 
       const response = await POST(request, { params: Promise.resolve({ projectId: "proj-1" }) });
 
+      // Should succeed — structured persistence failure is best-effort
       expect(response.status).toBe(200);
-      expect(db.conversationMessage.create).toHaveBeenCalled();
+      const data = await response.json();
+      expect(data.runId).toBe("run_test123");
     });
   });
 });

@@ -330,7 +330,7 @@ export function FileUploadZone() {
 - `lib/media` — Cloudinary upload, transformation, and download helpers; ResearchFile CRUD operations.
 - `lib/research` — research ingestion, Tavily/Obscura/Firecrawl/Context7 source capture, visual asset analysis, synthesis, export helpers.
 - `lib/auth` — Clerk session mapping, ownership scoping, plan limits, admin gate, project-access helpers.
-- `trigger` — durable Trigger.dev jobs: diagram generation, context generation, feature-spec generation, ZIP generation.
+- `trigger` — durable Trigger.dev jobs: streaming chat, diagram generation, context generation, feature-spec generation, ZIP generation.
 - `prisma` — schema, migrations, generated client, seed data.
 - `.agents/skills` — project-local agent skills, including Context7 skills.
 - `research` — Foundrie AI's own research corpus, mirroring the generated `research/` export contract.
@@ -434,6 +434,10 @@ Callers can still override with `overrideModelKey` for specific use cases (e.g.,
 | Task group | Example tasks | Model key |
 |---|---|---|
 | **All tasks** | Discovery, requirements, architecture, specs, code, chat, research, visual analysis | `unified-rotation` |
+
+**Vision Model Override:** If a generation request contains media attachments (images, documents, etc.) and no explicit model override is provided, the engine automatically routes to a vision-capable model to prevent visual context from being dropped by text-only providers:
+- **FREE tier:** Overrides to `gemini-2.5-pro`
+- **PRO/ENTERPRISE tier:** Overrides to `claude-sonnet-4`
 
 ### Legacy Task-to-Model Map (Preserved for Reference)
 
@@ -571,6 +575,22 @@ Prisma datasource is minimalist (`provider = "postgresql"`); URLs are configured
 
 `npm run db:generate`, `npm run db:migrate`, `npm run db:push`, `npm run db:studio`.
 
+### ISP Port 5432 Blocking & Workaround
+
+If Prisma CLI commands (`db:push`, `db:migrate`) fail with `P1001: Can't reach database server at ...:5432` and the `connect_timeout` fix doesn't work, your network/ISP is likely blocking outbound TCP port 5432 via Deep Packet Inspection (DPI).
+
+**Workaround (Linux/Debian/Parrot OS):**
+1. Install Tor and Proxychains: `sudo apt-get install -y tor proxychains4`
+2. Start the Tor service: `sudo systemctl start tor`
+3. Verify it's running: `systemctl status tor`
+4. Configure `/etc/proxychains4.conf` to use `socks5 127.0.0.1 9050`
+5. Run Prisma commands through the proxy:
+   `proxychains4 npm run db:generate`
+   `proxychains4 npm run db:push`
+   `proxychains4 npm run db:migrate`
+
+*Note: If proxychains suddenly stops working (e.g., connection refused), the Tor daemon has likely stopped or crashed. Restart it with `sudo systemctl restart tor`.*
+
 ### Prisma Client
 
 One Prisma client named `db` (pooled, reads and writes — compatible with the Neon free-tier 2-connection strategy), cached on `globalThis` in development. At scale, reads route to Neon read replicas and writes to the primary; reads requiring read-after-write consistency use the primary.
@@ -669,7 +689,7 @@ app/
 ```text
 components/
 |-- canvas/ (DiagramCanvas, DiagramSidebar, nodes/, edges/)
-|-- chat/ (DiscoveryChat, ArchitectureChat, ChatMessage)
+|-- chat/ (DiscoveryChat, ArchitectureChat, ChatMessage with Claude-style collapsible <think> UI)
 |-- diagram-generation/ (GenerationProgress, DiagramPreview, GenerationControls)
 |-- project/ (DownloadZipButton, ProjectPhaseNav, RequirementsReview, FeatureSpecsList)
 |-- research/ (ResearchLibrary, ResearchUploader, ResearchSourceList, VisualReferenceGrid, MotionPlanViewer)

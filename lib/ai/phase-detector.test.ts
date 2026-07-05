@@ -50,7 +50,7 @@ describe('analyzePhaseCompletion', () => {
       suggestedQuestion: null,
     };
 
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({
+    vi.mocked(rotationEngine.callAI as any).mockResolvedValue({
       status: 'ok',
       text: JSON.stringify(mockResponse),
     });
@@ -83,7 +83,7 @@ describe('analyzePhaseCompletion', () => {
       suggestedQuestion: 'What timeline or constraints are you working with?',
     };
 
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({
+    vi.mocked(rotationEngine.callAI as any).mockResolvedValue({
       status: 'ok',
       text: JSON.stringify(mockResponse),
     });
@@ -118,7 +118,7 @@ describe('analyzePhaseCompletion', () => {
       suggestedQuestion: null,
     };
 
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({
+    vi.mocked(rotationEngine.callAI as any).mockResolvedValue({
       status: 'ok',
       text: JSON.stringify(mockResponse),
     });
@@ -134,7 +134,7 @@ describe('analyzePhaseCompletion', () => {
   });
 
   it('falls back gracefully when AI unavailable', async () => {
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({
+    vi.mocked(rotationEngine.callAI as any).mockResolvedValue({
       status: 'queued',
       retryable: true,
       position: null,
@@ -150,7 +150,7 @@ describe('analyzePhaseCompletion', () => {
   });
 
   it('falls back gracefully on AI error', async () => {
-    vi.mocked(rotationEngine.callAI).mockRejectedValue(
+    vi.mocked(rotationEngine.callAI as any).mockRejectedValue(
       new Error('AI provider error')
     );
 

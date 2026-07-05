@@ -4,7 +4,6 @@
  * Assembles the complete Foundrie project export package.
  */
 
-import JSZip from 'jszip';
 import { db } from '@/lib/db';
 import { generateRootFolderName, buildZipPath } from './zip-structure';
 import { ContextFileType } from '@/lib/generated/prisma/enums';
@@ -199,6 +198,7 @@ export async function buildProjectZip(
   reportProgress("Creating ZIP structure...", 15);
   
   // Create ZIP instance
+  const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
   const rootFolder = generateRootFolderName(projectData.slug);
   const root = zip.folder(rootFolder);

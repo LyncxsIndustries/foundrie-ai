@@ -23,7 +23,14 @@ Foundrie uses Cloudinary for media storage in the discovery chat. This provides:
      - API Key
      - API Secret
 
-3. **Add to your environment**
+3. **Assign API Key Role (CRITICAL)**
+   - New Cloudinary accounts use the Roles and Permissions system. Your API key will fail with a 403 error on uploads unless it is assigned a role.
+   - Go to Settings (gear icon) → Role Management (or Access Keys).
+   - Find your API Key.
+   - Edit it and assign the **"Media Developer"** role (or any role that grants the `create` permission).
+   - Save the changes. This takes effect immediately.
+
+4. **Add to your environment**
    
    Add these variables to `.env.local`:
    

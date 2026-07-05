@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { requireAuth, AuthError } from "@/lib/auth/require-auth";
 import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import { getDiscoveryConversation, appendConversationMessage, ChatMessage } from "@/lib/conversations/chat";
-import { callAIStream } from "@/lib/ai/rotation-engine";
-import { getDiscoverySystemPrompt } from "@/lib/ai/prompts/discovery";
 import { db } from "@/lib/db";
 import { AttachmentType } from "@/lib/generated/prisma/client";
+import { auth, tasks } from "@trigger.dev/sdk";
 
 interface IncomingAttachment {
   type: AttachmentType;
@@ -16,28 +15,6 @@ interface IncomingAttachment {
   sizeBytes: number;
   width?: number;
   height?: number;
-}
-
-// Polyfill Iterator.from or use a custom stream encoder
-function iteratorToStream(iterable: AsyncIterable<string>) {
-  let it: AsyncIterator<string>;
-  return new ReadableStream({
-    start() {
-      it = iterable[Symbol.asyncIterator]();
-    },
-    async pull(controller) {
-      try {
-        const { value, done } = await it.next();
-        if (done) {
-          controller.close();
-        } else {
-          controller.enqueue(new TextEncoder().encode(value));
-        }
-      } catch (e) {
-        controller.error(e);
-      }
-    },
-  });
 }
 
 export async function GET(
@@ -145,71 +122,29 @@ export async function POST(
       return `${roleName}:\n${m.content}`;
     }).join("\n\n");
 
-    const systemPrompt = getDiscoverySystemPrompt();
-    
-    // We add the final directive to just respond to the last User message, considering history.
-    const userPrompt = `Here is the conversation history:\n\n${historyText}${attachmentContext}\n\nRespond to the last User message. Do not prefix your response with "Assistant:".`;
-
-    const result = await callAIStream("streaming_chat", {
-      plan: user.plan,
-      systemPrompt,
-      userPrompt,
-      temperature: 0.7,
+    // Trigger the background task for AI generation so the Next.js API route doesn't time out
+    const handle = await tasks.trigger("streaming-chat-task", {
+      projectId,
+      userPlan: user.plan,
+      historyText,
+      attachmentContext,
+      conversationId: conversation?.id,
+      attachments: message.attachments,
     });
 
-    if (result.status === "queued") {
-      return new NextResponse("All AI providers exhausted or rate limited.", { status: 503 });
-    }
-
-    const stream = iteratorToStream(result.stream);
-    
-    // Return a TransformStream that captures the AI response so we can save it.
-    let aiFullText = "";
-    const transformStream = new TransformStream({
-      transform(chunk, controller) {
-        aiFullText += new TextDecoder().decode(chunk);
-        controller.enqueue(chunk);
+    // Create a temporary read-only token for the frontend to subscribe to the AI stream
+    const publicToken = await auth.createPublicToken({
+      scopes: {
+        read: {
+          runs: [handle.id],
+        },
       },
-      async flush() {
-        if (aiFullText.trim()) {
-          const aiMessage: ChatMessage = {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: aiFullText,
-            createdAt: new Date().toISOString(),
-          };
-          // Append the assistant's message asynchronously after stream closes.
-          await appendConversationMessage(projectId, aiMessage).catch(err => {
-            console.error("Failed to append AI message", err);
-          });
-          
-          // Also persist to structured storage (Feature 54) - best effort
-          if (conversation) {
-            await db.conversationMessage.create({
-              data: {
-                conversationId: conversation.id,
-                projectId,
-                role: 'ASSISTANT',
-                content: aiFullText,
-              },
-            }).catch(err => {
-              console.error("Failed to persist structured AI message:", {
-                projectId,
-                conversationId: conversation.id,
-                error: err instanceof Error ? err.message : 'Unknown error',
-              });
-            });
-          }
-        }
-      }
+      expirationTime: "1h",
     });
 
-    return new Response(stream.pipeThrough(transformStream), {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
+    return NextResponse.json({
+      runId: handle.id,
+      token: publicToken,
     });
   } catch (error) {
     if (error instanceof AuthError) return new NextResponse(error.message, { status: error.status });

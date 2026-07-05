@@ -32,7 +32,7 @@ describe("SettingsPage", () => {
 
   it("renders settings when project exists", async () => {
     const { db } = await import("@/lib/db");
-    vi.mocked(db.project.findFirst).mockResolvedValue({
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
       id: "proj-1",
       name: "Test Project",
       description: "Test description",
@@ -41,7 +41,7 @@ describe("SettingsPage", () => {
       lastZipFileName: null,
       lastZipGeneratedAt: null,
       updatedAt: new Date(),
-    });
+    } as any);
 
     const params = Promise.resolve({ projectId: "proj-1" });
     const element = await SettingsPage({ params });
@@ -54,7 +54,7 @@ describe("SettingsPage", () => {
 
   it("returns 404 when project not found", async () => {
     const { db } = await import("@/lib/db");
-    vi.mocked(db.project.findFirst).mockResolvedValue(null);
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue(null);
 
     const params = Promise.resolve({ projectId: "proj-1" });
     await SettingsPage({ params });
@@ -64,7 +64,7 @@ describe("SettingsPage", () => {
 
   it("queries project with owner scope", async () => {
     const { db } = await import("@/lib/db");
-    vi.mocked(db.project.findFirst).mockResolvedValue({
+    vi.mocked((db.project.findFirst as any) as any).mockResolvedValue({
       id: "proj-1",
       name: "Test Project",
       description: null,
@@ -73,12 +73,12 @@ describe("SettingsPage", () => {
       lastZipFileName: null,
       lastZipGeneratedAt: null,
       updatedAt: new Date(),
-    });
+    } as any);
 
     const params = Promise.resolve({ projectId: "proj-1" });
     await SettingsPage({ params });
 
-    expect(db.project.findFirst).toHaveBeenCalledWith({
+    expect((db.project.findFirst as any)).toHaveBeenCalledWith({
       where: { id: "proj-1", userId: "user-1" },
       select: expect.objectContaining({
         id: true,

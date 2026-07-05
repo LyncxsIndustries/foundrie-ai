@@ -71,7 +71,7 @@ describe("generateProjectManagementDocs", () => {
   });
 
   it("should generate and persist four project management documents", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(
       MOCK_PROJECT as any
     );
 
@@ -117,7 +117,7 @@ describe("generateProjectManagementDocs", () => {
   });
 
   it("should throw if AI rotation is exhausted", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(
       MOCK_PROJECT as any
     );
 
@@ -136,14 +136,14 @@ describe("generateProjectManagementDocs", () => {
   });
 
   it("should throw if project not found", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(null);
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(null);
     await expect(
       generateProjectManagementDocs(projectId, userId)
     ).rejects.toThrow(`Project ${projectId} not found.`);
   });
 
   it("should use requireProjectOwner for authorization", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(
       MOCK_PROJECT as any
     );
 
@@ -158,7 +158,7 @@ describe("generateProjectManagementDocs", () => {
   });
 
   it("should call AI with correct task names", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(
       MOCK_PROJECT as any
     );
 
@@ -177,7 +177,7 @@ describe("generateProjectManagementDocs", () => {
   });
 
   it("should exclude REQUIREMENTS_EXPORT and PROJECT_MANAGEMENT_EXPORT from research context", async () => {
-    vi.mocked(db.project.findUnique).mockResolvedValue(
+    vi.mocked((db.project.findUnique as any) as any).mockResolvedValue(
       MOCK_PROJECT as any
     );
 
@@ -189,7 +189,7 @@ describe("generateProjectManagementDocs", () => {
     await generateProjectManagementDocs(projectId, userId);
 
     // The findUnique select should have a NOT filter for the two export types
-    const findUniqueCall = vi.mocked(db.project.findUnique).mock.calls[0][0];
+    const findUniqueCall = vi.mocked((db.project.findUnique as any) as any).mock.calls[0][0];
     const researchFilter = (findUniqueCall as any).select.researchDocuments.where;
     expect(researchFilter).toBeDefined();
     expect(researchFilter.NOT.sourceType.in).toContain("REQUIREMENTS_EXPORT");

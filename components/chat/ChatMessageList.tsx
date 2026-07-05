@@ -28,9 +28,19 @@ interface Message {
 interface ChatMessageListProps {
   messages: Message[];
   projectId: string;
+  activeRun?: any;
+  activeRunMessageId?: string | null;
+  /** True while the AI task is triggered but no stream content has arrived yet. */
+  isWaitingForStream?: boolean;
 }
 
-export function ChatMessageList({ messages, projectId }: ChatMessageListProps) {
+export function ChatMessageList({ 
+  messages, 
+  projectId,
+  activeRun,
+  activeRunMessageId,
+  isWaitingForStream,
+}: ChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -100,7 +110,12 @@ export function ChatMessageList({ messages, projectId }: ChatMessageListProps) {
         className="h-full overflow-y-auto px-6 py-4 space-y-4"
       >
         {messages.map((message) => (
-          <ChatMessage key={message.id} message={message} />
+          <ChatMessage 
+            key={message.id} 
+            message={message} 
+            activeRun={activeRunMessageId === message.id ? activeRun : null}
+            isWaitingForStream={activeRunMessageId === message.id ? isWaitingForStream : false}
+          />
         ))}
       </div>
 
