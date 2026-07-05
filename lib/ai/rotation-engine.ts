@@ -95,10 +95,19 @@ function resolveChain(
   task: AITask,
   options: CallOptions,
 ): { modelKey: ModelKey; chain: ChainEntry[] } {
+  let override = options.overrideModelKey;
+
+  // If the request contains media (images) and no explicit override was provided,
+  // we MUST route to a vision-capable model. The default unified rotation (e.g., deepseek-r1)
+  // is text-only and will either fail or silently ignore the images.
+  if (!override && options.media && options.media.length > 0) {
+    override = options.plan === "FREE" ? "gemini-2.5-pro" : "claude-sonnet-4";
+  }
+
   const modelKey = resolveModelKey(
     task,
     options.plan,
-    options.overrideModelKey,
+    override,
   );
   return { modelKey, chain: getFallbackChain(modelKey) };
 }

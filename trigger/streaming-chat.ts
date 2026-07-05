@@ -4,6 +4,7 @@ import { callAIStream } from "@/lib/ai/rotation-engine";
 import { getDiscoverySystemPrompt } from "@/lib/ai/prompts/discovery";
 import { appendConversationMessage, ChatMessage } from "@/lib/conversations/chat";
 import { db } from "@/lib/db";
+import { AIMediaAttachment } from "@/lib/ai/providers/types";
 
 export const streamingChatTask = task({
   id: "streaming-chat-task",
@@ -16,8 +17,9 @@ export const streamingChatTask = task({
     historyText: string;
     attachmentContext: string;
     conversationId: string | undefined;
+    attachments?: any[];
   }) => {
-    const { projectId, userPlan, historyText, attachmentContext, conversationId } = payload;
+    const { projectId, userPlan, historyText, attachmentContext, conversationId, attachments } = payload;
     
     // Initialize metadata with rich status for frontend display
     metadata
@@ -27,6 +29,35 @@ export const streamingChatTask = task({
         "Task queued in Trigger.dev",
         "Loading conversation history",
       ]);
+
+    // Download and convert images to base64
+    let media: AIMediaAttachment[] | undefined = undefined;
+    if (attachments && attachments.length > 0) {
+      metadata.set("status", "Processing media attachments...");
+      media = [];
+      for (const att of attachments) {
+        if (att.type === 'IMAGE' && att.cloudinaryUrl) {
+          try {
+            metadata.append("logs", `Fetching media: ${att.originalName}`);
+            const res = await fetch(att.cloudinaryUrl);
+            if (res.ok) {
+              const arrayBuffer = await res.arrayBuffer();
+              const buffer = Buffer.from(arrayBuffer);
+              media.push({
+                mimeType: att.mimeType || 'image/jpeg',
+                base64Data: buffer.toString('base64')
+              });
+            } else {
+              metadata.append("logs", `Failed to fetch media: ${res.statusText}`);
+            }
+          } catch (e) {
+            console.error("Failed to fetch image attachment", e);
+            metadata.append("logs", `Error fetching media: ${String(e)}`);
+          }
+        }
+      }
+      if (media.length === 0) media = undefined;
+    }
 
     const systemPrompt = getDiscoverySystemPrompt();
     const userPrompt = `Here is the conversation history:\n\n${historyText}${attachmentContext}\n\nRespond to the last User message. Do not prefix your response with "Assistant:".`;
@@ -42,6 +73,7 @@ export const streamingChatTask = task({
       systemPrompt,
       userPrompt,
       temperature: 0.7,
+      media,
     });
 
     if (result.status === "queued" || !result.stream) {

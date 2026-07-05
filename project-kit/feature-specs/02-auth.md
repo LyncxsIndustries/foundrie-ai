@@ -37,12 +37,13 @@ npx ctx7 docs <libraryId> "<specific question>"
 
 ## Files Owned
 
-- `middleware.ts`
+- `proxy.ts`
 - `app/(auth)/**`
+- `__tests__/proxy.test.ts`
 
 ## Files
 
-CREATE: `middleware.ts` - Clerk route protection using `clerkMiddleware` and `createRouteMatcher`.
+CREATE: `proxy.ts` - Clerk route protection using `clerkMiddleware` and `createRouteMatcher`.
 CREATE: `app/(auth)/sign-in/[[...sign-in]]/page.tsx` - Clerk sign-in component.
 CREATE: `app/(auth)/sign-up/[[...sign-up]]/page.tsx` - Clerk sign-up component.
 MODIFY: `app/layout.tsx` - Wrap children in `ClerkProvider`.
@@ -97,7 +98,7 @@ MODIFY: `package.json` - Add Clerk dependency if not already present.
 ## Acceptance Criteria
 
 - [ ] `app/layout.tsx` wraps the application in `ClerkProvider`.
-- [ ] `middleware.ts` protects all non-public routes by default.
+- [ ] `proxy.ts` protects all non-public routes by default.
 - [ ] Sign-in and sign-up pages render Clerk components.
 - [ ] No database code, webhook code, local user sync, plan gates, or admin helpers are introduced in this feature.
 - [ ] No custom admin portal, team RBAC, RLS, ABAC, or audit logging exists.

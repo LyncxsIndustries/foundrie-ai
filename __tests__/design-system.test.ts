@@ -5,7 +5,7 @@ import designSystem, {
   minTouchTargetPx,
   fontFamily,
   radius,
-} from "./design-system";
+} from "../design-system";
 
 describe("design-system tokens", () => {
   it("exposes the sans and mono font CSS variables", () => {

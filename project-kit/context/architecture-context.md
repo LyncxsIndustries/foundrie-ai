@@ -435,6 +435,10 @@ Callers can still override with `overrideModelKey` for specific use cases (e.g.,
 |---|---|---|
 | **All tasks** | Discovery, requirements, architecture, specs, code, chat, research, visual analysis | `unified-rotation` |
 
+**Vision Model Override:** If a generation request contains media attachments (images, documents, etc.) and no explicit model override is provided, the engine automatically routes to a vision-capable model to prevent visual context from being dropped by text-only providers:
+- **FREE tier:** Overrides to `gemini-2.5-pro`
+- **PRO/ENTERPRISE tier:** Overrides to `claude-sonnet-4`
+
 ### Legacy Task-to-Model Map (Preserved for Reference)
 
 The following specialized assignments are deprecated but documented here for context:

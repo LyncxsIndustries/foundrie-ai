@@ -129,6 +129,7 @@ export async function POST(
       historyText,
       attachmentContext,
       conversationId: conversation?.id,
+      attachments: message.attachments,
     });
 
     // Create a temporary read-only token for the frontend to subscribe to the AI stream

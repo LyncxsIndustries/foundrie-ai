@@ -145,6 +145,7 @@ This feature requires API keys from multiple AI providers. Here's how to obtain 
 - Task map and fallback chains match `architecture-context.md`. The production primary chain across providers is Claude Sonnet 4 → Gemini Pro → DeepSeek R1 → Kimi K2 → Qwen Coder.
 - Tier-based primary model selection: derive the primary model from the user's subscription plan (FREE → DeepSeek R1, PRO/ENTERPRISE → Claude Sonnet 4). Never hardcode the model per endpoint.
 - Model IDs are pinned to exact versions in `config/model.yaml`, never `"latest"`.
+- **Vision Model Routing**: When a generation request contains media attachments (images/documents), the engine must automatically override the text-only default (e.g., `deepseek-r1`) and route to a vision-capable model (`gemini-2.5-pro` for FREE, `claude-sonnet-4` for PRO/ENTERPRISE) so that visual content is not silently dropped by text-only providers.
 - This feature implements the application-layer rotation engine. In Foundrie's full deployed system, key rotation across 50+ keys/6 providers runs in the Rust execution layer and is reached over gRPC; document this boundary but implement the TypeScript engine and a key-selection seam here. When all providers are rate-limited, the engine must surface a recoverable "queued" state (NATS queue position in the deployed system) rather than a raw provider error.
 - Prompts can carry planning-gate instructions (plan → approval → revision → execution) without bypassing the engine.
 - Add tests for fallback selection, all-fail behavior, and tier-based primary selection.

@@ -24,8 +24,8 @@ describe('classifyProjectComplexity', () => {
       requiredPhases: ['problem', 'flows', 'scope'],
     };
 
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({} as any); // {
-      status: "ok", modelKey: "mock", attempts: 1, provider: "mock", model: "mock",
+    vi.mocked(rotationEngine.callAI as any).mockResolvedValue({
+      status: 'ok',
       text: JSON.stringify(mockResponse),
     });
 
@@ -48,8 +48,8 @@ describe('classifyProjectComplexity', () => {
       requiredPhases: ['problem', 'users', 'flows', 'scope', 'technical', 'features'],
     };
 
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({} as any); // {
-      status: "ok", modelKey: "mock", attempts: 1, provider: "mock", model: "mock",
+    vi.mocked(rotationEngine.callAI as any).mockResolvedValue({
+      status: 'ok',
       text: JSON.stringify(mockResponse),
     });
 
@@ -82,8 +82,8 @@ describe('classifyProjectComplexity', () => {
       ],
     };
 
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({} as any); // {
-      status: "ok", modelKey: "mock", attempts: 1, provider: "mock", model: "mock",
+    vi.mocked(rotationEngine.callAI as any).mockResolvedValue({
+      status: 'ok',
       text: JSON.stringify(mockResponse),
     });
 
@@ -98,8 +98,8 @@ describe('classifyProjectComplexity', () => {
   });
 
   it('falls back to STANDARD when AI unavailable', async () => {
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({} as any); // {
-      status: "queued", modelKey: "mock", attempts: 1,
+    vi.mocked(rotationEngine.callAI as any).mockResolvedValue({
+      status: 'queued',
       retryable: true,
       position: null,
       rateLimited: false,
@@ -113,7 +113,7 @@ describe('classifyProjectComplexity', () => {
   });
 
   it('falls back to STANDARD on AI error', async () => {
-    vi.mocked(rotationEngine.callAI).mockRejectedValue(
+    vi.mocked(rotationEngine.callAI as any).mockRejectedValue(
       new Error('AI provider error')
     );
 
@@ -125,8 +125,8 @@ describe('classifyProjectComplexity', () => {
   });
 
   it('falls back to STANDARD on invalid JSON', async () => {
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({} as any); // {
-      status: "ok", modelKey: "mock", attempts: 1, provider: "mock", model: "mock",
+    vi.mocked(rotationEngine.callAI as any).mockResolvedValue({
+      status: 'ok',
       text: 'Invalid JSON response',
     });
 
@@ -137,8 +137,8 @@ describe('classifyProjectComplexity', () => {
   });
 
   it('falls back to STANDARD on missing requiredPhases', async () => {
-    vi.mocked(rotationEngine.callAI).mockResolvedValue({} as any); // {
-      status: "ok", modelKey: "mock", attempts: 1, provider: "mock", model: "mock",
+    vi.mocked(rotationEngine.callAI as any).mockResolvedValue({
+      status: 'ok',
       text: JSON.stringify({
         complexity: 'SIMPLE',
         reasoning: 'Test',

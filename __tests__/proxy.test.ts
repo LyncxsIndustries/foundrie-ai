@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createRouteMatcher } from "@clerk/nextjs/server";
-import { publicRoutes } from "./proxy";
+import middleware, { publicRoutes } from "../proxy";
 
 /**
  * Builds a minimal request stand-in that satisfies what `createRouteMatcher`
