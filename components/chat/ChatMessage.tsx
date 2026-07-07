@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { Bot, User, FileText, File as FileIcon, ChevronDown, ChevronRight, Brain, Loader2, Sparkles, Zap, Search, MessageSquare } from 'lucide-react';
+import { Bot, User, FileText, File as FileIcon, ChevronDown, ChevronRight, Brain, Loader2, Sparkles, Zap, Search, MessageSquare, Copy, Pencil, Trash, Reply, RotateCcw, Check, X } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import type { ChatMessage as ChatMessageType } from '@/lib/conversations/chat';
 import ReactMarkdown from 'react-markdown';
 import { formatFileSize } from '@/lib/format';
@@ -21,6 +23,7 @@ interface ChatMessageProps {
   activeRun?: any;
   /** True while the Trigger.dev task is running but no stream content has arrived yet. */
   isWaitingForStream?: boolean;
+  onAction?: (action: string, message: any, newContent?: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -40,9 +43,12 @@ export const ChatMessage = React.memo(function ChatMessage({
   message,
   activeRun,
   isWaitingForStream,
+  onAction,
 }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const [isLogsExpanded, setIsLogsExpanded] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
 
   // ---- <think> tag parsing (DeepSeek R1 reasoning) ----
   const thinkStart = message.content.indexOf('<think>');
@@ -294,7 +300,7 @@ export const ChatMessage = React.memo(function ChatMessage({
   return (
     <div
       className={cn(
-        'flex w-full items-start gap-4 py-4',
+        'group flex w-full items-start gap-4 py-4',
         isUser ? 'flex-row-reverse' : 'flex-row'
       )}
     >
@@ -341,7 +347,14 @@ export const ChatMessage = React.memo(function ChatMessage({
         )}
 
         {/* Main content */}
-        {displayContent.trim() && (
+        {isEditing ? (
+          <Textarea 
+            value={editContent} 
+            onChange={(e) => setEditContent(e.target.value)} 
+            className="min-h-[100px] text-sm mt-2 text-foreground"
+            autoFocus
+          />
+        ) : displayContent.trim() && (
           <div className="prose prose-sm dark:prose-invert break-words">
             <ReactMarkdown>{displayContent}</ReactMarkdown>
           </div>
@@ -366,6 +379,55 @@ export const ChatMessage = React.memo(function ChatMessage({
           </div>
         )}
       </div>
+      
+      {/* Action Menu (hover) */}
+      {!isWaitingForStream && !activeRun && (
+        <div className={cn(
+          "opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1",
+          isUser ? "flex-row-reverse mr-2" : "ml-2"
+        )}>
+          {isEditing ? (
+            <div className="flex gap-1">
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => {
+                onAction?.('edit', message, editContent);
+                setIsEditing(false);
+              }}>
+                <Check className="h-3.5 w-3.5 text-green-500" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => {
+                setIsEditing(false);
+                setEditContent(message.content);
+              }}>
+                <X className="h-3.5 w-3.5 text-red-500" />
+              </Button>
+            </div>
+          ) : (
+            <div className={cn("flex gap-1", isUser ? "flex-row-reverse" : "flex-row")}>
+              <Button size="icon" variant="ghost" className="h-6 w-6" title="Reply" onClick={() => onAction?.('reply', message)}>
+                <Reply className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-6 w-6" title="Copy" onClick={() => onAction?.('copy', message)}>
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-6 w-6" title="Edit" onClick={() => setIsEditing(true)}>
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              {isUser ? (
+                <Button size="icon" variant="ghost" className="h-6 w-6" title="Rollback" onClick={() => onAction?.('rollback', message)}>
+                  <RotateCcw className="h-3.5 w-3.5 text-amber-500" />
+                </Button>
+              ) : (
+                <Button size="icon" variant="ghost" className="h-6 w-6" title="Regenerate" onClick={() => onAction?.('regenerate', message)}>
+                  <RotateCcw className="h-3.5 w-3.5 text-amber-500" />
+                </Button>
+              )}
+              <Button size="icon" variant="ghost" className="h-6 w-6" title="Delete" onClick={() => onAction?.('delete', message)}>
+                <Trash className="h-3.5 w-3.5 text-red-500" />
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 });

@@ -104,6 +104,7 @@ export function DiscoveryChat({ projectId }: DiscoveryChatProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [activeRun, setActiveRun] = useState<{ runId: string; token: string; messageId: string } | null>(null);
   const [currentRun, setCurrentRun] = useState<any>(null);
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
 
   // Track whether we've received any stream content for the active run.
   // If the run completes without any content having streamed, we do a
@@ -224,6 +225,54 @@ export function DiscoveryChat({ projectId }: DiscoveryChatProps) {
     };
   }, []);
 
+  // ---- Message Actions ----
+  const handleAction = async (action: string, message: Message, newContent?: string) => {
+    if (action === 'reply') {
+      setReplyToMessage(message);
+      return;
+    }
+    
+    if (action === 'copy') {
+      navigator.clipboard.writeText(message.content);
+      return;
+    }
+
+    try {
+      if (action === 'delete') {
+        setMessages(prev => prev.filter(m => m.id !== message.id));
+        await fetch(`/api/conversations/${projectId}/messages/${message.id}`, { method: 'DELETE' });
+      } else if (action === 'edit' && newContent) {
+        setMessages(prev => prev.map(m => m.id === message.id ? { ...m, content: newContent } : m));
+        await fetch(`/api/conversations/${projectId}/messages/${message.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'edit', content: newContent })
+        });
+      } else if (action === 'rollback' || action === 'regenerate') {
+        await fetch(`/api/conversations/${projectId}/messages/${message.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'rollback' })
+        });
+        
+        // Remove locally as well
+        setMessages(prev => {
+          const index = prev.findIndex(m => m.id === message.id);
+          return index !== -1 ? prev.slice(0, index) : prev;
+        });
+        
+        if (action === 'regenerate') {
+          // Trigger regeneration using the last user message before this AI message
+          // Actually, we can just trigger AI directly if we had a trigger endpoint.
+          // For now, refetch to be safe. We'll let the user type again or trigger regeneration.
+          refetchMessages();
+        }
+      }
+    } catch (e) {
+      console.error("Action failed", e);
+    }
+  };
+
   // ---- Send message ----
   const handleSend = async (content: string, attachments: AttachmentMetadata[]) => {
     if (!content.trim() && attachments.length === 0) return;
@@ -278,10 +327,13 @@ export function DiscoveryChat({ projectId }: DiscoveryChatProps) {
               width: att.width,
               height: att.height,
             })),
+            replyToId: replyToMessage?.id,
           },
         }),
       });
 
+      setReplyToMessage(null); // clear reply context
+      
       if (!response.ok) {
         throw new Error('Chat request failed');
       }
@@ -348,7 +400,21 @@ export function DiscoveryChat({ projectId }: DiscoveryChatProps) {
         activeRun={currentRun}
         activeRunMessageId={activeRun?.messageId}
         isWaitingForStream={isStreaming && !hasReceivedContentRef.current}
+        onAction={handleAction}
       />
+      
+      {replyToMessage && (
+        <div className="px-6 py-2 bg-muted/30 border-t flex justify-between items-center text-sm">
+          <div className="text-muted-foreground truncate">
+            <span className="font-semibold">{replyToMessage.role === 'user' ? 'You' : 'AI'}: </span>
+            {replyToMessage.content}
+          </div>
+          <button onClick={() => setReplyToMessage(null)} className="text-muted-foreground hover:text-foreground p-1">
+            <Loader2 className="w-4 h-4 hidden" /> {/* just a placeholder to keep imports clean if we don't import X */}
+            ×
+          </button>
+        </div>
+      )}
       <ChatInput projectId={projectId} onSend={handleSend} disabled={isStreaming} />
     </div>
   );

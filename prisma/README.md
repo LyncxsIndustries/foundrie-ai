@@ -41,11 +41,35 @@ npm run db:migrate     # applies prisma/migrations/** to the database
 
 If your network requires a proxy to reach external services, prefix all Prisma commands with `proxychains4`:
 
+#### One-time setup (Parrot OS / Debian-based):
+
 ```bash
+# Install (tor is usually pre-installed on Parrot; proxychains4 may not be)
+sudo apt-get update
+sudo apt-get install -y tor proxychains4
+
+# Start Tor
+sudo systemctl start tor
+
+# Verify Tor is listening on 9050
+ss -tlnp | grep 9050
+
+# Ensure proxychains config uses socks5 (not socks4)
+tail -5 /etc/proxychains4.conf
+# Must show:  socks5  127.0.0.1 9050
+# If it shows socks4, edit the file:
+sudo sed -i 's/^socks4 /socks5 /' /etc/proxychains4.conf
+```
+#### Run all Prisma commands through proxychains:
+
+```bash
+# Start Tor (if not already running)
+sudo systemctl start tor
+
+# Run Prisma commands
 proxychains4 npm run db:generate
-proxychains4 npm run db:migrate
 proxychains4 npm run db:push
-proxychains4 npm run db:studio
+proxychains4 npm run db:migrate
 ```
 
 Or use `npx` for one-off commands:

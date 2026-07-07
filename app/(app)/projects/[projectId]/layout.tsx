@@ -51,11 +51,11 @@ export default async function ProjectLayout({
   return (
     <WorkspaceShell
       nav={<ProjectPhaseNav projectId={project.id} status={project.status} />}
-      className="min-h-[calc(100svh-3.5rem)]"
+      className="h-full"
     >
       <ProjectHeader projectId={project.id} userRole={userRole} />
       <ResumeSessionPrompt projectId={project.id} />
-      {children}
+      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
     </WorkspaceShell>
   );
 }

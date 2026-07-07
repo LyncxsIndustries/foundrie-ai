@@ -32,6 +32,7 @@ interface ChatMessageListProps {
   activeRunMessageId?: string | null;
   /** True while the AI task is triggered but no stream content has arrived yet. */
   isWaitingForStream?: boolean;
+  onAction?: (action: string, message: Message, newContent?: string) => void;
 }
 
 export function ChatMessageList({ 
@@ -40,6 +41,7 @@ export function ChatMessageList({
   activeRun,
   activeRunMessageId,
   isWaitingForStream,
+  onAction,
 }: ChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -64,17 +66,21 @@ export function ChatMessageList({
     prevMessageCountRef.current = messages.length;
     prevLastContentRef.current = lastContent;
 
-    if ((newMessageAdded || contentChanged) && isAtBottom) {
-      // Small delay to ensure DOM has updated, re-check isAtBottom before scrolling
+    // Force scroll if we're waiting for stream to start, or if new message is added by user
+    const shouldScroll = (newMessageAdded && lastMessage?.role === 'user') || isWaitingForStream || (contentChanged && isAtBottom);
+
+    if (shouldScroll) {
+      // Small delay to ensure DOM has updated
       const timerId = setTimeout(() => {
-        if (isAtBottom) {
-          scrollToBottom();
-        }
+        scrollToBottom();
+        // Also force isAtBottom to true if we programmatically scrolled
+        setIsAtBottom(true);
+        setShowScrollButton(false);
       }, 100);
       
       return () => clearTimeout(timerId);
     }
-  }, [messages, isAtBottom]);
+  }, [messages, isAtBottom, isWaitingForStream]);
 
   // Initial scroll to bottom
   useEffect(() => {
@@ -84,7 +90,8 @@ export function ChatMessageList({
   const handleScroll = () => {
     if (!scrollRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    const atBottom = scrollHeight - scrollTop - clientHeight < 50;
+    // 150px tolerance for auto-scrolling
+    const atBottom = scrollHeight - scrollTop - clientHeight < 150;
     setIsAtBottom(atBottom);
     setShowScrollButton(!atBottom);
   };
@@ -103,11 +110,11 @@ export function ChatMessageList({
   }
 
   return (
-    <div className="flex-1 relative overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="h-full overflow-y-auto px-6 py-4 space-y-4"
+        className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
       >
         {messages.map((message) => (
           <ChatMessage 
@@ -115,6 +122,7 @@ export function ChatMessageList({
             message={message} 
             activeRun={activeRunMessageId === message.id ? activeRun : null}
             isWaitingForStream={activeRunMessageId === message.id ? isWaitingForStream : false}
+            onAction={onAction}
           />
         ))}
       </div>

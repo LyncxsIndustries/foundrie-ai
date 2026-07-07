@@ -42,12 +42,12 @@ export default async function RequirementsReviewPage({ params }: Props) {
   const prefix = `Phase ${phasePosition("requirements")} of ${PROJECT_PHASE_COUNT}`;
 
   return (
-    <>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <SurfaceHeader
         title="Requirements"
         description={`${prefix} — Review and edit the surfaced requirements before architecture.`}
       />
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-6">
           {!requirements ? (
             <SurfaceEmpty
@@ -71,6 +71,6 @@ export default async function RequirementsReviewPage({ params }: Props) {
           )}
         </div>
       </ScrollArea>
-    </>
+    </div>
   );
 }

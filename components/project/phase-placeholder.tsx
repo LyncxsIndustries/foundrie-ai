@@ -37,9 +37,11 @@ export function PhasePlaceholder({
 }: PhasePlaceholderProps) {
   const prefix = `Phase ${phasePosition(phaseId)} of ${PROJECT_PHASE_COUNT}`;
   return (
-    <>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <SurfaceHeader title={title} description={`${prefix} — ${description}`} />
-      <SurfaceEmpty icon={icon} title={emptyTitle} message={emptyMessage} />
-    </>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <SurfaceEmpty icon={icon} title={emptyTitle} message={emptyMessage} />
+      </div>
+    </div>
   );
 }

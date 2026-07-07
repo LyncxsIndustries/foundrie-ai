@@ -12,12 +12,14 @@ export default async function ResearchPage({ params }: RouteContext) {
   const prefix = `Phase ${phasePosition("research")} of ${PROJECT_PHASE_COUNT}`;
 
   return (
-    <>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <SurfaceHeader 
         title="Research" 
         description={`${prefix} — Visual references and domain docs.`} 
       />
-      <ResearchLibrary projectId={projectId} />
-    </>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <ResearchLibrary projectId={projectId} />
+      </div>
+    </div>
   );
 }

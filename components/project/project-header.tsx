@@ -19,7 +19,7 @@ export function ProjectHeader({ projectId, userRole }: ProjectHeaderProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-surface">
+      <div className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-b border-border bg-bg-surface/95 backdrop-blur-sm">
         <div className="flex items-center gap-4">
           <MemberAvatars projectId={projectId} onOpenModal={() => setModalOpen(true)} />
         </div>

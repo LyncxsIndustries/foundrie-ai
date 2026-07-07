@@ -13,15 +13,18 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- **Feature 57 - Dynamic Templates System**: After Feature 56 complete, implement project template system with curated starter templates for common project types (SaaS, Landing Page, Mobile App, etc.) with pre-configured architecture, diagrams, and feature specs.
+- **Feature 57 - Advanced Requirements & Chat**: Injecting advanced requirements generation with incremental state backup, beautiful read-only requirements UI, and advanced chat actions (reply, regenerate, rollback).
 
 ## Next Up
 
-- **Feature 58 - Enhanced Project Overview**: After Feature 57 complete, enhance project overview page with rich visualizations, progress metrics, team activity feed, and quick actions.
+- **Feature 58 - Dynamic Templates System**: After Feature 57 complete, implement project template system with curated starter templates for common project types (SaaS, Landing Page, Mobile App, etc.) with pre-configured architecture, diagrams, and feature specs.
 
 ## In Progress
 
-- `[ ]` Nothing in progress. Feature 56 complete. Ready to begin Feature 57.
+- `[x]` Database schema upgrades for RequirementsBackup, chat replyTo, and isActive rollback flags.
+- `[ ]` Update trigger/generate-requirements.ts for incremental patching and backups.
+- `[ ]` Redesign components/project/RequirementsReview.tsx.
+- `[ ]` Implement Chat Actions (Regenerate, Rollback, Reply).
 
 ## Completed
 
