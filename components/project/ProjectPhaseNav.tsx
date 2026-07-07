@@ -54,19 +54,19 @@ export function ProjectPhaseNav({
   return (
     <nav
       aria-label="Project phases"
-      className={cn("flex flex-col gap-1 p-4", className)}
+      className={cn("flex flex-col gap-1 p-4 h-full overflow-hidden", className)}
     >
-      <p className="px-2 pb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
+      <p className="px-2 pb-2 text-xs font-medium uppercase tracking-wide text-text-muted flex-shrink-0">
         Phases
       </p>
-      <ol className="flex flex-col gap-1">
+      <ol className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
         {PROJECT_PHASES.map((phase, index) => {
           const isActive = phase.id === activeId;
           const isCurrent = phase.id === currentId;
           const isDone = index < currentIndex;
 
           return (
-            <li key={phase.id}>
+            <li key={phase.id} className="flex-shrink-0">
               <Link
                 href={phaseHref(projectId, phase)}
                 aria-current={isActive ? "page" : undefined}
@@ -109,7 +109,7 @@ export function ProjectPhaseNav({
           );
         })}
       </ol>
-      <p className="mt-3 px-2 text-xs text-text-muted">
+      <p className="mt-3 px-2 text-xs text-text-muted flex-shrink-0">
         {PROJECT_PHASE_COUNT} phases
       </p>
     </nav>

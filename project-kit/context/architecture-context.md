@@ -555,7 +555,7 @@ A ZIP without `diagrams/` is invalid. `docs/HANDOFF.md` is generated separately 
 
 ## Database Schema
 
-Core models: `User`, `Project`, `Conversation`, `Requirements`, `Diagram`, `ContextFile`, `FeatureSpec`, `ResearchDocument`, `ResearchAsset`, `ResearchSource`, `ProjectAgentSkill`, `ExecutionPlan`. `ProjectMember` is deferred to Feature 35 and must not be queried before that schema migration lands.
+Core models: `User`, `Project`, `Conversation`, `ConversationMessage`, `Requirements`, `RequirementsBackup`, `Diagram`, `DiagramVersion`, `ContextFile`, `FeatureSpec`, `ResearchDocument`, `ResearchAsset`, `ResearchSource`, `ProjectAgentSkill`, `ExecutionPlan`, `TaskProgressLog`. `ProjectMember` is deferred to Feature 35 and must not be queried before that schema migration lands.
 
 Current field contract: `Project.executionPlans` is a list relation; approved architecture is the latest `ExecutionPlan` with `status: "APPROVED"` and Markdown `content`. `ExecutionPlan` has `content`, `revisionNotes`, `approvedAt`, and `executedAt`; it does not have `critiqueContent` or `metadata`. `ResearchDocument` has `title`, `sourceType`, and `content`; it does not have `summary` or `category`. `ResearchAsset` stores AI-derived previews/details in `metadata`, not custom scalar summary fields.
 
@@ -650,8 +650,10 @@ Cloudflare (DDoS/WAF/CDN) → Vercel Edge (anycast) → Next.js → Rust Axum on
 /api/projects/[projectId]/members
 /api/projects/[projectId]/members/[memberId]
 /api/conversations/[projectId]/chat
+/api/conversations/[projectId]/messages/[messageId]
 /api/requirements/[projectId]
 /api/requirements/[projectId]/generate
+/api/requirements/[projectId]/rephrase
 /api/diagrams/[projectId]/plan
 /api/diagrams/[projectId]/generate
 /api/diagrams/[projectId]/status

@@ -6,7 +6,7 @@
 // navigation lives in `ProjectPhaseNav`, not here.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Plus, FileText, Settings, type LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ interface WorkspaceNavItem {
 
 const NAV_ITEMS: readonly WorkspaceNavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "New Project", href: "/projects/new", icon: Plus },
 ] as const;
 
 interface WorkspaceNavProps {

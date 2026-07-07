@@ -87,7 +87,7 @@ export function SurfaceEmpty({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 px-6 py-16 text-center",
+        "flex flex-col items-center justify-center gap-3 px-6 py-16 text-center h-full",
         className,
       )}
     >

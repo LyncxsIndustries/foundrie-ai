@@ -25,18 +25,18 @@ export function WorkspaceShell({
   return (
     <div
       className={cn(
-        "flex min-h-screen bg-background text-foreground",
+        "flex h-full bg-background text-foreground overflow-hidden",
         className,
       )}
     >
       {nav ? (
-        <aside className="hidden w-64 shrink-0 border-r border-border bg-bg-surface md:block">
+        <aside className="hidden w-64 shrink-0 border-r border-border bg-bg-surface md:flex flex-col overflow-hidden">
           {nav}
         </aside>
       ) : null}
-      <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">{children}</main>
       {inspector ? (
-        <aside className="hidden w-80 shrink-0 border-l border-border bg-bg-surface lg:block">
+        <aside className="hidden w-80 shrink-0 border-l border-border bg-bg-surface lg:flex flex-col overflow-hidden">
           {inspector}
         </aside>
       ) : null}

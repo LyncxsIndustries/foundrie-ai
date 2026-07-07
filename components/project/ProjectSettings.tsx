@@ -131,17 +131,23 @@ export function ProjectSettings({ project }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      {error && (
-        <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="rounded-md bg-accent-primary/10 p-4 text-sm text-accent-primary">
-          {success}
-        </div>
-      )}
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <div className="flex-shrink-0 px-6 py-4 border-b border-border">
+        <h1 className="text-2xl font-semibold text-text-primary">Settings</h1>
+        <p className="text-sm text-text-secondary mt-1">Manage your project settings</p>
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="space-y-6 p-6">
+          {error && (
+            <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="rounded-md bg-accent-primary/10 p-4 text-sm text-accent-primary">
+              {success}
+            </div>
+          )}
 
       <Card>
         <CardHeader>
@@ -457,6 +463,8 @@ export function ProjectSettings({ project }: Props) {
           </div>
         </CardContent>
       </Card>
+        </div>
+      </div>
     </div>
   );
 }

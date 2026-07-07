@@ -5,6 +5,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { SurfaceHeader } from "@/components/shells/workspace-shell";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -51,47 +52,49 @@ export default async function ProjectOverviewPage({
   const position = phasePosition(phaseForStatus(project.status));
 
   return (
-    <>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <SurfaceHeader
         title={project.name}
         description={`Phase ${position} of ${PROJECT_PHASE_COUNT} — ${statusLabel(project.status)}`}
       />
-      <div className="grid gap-4 p-6 sm:grid-cols-2">
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Overview</CardTitle>
-            <Badge variant="secondary">{statusLabel(project.status)}</Badge>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-text-secondary">
-            <p>{project.description || "No description yet."}</p>
-            <Separator />
-            <dl className="grid grid-cols-2 gap-2 text-xs text-text-muted">
-              <div>
-                <dt className="text-text-muted">Diagrams</dt>
-                <dd className="text-text-secondary">
-                  {project.completedDiagramCount}/{project.diagramCount}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-muted">Feature specs</dt>
-                <dd className="text-text-secondary">
-                  {project.featureSpecCount}
-                </dd>
-              </div>
-            </dl>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Activity</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-text-secondary">
-            <p>Recent session activity.</p>
-            <Separator className="my-3" />
-            <p className="text-text-muted">No activity yet.</p>
-          </CardContent>
-        </Card>
-      </div>
-    </>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="grid gap-4 p-6 sm:grid-cols-2">
+          <Card>
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle>Overview</CardTitle>
+              <Badge variant="secondary">{statusLabel(project.status)}</Badge>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm text-text-secondary">
+              <p>{project.description || "No description yet."}</p>
+              <Separator />
+              <dl className="grid grid-cols-2 gap-2 text-xs text-text-muted">
+                <div>
+                  <dt className="text-text-muted">Diagrams</dt>
+                  <dd className="text-text-secondary">
+                    {project.completedDiagramCount}/{project.diagramCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-muted">Feature specs</dt>
+                  <dd className="text-text-secondary">
+                    {project.featureSpecCount}
+                  </dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Activity</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-text-secondary">
+              <p>Recent session activity.</p>
+              <Separator className="my-3" />
+              <p className="text-text-muted">No activity yet.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </ScrollArea>
+    </div>
   );
 }

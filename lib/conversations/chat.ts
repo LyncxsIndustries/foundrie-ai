@@ -50,3 +50,11 @@ export async function appendConversationMessage(
 
   return newMessages;
 }
+
+export async function setConversationMessages(projectId: string, messages: ChatMessage[]) {
+  await db.conversation.update({
+    where: { projectId },
+    data: { messages: messages as any },
+  });
+  return messages;
+}

@@ -29,6 +29,7 @@ export async function GET(
       },
       include: {
         conversationMessages: {
+          where: { isActive: true },
           include: {
             attachments: true,
           },

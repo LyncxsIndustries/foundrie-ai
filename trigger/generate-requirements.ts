@@ -9,7 +9,7 @@ import type { Plan } from "../lib/ai/tier";
 
 export const generateRequirementsTask = task({
   id: "generate-requirements",
-  run: async (payload: { projectId: string }) => {
+  run: async (payload: { projectId: string }, { ctx }) => {
     const { projectId } = payload;
 
     // 1. Fetch project and related context
@@ -19,6 +19,7 @@ export const generateRequirementsTask = task({
         user: true,
         conversation: true,
         researchDocuments: true,
+        requirements: true, // Fetch existing requirements for incremental update
       },
     });
 
@@ -35,6 +36,10 @@ export const generateRequirementsTask = task({
       .map((doc) => `--- Research: ${doc.title} ---\n${doc.content}`)
       .join("\n\n");
 
+    const existingRequirements = project.requirements?.content
+      ? JSON.stringify(project.requirements.content, null, 2)
+      : null;
+
     // 2. Requirements Surfacing
     const surfacingPrompt = `
 Conversation History:
@@ -43,7 +48,10 @@ ${conversationMessages}
 Research Context:
 ${researchContext}
 
-Please analyze the above data and provide a comprehensive JSON requirements specification. Include functional requirements, non-functional requirements, scale estimates, and technology preferences/constraints.
+${existingRequirements ? `Existing Requirements:
+${existingRequirements}
+
+Please analyze the above data and intelligently UPDATE the existing requirements based on the latest conversation and research. Add new requirements that surfaced, modify existing ones if they changed, and remove them if they were explicitly discarded. Ensure the final JSON structure includes functional requirements, non-functional requirements, scale estimates, and technology preferences/constraints.` : `Please analyze the above data and provide a comprehensive JSON requirements specification. Include functional requirements, non-functional requirements, scale estimates, and technology preferences/constraints.`}
 `;
 
     const requirementsResponse = await callAI("requirements_surfacing", {
@@ -102,8 +110,25 @@ ${requirementsText}
       hiddenRequirements: hiddenJson,
     };
 
-    // 4. Atomically persist to db and advance project status
-    await db.$transaction([
+    // 4. Atomically backup existing and persist new to db
+    const transactions: any[] = [];
+
+    // If there were existing requirements, back them up
+    if (project.requirements) {
+      transactions.push(
+        db.requirementsBackup.create({
+          data: {
+            projectId,
+            requirementsId: project.requirements.id,
+            content: project.requirements.content as any,
+            runId: ctx?.run?.id || null,
+          },
+        })
+      );
+    }
+
+    // Upsert the new requirements
+    transactions.push(
       db.requirements.upsert({
         where: { projectId },
         create: {
@@ -113,12 +138,18 @@ ${requirementsText}
         update: {
           content: finalContent,
         },
-      }),
+      })
+    );
+
+    // Update project status
+    transactions.push(
       db.project.update({
         where: { id: projectId },
         data: { status: "REQUIREMENTS" },
-      }),
-    ]);
+      })
+    );
+
+    await db.$transaction(transactions);
 
     return {
       message: "Requirements successfully generated and persisted.",

@@ -201,6 +201,7 @@ model Project {
   conversation      Conversation?
   conversationMessages ConversationMessage[] @relation("conversationMessages")
   requirements      Requirements?
+  requirementsBackups RequirementsBackup[]
   diagrams          Diagram[]
   contextFiles      ContextFile[]
   featureSpecs      FeatureSpec[]
@@ -252,6 +253,12 @@ model ConversationMessage {
   phaseId        String?
   metadata       Json?
 
+  // Claude-style history & WhatsApp-style replies (Feature 57)
+  isActive       Boolean      @default(true)
+  replyToId      String?
+  replyTo        ConversationMessage?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        ConversationMessage[] @relation("MessageReplies")
+
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   project      Project       @relation("conversationMessages", fields: [projectId], references: [id], onDelete: Cascade)
   attachments  Attachment[]
@@ -293,9 +300,29 @@ model Requirements {
   content Json @default("{}")
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  backups RequirementsBackup[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Point-in-time snapshot of requirements (Feature 57).
+model RequirementsBackup {
+  id             String @id @default(cuid())
+  projectId      String
+  requirementsId String
+  
+  content        Json
+  runId          String? // Trigger.dev run ID that created this backup
+  
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requirements Requirements @relation(fields: [requirementsId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime     @default(now())
+
+  @@index([projectId])
+  @@index([requirementsId])
+  @@index([createdAt])
 }
 
 model Diagram {

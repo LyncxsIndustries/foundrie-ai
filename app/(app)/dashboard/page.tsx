@@ -34,11 +34,11 @@ export default async function DashboardPage() {
   return (
     <WorkspaceShell
       nav={<WorkspaceNav />}
-      className="min-h-[calc(100svh-3.5rem)]"
+      className="h-full"
     >
-      <div className="bg-background">
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-background">
         {/* Hero Section */}
-        <section className="px-6 py-12 border-b border-border-subtle">
+        <section className="flex-shrink-0 px-6 py-12 border-b border-border-subtle">
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-5xl font-black text-primary mb-2">
@@ -57,29 +57,33 @@ export default async function DashboardPage() {
         </section>
 
         {!hasProjects ? (
-          <EmptyState
-            icon={<Sparkles className="size-12" />}
-            title="No projects yet"
-            message="Start a new project to begin discovery and shape your architecture."
-            action={<NewProjectButton variant="outline" />}
-          />
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <EmptyState
+              icon={<Sparkles className="size-12" />}
+              title="No projects yet"
+              message="Start a new project to begin discovery and shape your architecture."
+              action={<NewProjectButton variant="outline" />}
+            />
+          </div>
         ) : (
-          <div className="flex flex-col gap-12 p-6 pb-24">
-            {/* My Projects Section */}
-            {owned.length > 0 && (
-              <section>
-                <SectionHeader title="My Projects" count={owned.length} />
-                <DashboardGrid projects={owned} />
-              </section>
-            )}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="flex flex-col gap-12 p-6 pb-24">
+              {/* My Projects Section */}
+              {owned.length > 0 && (
+                <section>
+                  <SectionHeader title="My Projects" count={owned.length} />
+                  <DashboardGrid projects={owned} />
+                </section>
+              )}
 
-            {/* Shared With Me Section */}
-            {shared.length > 0 && (
-              <section>
-                <SectionHeader title="Shared With Me" count={shared.length} />
-                <DashboardGrid projects={shared} />
-              </section>
-            )}
+              {/* Shared With Me Section */}
+              {shared.length > 0 && (
+                <section>
+                  <SectionHeader title="Shared With Me" count={shared.length} />
+                  <DashboardGrid projects={shared} />
+                </section>
+              )}
+            </div>
           </div>
         )}
 
