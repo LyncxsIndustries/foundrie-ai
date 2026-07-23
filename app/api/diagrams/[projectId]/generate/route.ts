@@ -3,6 +3,7 @@ import { tasks } from "@trigger.dev/sdk/v3";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { requireProjectMember } from "@/lib/projects/auth";
 import type { generateDiagramsTask } from "@/trigger/generate-diagrams";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 export async function POST(
   req: NextRequest,
@@ -18,6 +19,10 @@ export async function POST(
       "generate-diagrams",
       { projectId }
     );
+
+    await captureServerEvent(user.id, "diagram_generation_started", {
+      project_id: projectId,
+    });
 
     return NextResponse.json(
       { message: "Diagram generation started", runId: handle.id },

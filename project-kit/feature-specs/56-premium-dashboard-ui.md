@@ -62,15 +62,7 @@ MODIFY: `context/progress-tracker.md` - mark feature progress
 
 **CRITICAL CONTRACT SYNCHRONIZATION GATE**: Before implementation and before marking this feature done, compare this spec against the current codebase, Prisma schema, context files, AGENTS.md, and every dependent future spec. If the implementation changes or corrects any contract (schema fields or relations, route signatures, helper signatures, AI task names or callAI/callAIStream request/response shapes, status enums, storage paths, generated file structure, package versions, environment variables, or file ownership), update this spec, all affected later specs, relevant context files, AGENTS.md, and progress-tracker.md in the same branch. Do not leave future specs with stale names, old API shapes, or invalid fields.
 
-## 4. Updates (Contract Synchronization)
 
-**Part 2: Advanced Requirements & Chat Integration**
-
-The following features were developed as part of this sprint in response to new user requirements:
-- **Conversation UI**: Floating UI structure with a h-full and overflow-hidden constraint ensuring fixed headers and sidebar.
-- **Message Chat**: Updated ChatMessageList auto-scroll and stream management.
-- **Requirements UI**: Removed old text-area based forms in favor of an elegant, categorized list of requirements (RequirementsReview), which supports magic rephrasing (/api/requirements/[projectId]/rephrase) via TaskProgressLog and ConversationMessage structures.
-- **Schema Contracts**: Migrated from legacy requirements blocks to RequirementsBackup, ConversationMessage, DiagramVersion, and TaskProgressLog.
 
 - **CRITICAL**: GSAP 3.12+ and `@gsap/react` must already be installed from Feature 01. If not, install exact-pinned versions.
 - **CRITICAL**: Register GSAP plugins in `lib/gsap-config.ts` before use: `gsap.registerPlugin(ScrollTrigger, useGSAP)`.

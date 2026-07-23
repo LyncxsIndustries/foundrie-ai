@@ -6,6 +6,7 @@ import { requireAuth, AuthError } from "@/lib/auth/require-auth";
 import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import { db } from "@/lib/db";
 import { ResearchAssetType } from "@/lib/generated/prisma/client";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 const payloadSchema = z.object({
   assetType: z.nativeEnum(ResearchAssetType),
@@ -89,7 +90,7 @@ export async function POST(
       onUploadCompleted: async ({ blob, tokenPayload }) => {
         try {
           if (!tokenPayload) throw new Error("Missing tokenPayload");
-          const { projectId: tProjectId, assetType } = JSON.parse(tokenPayload);
+          const { projectId: tProjectId, userId, assetType } = JSON.parse(tokenPayload);
 
           await db.researchAsset.create({
             data: {
@@ -99,6 +100,12 @@ export async function POST(
               storageUrl: blob.url,
               mimeType: blob.contentType,
             },
+          });
+
+          await captureServerEvent(userId, "research_asset_uploaded", {
+            project_id: tProjectId,
+            asset_type: assetType,
+            mime_type: blob.contentType,
           });
         } catch (error) {
           // If DB write fails, log it. In a real system, you might want to cleanup the blob.

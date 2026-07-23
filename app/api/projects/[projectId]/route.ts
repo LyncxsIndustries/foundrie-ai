@@ -13,6 +13,7 @@ import {
 } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 import { buildProjectSlug } from "@/lib/projects/slug";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 const PROJECT_DETAIL_SELECT = {
   id: true,
@@ -123,6 +124,12 @@ export async function PATCH(
       return notFound();
     }
 
+    await captureServerEvent(user.id, "project_updated", {
+      project_id: projectId,
+      name_updated: parsed.data.name !== undefined,
+      description_updated: parsed.data.description !== undefined,
+    });
+
     return NextResponse.json({ project });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -151,6 +158,10 @@ export async function DELETE(
     if (result.count === 0) {
       return notFound();
     }
+
+    await captureServerEvent(user.id, "project_deleted", {
+      project_id: projectId,
+    });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

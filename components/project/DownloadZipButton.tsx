@@ -100,23 +100,19 @@ export function DownloadZipButton({ projectId }: DownloadZipButtonProps) {
         await response.json();
 
       if (data.cached) {
-        // ZIP is cached, download immediately
+        // ZIP is cached, show ready state and let user download manually
         setZipUrl(data.url);
         setFileName(data.fileName);
         setState("ready");
         setProgress(100);
         setRetryCount(0); // Reset on success
-        
-        // Trigger browser download
+        // Immediately trigger browser download for cached ZIP
         const link = document.createElement("a");
         link.href = data.url;
         link.download = data.fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-        // Reset to idle after download
-        setTimeout(() => setState("idle"), 2000);
       } else {
         // Generation triggered, start polling
         setRunId(data.runId);
@@ -146,10 +142,8 @@ export function DownloadZipButton({ projectId }: DownloadZipButtonProps) {
     document.body.removeChild(link);
 
     // Reset to idle after download
-    setTimeout(() => {
-      setState("idle");
-      setRetryCount(0); // Reset retry count after successful download
-    }, 2000);
+    setState("idle");
+    setRetryCount(0); // Reset retry count after successful download
   };
 
   if (state === "error") {
@@ -236,9 +230,11 @@ export function DownloadZipButton({ projectId }: DownloadZipButtonProps) {
   }
 
   return (
-    <Button onClick={handleDownload} disabled={state !== "idle"}>
-      <Download className="mr-2 h-4 w-4" />
-      Download ZIP
-    </Button>
+    <>
+      <Button onClick={handleDownload} disabled={state !== "idle"}>
+        <Download className="mr-2 h-4 w-4" />
+        Download ZIP
+      </Button>
+    </>
   );
 }

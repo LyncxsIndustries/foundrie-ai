@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
 import type { generateProjectZip } from "@/trigger/generate-project-zip";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -55,6 +56,12 @@ export async function POST(
           10
         );
 
+        await captureServerEvent(user.id, "project_zip_download_prepared", {
+          project_id: projectId,
+          cache_hit: true,
+          size_bytes: size,
+        });
+
         return NextResponse.json({
           cached: true,
           fileName: project.lastZipFileName,
@@ -72,6 +79,11 @@ export async function POST(
         userId: user.id,
       }
     );
+
+    await captureServerEvent(user.id, "project_zip_generation_started", {
+      project_id: projectId,
+      cache_hit: false,
+    });
 
     return NextResponse.json(
       {

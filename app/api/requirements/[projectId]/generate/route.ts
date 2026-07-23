@@ -3,6 +3,7 @@ import { tasks } from "@trigger.dev/sdk";
 import type { generateRequirementsTask } from "@/trigger/generate-requirements";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { requireProjectMember } from "@/lib/projects/auth";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 export async function POST(
   req: Request,
@@ -23,6 +24,10 @@ export async function POST(
       "generate-requirements",
       { projectId }
     );
+
+    await captureServerEvent(user.id, "requirements_generation_started", {
+      project_id: projectId,
+    });
 
     return NextResponse.json({ id: handle.id }, { status: 202 });
   } catch (error) {
