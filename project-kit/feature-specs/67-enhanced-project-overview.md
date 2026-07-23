@@ -1,4 +1,4 @@
-# Feature 58 - Enhanced Project Overview with Friendly UI
+# Feature 67 - Enhanced Project Overview with Friendly UI
 
 ## Type
 

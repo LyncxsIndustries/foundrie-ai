@@ -1,4 +1,4 @@
-# Feature 67: Payment Transaction Safety & Idempotency
+# Feature 76: Payment Transaction Safety & Idempotency
 
 **Status:** Not Started  
 **Priority:** P0 (Blocking Monetization)  

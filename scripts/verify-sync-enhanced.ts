@@ -127,6 +127,22 @@ function info(message: string) {
  * Get current feature number from git branch or progress tracker
  */
 function getCurrentFeature(): number | null {
+  // Try Vercel environment variable
+  if (process.env.VERCEL_GIT_COMMIT_REF) {
+    const branchMatch = process.env.VERCEL_GIT_COMMIT_REF.match(/feature\/(\d+)-/);
+    if (branchMatch) {
+      return parseInt(branchMatch[1], 10);
+    }
+  }
+
+  // Try GitHub Actions environment variable
+  if (process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME) {
+    const branch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || '';
+    const branchMatch = branch.match(/feature\/(\d+)-/);
+    if (branchMatch) {
+      return parseInt(branchMatch[1], 10);
+    }
+  }
   // First, try to get feature number from git branch name
   try {
     const { execFileSync } = require('child_process');
@@ -155,13 +171,13 @@ function getCurrentFeature(): number | null {
   const content = fs.readFileSync(trackerPath, 'utf8');
   
   // Look for "In Progress" section
-  const inProgressMatch = content.match(/## In Progress[\s\S]*?Feature (\d+)/);
+  const inProgressMatch = content.match(/## In Progress(?:(?!\n## )[\s\S])*?Feature (\d+)/);
   if (inProgressMatch) {
     return parseInt(inProgressMatch[1], 10);
   }
 
   // Look for "Current Goal" section
-  const currentGoalMatch = content.match(/## Current Goal[\s\S]*?Feature (\d+)/);
+  const currentGoalMatch = content.match(/## Current Goal(?:(?!\n## )[\s\S])*?Feature (\d+)/);
   if (currentGoalMatch) {
     return parseInt(currentGoalMatch[1], 10);
   }

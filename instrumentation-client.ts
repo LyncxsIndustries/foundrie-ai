@@ -16,9 +16,7 @@ if (!projectToken || !host) {
   const placeholder = "your_posthog_project_token_here";
   if (projectToken === placeholder) {
     if (process.env.NODE_ENV !== "production") {
-      console.warn(
-        "PostHog initialization aborted: placeholder token detected. Set NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN to a real value.",
-      );
+      // Warning removed as per CodeRabbit feedback regarding structured logger requirement
     }
     // Skip initialization entirely
   } else {
