@@ -342,7 +342,7 @@ In Foundrie's full deployed system, ZIP/key-rotation/file-ingestion/diagram-rend
 Authentication and authorization are deliberately separate. Clerk authenticates users and owns sessions. Foundrie authorization code enforces ownership, plan limits, and admin access.
 
 Launch scope:
-- Root `middleware.ts` protects app and API routes by default with `clerkMiddleware` + `createRouteMatcher`.
+- Root `proxy.ts` configures `clerkMiddleware`; app routes use `auth.protect()` in layouts, API routes use `requireAuth()`.
 - Public routes: `/`, `/pricing`, `/sign-in(.*)`, `/sign-up(.*)`, `/api/webhooks/clerk`.
 - `app/layout.tsx` wraps the app in `ClerkProvider`.
 - `app/api/webhooks/clerk/route.ts` verifies Svix signatures before user sync.
@@ -580,16 +580,23 @@ Prisma datasource is minimalist (`provider = "postgresql"`); URLs are configured
 If Prisma CLI commands (`db:push`, `db:migrate`) fail with `P1001: Can't reach database server at ...:5432` and the `connect_timeout` fix doesn't work, your network/ISP is likely blocking outbound TCP port 5432 via Deep Packet Inspection (DPI).
 
 **Workaround (Linux/Debian/Parrot OS):**
-1. Install Tor and Proxychains: `sudo apt-get install -y tor proxychains4`
-2. Start the Tor service: `sudo systemctl start tor`
-3. Verify it's running: `systemctl status tor`
-4. Configure `/etc/proxychains4.conf` to use `socks5 127.0.0.1 9050`
-5. Run Prisma commands through the proxy:
-   `proxychains4 npm run db:generate`
-   `proxychains4 npm run db:push`
-   `proxychains4 npm run db:migrate`
+We use Cloudflare WARP to bypass the ISP's DPI block.
 
-*Note: If proxychains suddenly stops working (e.g., connection refused), the Tor daemon has likely stopped or crashed. Restart it with `sudo systemctl restart tor`.*
+1. Add Cloudflare repository (use `bookworm` codename for Debian/Parrot compatibility) and install:
+   ```bash
+   curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+   echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ bookworm main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+   sudo apt-get update && sudo apt-get install cloudflare-warp
+   ```
+2. Register and connect:
+   `warp-cli registration new`
+   `warp-cli connect`
+3. Verify connection: `warp-cli status`
+4. Run Prisma commands normally (no prefixes needed):
+   `npm run db:push`
+   `npm run db:migrate`
+
+*Note: Turn WARP OFF before logging into strict remote work platforms (e.g., Remotasks) to avoid data center IP bans.*
 
 ### Prisma Client
 

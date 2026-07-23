@@ -37,49 +37,41 @@ npm run db:migrate     # applies prisma/migrations/** to the database
 
 `prisma migrate dev` connects over **direct TCP on port 5432**.
 
-### Networks requiring proxy (proxychains)
+### Networks blocking port 5432 (Cloudflare WARP)
 
-If your network requires a proxy to reach external services, prefix all Prisma commands with `proxychains4`:
+If your network or ISP blocks outbound TCP port 5432 (common with some fiber providers due to government rules or DPI), you must tunnel your traffic to bypass the block. We use Cloudflare WARP instead of proxychains as it is much faster and more reliable.
 
-#### One-time setup (Parrot OS / Debian-based):
+#### One-time setup (Debian/Parrot OS):
 
 ```bash
-# Install (tor is usually pre-installed on Parrot; proxychains4 may not be)
-sudo apt-get update
-sudo apt-get install -y tor proxychains4
+# Add Cloudflare GPG key and repo (using bookworm codename for compatibility)
+curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ bookworm main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
 
-# Start Tor
-sudo systemctl start tor
+# Install WARP
+sudo apt-get update && sudo apt-get install cloudflare-warp
 
-# Verify Tor is listening on 9050
-ss -tlnp | grep 9050
-
-# Ensure proxychains config uses socks5 (not socks4)
-tail -5 /etc/proxychains4.conf
-# Must show:  socks5  127.0.0.1 9050
-# If it shows socks4, edit the file:
-sudo sed -i 's/^socks4 /socks5 /' /etc/proxychains4.conf
+# Register and connect
+warp-cli registration new
+warp-cli connect
 ```
-#### Run all Prisma commands through proxychains:
+
+Once connected, run your Prisma commands normally (no prefixes needed):
 
 ```bash
-# Start Tor (if not already running)
-sudo systemctl start tor
-
-# Run Prisma commands
-proxychains4 npm run db:generate
-proxychains4 npm run db:push
-proxychains4 npm run db:migrate
+npm run db:generate
+npm run db:push
+npm run db:migrate
 ```
 
 Or use `npx` for one-off commands:
 
 ```bash
-proxychains4 npx prisma migrate reset --force
-proxychains4 npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
+npx prisma migrate reset --force
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
 ```
 
-**Note:** Ensure `/etc/proxychains.conf` is configured correctly for your proxy setup.
+**Note:** If you use platforms like Remotasks/Outlier, turn WARP OFF before logging in to avoid account bans due to data center IP usage.
 
 **Neon Free tier scales the compute to zero after ~5 minutes idle.** The first
 connection wakes it, and that wake can take longer than Prisma's default 5s
@@ -149,8 +141,8 @@ Use this in development when you need a clean slate:
 # Without proxy
 npm run db:migrate reset --force
 
-# With proxy
-proxychains4 npx prisma migrate reset --force
+# With WARP enabled
+npx prisma migrate reset --force
 ```
 
 This drops all data and replays all migrations from scratch.
@@ -161,10 +153,10 @@ If you applied schema changes via `db push` before running migrations:
 
 ```bash
 # Mark the current migration as applied without running it
-proxychains4 npx prisma migrate resolve --applied <migration-name>
+npx prisma migrate resolve --applied <migration-name>
 
 # Example:
-proxychains4 npx prisma migrate resolve --applied 20260703083100_add_research_asset_categories
+npx prisma migrate resolve --applied 20260703083100_add_research_asset_categories
 ```
 
 **When to use Option 1:** Development databases, when you need clean migration history, or when drift is complex.

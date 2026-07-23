@@ -24,7 +24,8 @@ if (!projectToken || !host) {
       api_host: host,
       defaults: "2026-01-30",
       capture_exceptions: true,
-      debug: process.env.NODE_ENV === "development",
+      debug: false,
+      disable_external_dependency_loading: false,
       // before_send hook will be added in a later spec
     });
   }

@@ -149,66 +149,37 @@ Tell support:
 The ISP can push a new TR-069 config to the ONT remotely in minutes without
 sending a technician. This is the cleanest fix and requires zero code changes.
 
-#### Immediate workaround — ProxyChains4 + Tor
+#### Immediate workaround — Cloudflare WARP
 
-While waiting for the ISP (or permanently if they refuse), tunnel all Prisma
-CLI traffic through Tor. Tor exit nodes are not subject to your ISP's port
-restrictions.
+Since the ISP's upstream provider uses DPI to block Postgres traffic, we tunnel all traffic using Cloudflare WARP. This encrypts the traffic and bypasses the DPI rules. It is much faster and simpler than proxychains/Tor.
 
-**One-time setup (Parrot OS / Debian-based):**
+**One-time setup (Debian/Parrot OS):**
 
 ```bash
-# Install (tor is usually pre-installed on Parrot; proxychains4 may not be)
-sudo apt-get update
-sudo apt-get install -y tor proxychains4
+# Add Cloudflare GPG key and repo (using bookworm codename for compatibility)
+curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ bookworm main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
 
-# Start Tor
-sudo systemctl start tor
+# Install WARP
+sudo apt-get update && sudo apt-get install cloudflare-warp
 
-# Verify Tor is listening on 9050
-ss -tlnp | grep 9050
-
-# Ensure proxychains config uses socks5 (not socks4)
-tail -5 /etc/proxychains4.conf
-# Must show:  socks5  127.0.0.1 9050
-# If it shows socks4, edit the file:
-sudo sed -i 's/^socks4 /socks5 /' /etc/proxychains4.conf
+# Register and connect
+warp-cli registration new
+warp-cli connect
 ```
 
-**Run all Prisma commands through proxychains:**
+**Run Prisma commands normally:**
+
+Because WARP works at the system level, you no longer need any special prefixes (`proxychains4`) or helper scripts. Just run commands as usual:
 
 ```bash
-proxychains4 npm run db:generate
-proxychains4 npm run db:push
-proxychains4 npm run db:migrate
-proxychains4 npm run db:studio
+npm run db:generate
+npm run db:push
+npm run db:migrate
+npm run db:studio
 ```
 
-**Optional — project helper script (`db.sh` in project root):**
-
-```bash
-cat > db.sh << 'EOF'
-#!/bin/bash
-# Runs Prisma CLI commands through Tor to bypass ISP port 5432 block.
-# Usage: ./db.sh <command>   e.g.  ./db.sh migrate
-sudo systemctl start tor 2>/dev/null
-echo "🔒 Routing Prisma through Tor (ISP blocks port 5432)..."
-proxychains4 npm run db:"$1"
-EOF
-chmod +x db.sh
-```
-
-```bash
-./db.sh generate
-./db.sh push
-./db.sh migrate
-```
-
-> **Note:** `db:generate` does not connect to the database at all — it only
-> reads `schema.prisma` and writes the client to `lib/generated/prisma`.
-> Running it through proxychains is harmless but not strictly required.
-> `db:push` and `db:migrate` both need the tunnel because they use `DIRECT_URL`
-> (port 5432) as configured in `prisma.config.ts`.
+> **Warning for Remote Workers:** Cloudflare WARP routes your traffic through a data center. If you log into strict remote work platforms (like Remotasks or Outlier) while WARP is on, you will likely be banned for using a proxy/VPN. Always turn WARP off before accessing those platforms.
 
 #### Why `prisma.config.ts` matters here
 

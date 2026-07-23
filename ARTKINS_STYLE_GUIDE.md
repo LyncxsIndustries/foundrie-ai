@@ -2220,7 +2220,7 @@ Context7 verified the App Router patterns used here.
 Context7 verified the Clerk App Router baseline.
 
 - Wrap the root app with `ClerkProvider`.
-- Protect routes with `clerkMiddleware` and `createRouteMatcher`.
+- Protect routes with resource-based auth checks (`auth.protect()` in layouts/pages, `requireAuth()` in API routes).
 - Use server-side `auth()` for session identity in route handlers and server components.
 - Verify Clerk webhooks with Svix before writing user records.
 - Clerk owns authentication. Application code owns authorization.
