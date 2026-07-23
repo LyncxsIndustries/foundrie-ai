@@ -57,6 +57,8 @@ Use known library IDs from `project-kit/context/architecture-context.md` when av
 
 Feature specs are in `project-kit/feature-specs/`. Implement them in strict numeric order, one spec at a time. Phase names are roadmap labels, not implementation batches. Do not implement `01-06` as a group, do not bundle multiple specs into one pull request, and do not start the next spec until the current one passes review.
 
+**Note on Spec Renumbering:** Specs originally numbered 56-70 have been shifted forward to 65-79 to accommodate 9 new specs (56-64) added to the beginning of this block.
+
 For every single feature spec:
 
 1. Read only the current numbered spec and its required context.

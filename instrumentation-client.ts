@@ -12,10 +12,22 @@ if (!projectToken || !host) {
     );
   }
 } else {
-  posthog.init(projectToken, {
-    api_host: host,
-    defaults: "2026-01-30",
-    capture_exceptions: true,
-    debug: process.env.NODE_ENV === "development",
-  });
+  // Guard against using the example placeholder token
+  const placeholder = "your_posthog_project_token_here";
+  if (projectToken === placeholder) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        "PostHog initialization aborted: placeholder token detected. Set NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN to a real value.",
+      );
+    }
+    // Skip initialization entirely
+  } else {
+    posthog.init(projectToken, {
+      api_host: host,
+      defaults: "2026-01-30",
+      capture_exceptions: true,
+      debug: process.env.NODE_ENV === "development",
+      // before_send hook will be added in a later spec
+    });
+  }
 }
