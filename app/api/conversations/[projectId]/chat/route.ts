@@ -5,6 +5,7 @@ import { getDiscoveryConversation, appendConversationMessage, ChatMessage } from
 import { db } from "@/lib/db";
 import { AttachmentType } from "@/lib/generated/prisma/client";
 import { auth, tasks } from "@trigger.dev/sdk";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 interface IncomingAttachment {
   type: AttachmentType;
@@ -140,6 +141,12 @@ export async function POST(
         },
       },
       expirationTime: "1h",
+    });
+
+    await captureServerEvent(user.id, "discovery_message_sent", {
+      project_id: projectId,
+      attachment_count: message.attachments?.length ?? 0,
+      has_content: message.content.trim().length > 0,
     });
 
     return NextResponse.json({

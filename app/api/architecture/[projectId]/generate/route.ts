@@ -3,6 +3,7 @@ import { tasks } from "@trigger.dev/sdk";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { requireProjectMember } from "@/lib/projects/auth";
 import type { generateArchitectureTask } from "@/trigger/generate-architecture";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 export async function POST(
   req: NextRequest,
@@ -14,10 +15,14 @@ export async function POST(
 
     await requireProjectMember(projectId, user.id);
 
-    const handle = await tasks.trigger<typeof generateArchitectureTask>(
+    const handle = await tasks.trigger(
       "generate-architecture",
       { projectId }
     );
+
+    await captureServerEvent(user.id, "architecture_generation_started", {
+      project_id: projectId,
+    });
 
     return NextResponse.json(
       {

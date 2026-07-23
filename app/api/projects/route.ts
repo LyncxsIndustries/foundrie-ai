@@ -10,6 +10,7 @@ import { canCreateProject } from "@/lib/auth/plan-limits";
 import { requireAuth, AuthError } from "@/lib/auth/require-auth";
 import { db } from "@/lib/db";
 import { buildProjectSlug } from "@/lib/projects/slug";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 // Dashboard list shape: counters are denormalized on Project (Feature 03), so we
 // never count diagrams/specs per row. Large JSON columns are excluded.
@@ -175,6 +176,12 @@ export async function POST(req: NextRequest): Promise<Response> {
         { status: 403 },
       );
     }
+
+    await captureServerEvent(user.id, "project_created", {
+      project_id: project.id,
+      plan: user.plan,
+      has_description: Boolean(project.description),
+    });
 
     return NextResponse.json({ project }, { status: 201 });
   } catch (error) {
