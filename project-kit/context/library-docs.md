@@ -662,11 +662,12 @@ export async function POST(req: Request) {
 - Client (browser): `/posthog/posthog-js` — use this ID for all `ctx7 library` / `ctx7 docs` lookups covering `before_send`, `identify`, `reset`, capture events, init config.
 - Server (Node): `/posthog/posthog-node` — distinct SDK for server-side telemetry (Route Handlers, Trigger.dev tasks). Client-side patterns do not apply.
 
-### Installation & Versions (project-pinned)
+### Installation & Versions (lockfile-resolved exact versions)
 ```
-posthog-js@^1.300.0     # browser — instrumentation-client.ts
-posthog-node@^5.15.0    # Node    — lib/posthog-server.ts, server-only
+posthog-js@1.407.1       # browser — instrumentation-client.ts (exact resolved from package-lock; ^1.300.0 semver range in package.json)
+posthog-node@5.46.0       # Node    — lib/posthog-server.ts, server-only (exact resolved from package-lock; ^5.15.0 semver range in package.json)
 ```
+Verification step for every PostHog-SDK bump: after `npm install <newversion>`, run `npm ls posthog-js posthog-node --depth 0` and update the exact versions listed above, then re-run gates 1–4 (`sync:check`, `security:all`, `test`, `build`) to confirm envelope shape (`properties`, `$set`, `$set_once`) has not shifted.
 
 ### Environment Variables
 ```
@@ -705,11 +706,12 @@ posthog.init(projectToken, {
 - `before_send` runs after the SDK builds the full envelope. Return `null` to drop an event (not used in this spec; Feature 57 only scrubs). Returning a mutated `CaptureResult` continues the event.
 
 **Defense-in-depth layering across specs**:
-| Layer | Spec     | Scope                                 | Mechanism                                |
-|-------|----------|---------------------------------------|------------------------------------------|
-| 1     | 60       | identify() call site                  | No email/name passed in person props     |
-| 2     | 57       | every browser event (wire payload)    | `before_send` wipes properties/$set/$s_o |
-| 3     | 59       | signed-out provider mount boundary    | `posthog.reset()` clears in-memory state |
+
+| Layer | Spec     | Scope                                 | Mechanism                                      |
+|-------|----------|---------------------------------------|------------------------------------------------|
+| 1     | 60       | identify() call site                  | No email/name passed in person props           |
+| 2     | 57       | every browser event (wire payload)    | `before_send` wipes properties/$set/$set_once  |
+| 3     | 59       | signed-out provider mount boundary    | `posthog.reset()` clears in-memory state     |
 
 **Exceptions captured by `capture_exceptions: true`**: also routed through `before_send`. Stack traces, file paths, and query strings that would leak into exception properties are all removed by the blanket `properties = {}` wipe. No separate exception scrubbing hook is required.
 

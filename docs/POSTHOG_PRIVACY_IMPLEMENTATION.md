@@ -114,10 +114,10 @@ This checklist must pass on every PR that touches `instrumentation-client.ts` or
 - **NOT weakened by any future spec without a PR that explicitly updates this document AND the Hard Rule 0 contract-sync list**. Feature 57 is marked as CANNOT-be-weakened in `library-docs.md` → PostHog → Client-Side Integration Pattern.
 
 ## References
-- [instrumentation-client.ts](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/instrumentation-client.ts#L17-L29)
-- [ARTKINS_STYLE_GUIDE.md §8 Production Security](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/ARTKINS_STYLE_GUIDE.md)
-- [AGENTS.md Hard Rule 0 (contract synchronization)](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/AGENTS.md)
-- [Feature 57 spec](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/project-kit/feature-specs/57-posthog-before-send-hook.md)
-- [Feature 59 spec](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/project-kit/feature-specs/59-liveblocks-reset-on-sign-out.md)
-- [Feature 60 spec](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/project-kit/feature-specs/60-liveblocks-identify-scrub.md)
-- [library-docs.md PostHog section](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/project-kit/context/library-docs.md#L659-L731)
+- [instrumentation-client.ts](../instrumentation-client.ts#L17-L29)
+- [ARTKINS_STYLE_GUIDE.md §8 Production Security](../ARTKINS_STYLE_GUIDE.md)
+- [AGENTS.md Hard Rule 0 (contract synchronization)](../AGENTS.md)
+- [Feature 57 spec](../project-kit/feature-specs/57-posthog-before-send-hook.md)
+- [Feature 59 spec](../project-kit/feature-specs/59-liveblocks-reset-on-sign-out.md)
+- [Feature 60 spec](../project-kit/feature-specs/60-liveblocks-identify-scrub.md)
+- [library-docs.md PostHog section](../project-kit/context/library-docs.md#L659-L731)

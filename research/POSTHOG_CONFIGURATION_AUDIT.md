@@ -25,16 +25,18 @@
 ## 2. Risk Matrix
 
 ### Before Feature 57
+
 | Risk | Class | Likelihood | Impact | Notes |
 |---|---|---|---|---|
-| R-01 URL param PII leak via `$current_url` | PII disclosure | HIGH — users frequently paste share links carrying `?email=`/`?token=` query params | HIGH — GDPR / CCPA personal data |
-| R-02 Raw email/name in `$set` after `identify()` | PII disclosure | HIGH — Feature 60 not yet implemented | CRITICAL — direct personal-identifiable fields |
-| R-03 First-seen attribution leak via `$set_once` | Behavioral fingerprinting | MEDIUM — only at creation time | MEDIUM — allows cross-site reidentification |
-| R-04 Geo-inference from `$geoip_*` auto-captured | Location leak | HIGH — server-side GeoIP enrichment runs by default | MEDIUM — coarse city-level |
-| R-05 Exception messages containing PII | PII disclosure (secondary) | MEDIUM — depends on code paths | HIGH — stack traces leak file system paths including `$HOME` |
-| R-06 Session recording DOM snapshot leak | Mass PII leak | N/A — not enabled in current config | EXTREME — DOM contents include rendered email/names |
+| R-01 URL param PII leak via `$current_url` | PII disclosure | HIGH — users frequently paste share links carrying `?email=`/`?token=` query params | HIGH — GDPR / CCPA personal data | |
+| R-02 Raw email/name in `$set` after `identify()` | PII disclosure | HIGH — Feature 60 not yet implemented | CRITICAL — direct personal-identifiable fields | |
+| R-03 First-seen attribution leak via `$set_once` | Behavioral fingerprinting | MEDIUM — only at creation time | MEDIUM — allows cross-site reidentification | |
+| R-04 Geo-inference from `$geoip_*` auto-captured | Location leak | HIGH — server-side GeoIP enrichment runs by default | MEDIUM — coarse city-level | |
+| R-05 Exception messages containing PII | PII disclosure (secondary) | MEDIUM — depends on code paths | HIGH — stack traces leak file system paths including `$HOME` | |
+| R-06 Session recording DOM snapshot leak | Mass PII leak | N/A — not enabled in current config | EXTREME — DOM contents include rendered email/names | |
 
 ### After Feature 57
+
 | Risk | Residual Likelihood | Residual Impact | Mitigation Status |
 |---|---|---|---|
 | R-01 through R-06 | NULL | NULL | **Fully mitigated**. Three envelope fields zeroed on every browser event BEFORE the XHR is constructed. |
@@ -103,9 +105,9 @@ Changes required by this audit, confirmed completed on branch `feature/57-postho
 ---
 
 ## 7. References
-- [AGENTS.md Hard Rule 0](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/AGENTS.md)
-- [ARTKINS_STYLE_GUIDE.md §8 Production Security](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/ARTKINS_STYLE_GUIDE.md)
-- [architecture-context.md Context7 Library IDs](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/project-kit/context/architecture-context.md)
-- [docs/POSTHOG_PRIVACY_IMPLEMENTATION.md](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/docs/POSTHOG_PRIVACY_IMPLEMENTATION.md)
-- [instrumentation-client.ts](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/instrumentation-client.ts)
-- [Feature 57 spec](file:///home/artkins/Programming/WEB%20PROGRAMMING/NEXTJS/foundrie-ai/project-kit/feature-specs/57-posthog-before-send-hook.md)
+- [AGENTS.md Hard Rule 0](../../AGENTS.md)
+- [ARTKINS_STYLE_GUIDE.md §8 Production Security](../../ARTKINS_STYLE_GUIDE.md)
+- [architecture-context.md Context7 Library IDs](../project-kit/context/architecture-context.md)
+- [docs/POSTHOG_PRIVACY_IMPLEMENTATION.md](../docs/POSTHOG_PRIVACY_IMPLEMENTATION.md)
+- [instrumentation-client.ts](../../instrumentation-client.ts)
+- [Feature 57 spec](../project-kit/feature-specs/57-posthog-before-send-hook.md)
