@@ -6,10 +6,13 @@
 // `WorkspaceShell` (the dashboard list, the project phase nav), so the shell does
 // not render a second persistent desktop sidebar here.
 import type { ReactNode } from "react";
+import { auth } from "@clerk/nextjs/server";
 
 import { TopNav } from "@/components/app-shell/top-nav";
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  await auth.protect();
+  
   return (
     <div className="flex h-[100dvh] flex-col bg-background text-foreground overflow-hidden">
       <TopNav />

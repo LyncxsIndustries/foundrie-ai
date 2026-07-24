@@ -527,7 +527,7 @@ Authentication and authorization are separate systems:
 
 ### Launch auth scope
 
-`ClerkProvider` in `app/layout.tsx`; root `middleware.ts` with `clerkMiddleware` + `createRouteMatcher`; public routes `/`, `/pricing`, `/sign-in(.*)`, `/sign-up(.*)`, `/api/webhooks/clerk`; protected app/API routes by default; Clerk webhook verified with Svix before user sync; local `User` row keyed by Clerk ID; `getAuthUser()` and `requireAuth()` helpers; ownership scoping on every project-owned query; plan and role fields for simple gates; admin email helper using `ADMIN_EMAILS`.
+`ClerkProvider` in `app/layout.tsx`; root `proxy.ts` configures `clerkMiddleware`; app routes use `auth.protect()` in layouts, API routes use `requireAuth()`; Clerk webhook verified with Svix before user sync; local `User` row keyed by Clerk ID; `getAuthUser()` and `requireAuth()` helpers; ownership scoping on every project-owned query; plan and role fields for simple gates; admin email helper using `ADMIN_EMAILS`.
 
 ### Foundrie's two-role collaboration model
 

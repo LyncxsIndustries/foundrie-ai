@@ -43,7 +43,7 @@ npx ctx7 docs <libraryId> "<specific question>"
 
 ## Files
 
-CREATE: `proxy.ts` - Clerk route protection using `clerkMiddleware` and `createRouteMatcher`.
+CREATE: `proxy.ts` - Clerk route protection using `clerkMiddleware` and resource-based auth checks in layouts.
 CREATE: `app/(auth)/sign-in/[[...sign-in]]/page.tsx` - Clerk sign-in component.
 CREATE: `app/(auth)/sign-up/[[...sign-up]]/page.tsx` - Clerk sign-up component.
 MODIFY: `app/layout.tsx` - Wrap children in `ClerkProvider`.
