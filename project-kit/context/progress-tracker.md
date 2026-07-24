@@ -13,20 +13,22 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- **Feature 57 - Advanced Requirements & Chat**: Injecting advanced requirements generation with incremental state backup, beautiful read-only requirements UI, and advanced chat actions (reply, regenerate, rollback).
+- **Feature 57 - PostHog before_send hook**: Add a `before_send` hook to the PostHog client initialization in `instrumentation-client.ts` that scrubs all automatically captured event and person properties before they are sent to PostHog.
 
 ## Next Up
 
-- **Feature 58 - Dynamic Templates System**: After Feature 57 complete, implement project template system with curated starter templates for common project types (SaaS, Landing Page, Mobile App, etc.) with pre-configured architecture, diagrams, and feature specs.
+- **Feature 58 - PostHog default date**: Change the default date in `instrumentation-client.ts` to `2026-05-30`.
 
 ## In Progress
 
-- `[x]` Database schema upgrades for RequirementsBackup, chat replyTo, and isActive rollback flags.
-- `[ ]` Update trigger/generate-requirements.ts for incremental patching and backups.
-- `[ ]` Redesign components/project/RequirementsReview.tsx.
-- `[ ]` Implement Chat Actions (Regenerate, Rollback, Reply).
+- `[ ]` Open `instrumentation-client.ts`.
+- `[ ]` Extend the `posthog.init` configuration object with a `before_send` property.
+- `[ ]` Inside the hook, set `event.properties = {}` and `event.person_properties = {}`.
+- `[ ]` Run the validation pipeline.
 
 ## Completed
+
+- **Feature 56 - PostHog token guard** (DONE): Added a client guard around line 10 in `instrumentation-client.ts` to reject sentinel tokens, and updated `.env.example` to make the placeholder empty and reorder it.
 
 - **Initial Scaffold**: Created the Next.js project. No feature work beyond the base project scaffold has been done.
 - **Documentation Foundation**: Consolidated the full versioned research corpus into the master research files, AGENTS.md, the six context files, and all 52 feature specs.
