@@ -579,24 +579,24 @@ Prisma datasource is minimalist (`provider = "postgresql"`); URLs are configured
 
 If Prisma CLI commands (`db:push`, `db:migrate`) fail with `P1001: Can't reach database server at ...:5432` and the `connect_timeout` fix doesn't work, your network/ISP is likely blocking outbound TCP port 5432 via Deep Packet Inspection (DPI).
 
-**Workaround (Linux/Debian/Parrot OS):**
-We use Cloudflare WARP to bypass the ISP's DPI block.
+**Workaround (Linux/Debian):**
+We use Cloudflare WARP to bypass the ISP's DPI block. As per Cloudflare documentation, WARP is supported on major Debian releases (including Debian 12/Bookworm).
 
-1. Add Cloudflare repository (use `bookworm` codename for Debian/Parrot compatibility) and install:
+1. Add Cloudflare repository and install:
    ```bash
    curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-   echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ bookworm main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+   echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
    sudo apt-get update && sudo apt-get install cloudflare-warp
    ```
 2. Register and connect:
    `warp-cli registration new`
    `warp-cli connect`
-3. Verify connection: `warp-cli status`
+3. Verify connection: `warp-cli status` and `curl https://www.cloudflare.com/cdn-cgi/trace | grep warp=on`
 4. Run Prisma commands normally (no prefixes needed):
    `npm run db:push`
    `npm run db:migrate`
 
-*Note: Turn WARP OFF before logging into strict remote work platforms (e.g., Remotasks) to avoid data center IP bans.*
+*Note: Turn WARP OFF before logging into strict remote work platforms (e.g., Remotasks), as using a data center IP may violate policy or trigger suspension.*
 
 ### Prisma Client
 

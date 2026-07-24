@@ -39,14 +39,14 @@ npm run db:migrate     # applies prisma/migrations/** to the database
 
 ### Networks blocking port 5432 (Cloudflare WARP)
 
-If your network or ISP blocks outbound TCP port 5432 (common with some fiber providers due to government rules or DPI), you must tunnel your traffic to bypass the block. We use Cloudflare WARP instead of proxychains as it is much faster and more reliable.
+If your network or ISP blocks outbound TCP port 5432 (common with some fiber providers due to government rules or DPI), you must tunnel your traffic to bypass the block. We use Cloudflare WARP to tunnel the connection.
 
 #### One-time setup (Debian/Parrot OS):
 
 ```bash
-# Add Cloudflare GPG key and repo (using bookworm codename for compatibility)
+# Add Cloudflare GPG key and repo
 curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ bookworm main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
 
 # Install WARP
 sudo apt-get update && sudo apt-get install cloudflare-warp
@@ -54,6 +54,9 @@ sudo apt-get update && sudo apt-get install cloudflare-warp
 # Register and connect
 warp-cli registration new
 warp-cli connect
+
+# Verify connection
+curl https://www.cloudflare.com/cdn-cgi/trace | grep warp=on
 ```
 
 Once connected, run your Prisma commands normally (no prefixes needed):
@@ -71,7 +74,7 @@ npx prisma migrate reset --force
 npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
 ```
 
-**Note:** If you use platforms like Remotasks/Outlier, turn WARP OFF before logging in to avoid account bans due to data center IP usage.
+**Note:** If you use platforms like Remotasks/Outlier, turn WARP OFF before logging in, as using a data center IP may violate policy or trigger suspension.
 
 **Neon Free tier scales the compute to zero after ~5 minutes idle.** The first
 connection wakes it, and that wake can take longer than Prisma's default 5s

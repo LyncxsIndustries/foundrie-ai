@@ -6,7 +6,7 @@ NEW FEATURE
 
 ## What This Delivers
 
-Foundrie has the minimal Clerk session foundation: Clerk is installed, the root app is wrapped with `ClerkProvider`, public sign-in/sign-up routes exist, and app/API routes are protected by default. This feature does not touch the database because the Prisma schema is created in Feature 03.
+Foundrie has the minimal Clerk session foundation: Clerk is installed, the root app is wrapped with `ClerkProvider`, public sign-in/sign-up routes exist, and each protected layout, page, and API resource performs local Clerk authentication/resource checks. This feature does not touch the database because the Prisma schema is created in Feature 03.
 
 ## Dependencies
 
@@ -43,7 +43,7 @@ npx ctx7 docs <libraryId> "<specific question>"
 
 ## Files
 
-CREATE: `proxy.ts` - Clerk route protection using `clerkMiddleware` and resource-based auth checks in layouts.
+CREATE: `proxy.ts` - Clerk route protection using `clerkMiddleware`. Every protected layout, page, and API resource must perform local Clerk authentication checks.
 CREATE: `app/(auth)/sign-in/[[...sign-in]]/page.tsx` - Clerk sign-in component.
 CREATE: `app/(auth)/sign-up/[[...sign-up]]/page.tsx` - Clerk sign-up component.
 MODIFY: `app/layout.tsx` - Wrap children in `ClerkProvider`.
@@ -62,7 +62,7 @@ MODIFY: `package.json` - Add Clerk dependency if not already present.
 
 - Use root-level Next.js 16 App Router folders. Do not create a `src/` directory.
 - Public routes are `/`, `/pricing`, `/sign-in(.*)`, `/sign-up(.*)`, and `/api/webhooks/clerk`.
-- Protect every other app/API route by default.
+- Ensure each protected layout, page, and API resource performs local Clerk authentication and resource checks.
 - Keep Clerk appearance minimal and mapped to Foundrie tokens where the current design system supports it.
 - Do not create local users, auth utilities, plan gates, admin helpers, or webhooks yet.
 
@@ -98,7 +98,8 @@ MODIFY: `package.json` - Add Clerk dependency if not already present.
 ## Acceptance Criteria
 
 - [ ] `app/layout.tsx` wraps the application in `ClerkProvider`.
-- [ ] `proxy.ts` protects all non-public routes by default.
+- [ ] `proxy.ts` implements Clerk middleware.
+- [ ] Each protected layout, page, and API resource performs local Clerk authentication and resource checks (e.g. `auth.protect()` or `requireAuth()`).
 - [ ] Sign-in and sign-up pages render Clerk components.
 - [ ] No database code, webhook code, local user sync, plan gates, or admin helpers are introduced in this feature.
 - [ ] No custom admin portal, team RBAC, RLS, ABAC, or audit logging exists.
