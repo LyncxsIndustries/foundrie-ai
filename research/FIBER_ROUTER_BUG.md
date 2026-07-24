@@ -151,14 +151,16 @@ sending a technician. This is the cleanest fix and requires zero code changes.
 
 #### Immediate workaround — Cloudflare WARP
 
-Since the ISP's upstream provider uses DPI to block Postgres traffic, we tunnel all traffic using Cloudflare WARP. This encrypts the traffic and bypasses the DPI rules.
+Since the ISP's upstream provider uses [DPI](https://en.wikipedia.org/wiki/Deep_packet_inspection) to block Postgres traffic, we tunnel all traffic using [Cloudflare WARP](https://pkg.cloudflareclient.com/). This encrypts the traffic and bypasses the DPI rules.
 
 **One-time setup (Debian/Parrot OS):**
 
 ```bash
 # Add Cloudflare GPG key and repo
 curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+CODENAME=$(lsb_release -cs 2>/dev/null || echo "bookworm")
+if ! curl -s --head https://pkg.cloudflareclient.com/dists/$CODENAME/Release | grep -q "200 OK"; then CODENAME="bookworm"; fi
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $CODENAME main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
 
 # Install WARP
 sudo apt-get update && sudo apt-get install cloudflare-warp
@@ -182,7 +184,7 @@ npm run db:migrate
 npm run db:studio
 ```
 
-> **Warning for Remote Workers:** Cloudflare WARP routes your traffic through a data center. If you log into strict remote work platforms (like Remotasks or Outlier) while WARP is on, it may violate policy or trigger suspension for using a proxy/VPN. Always turn WARP off before accessing those platforms.
+> **Warning for Remote Workers:** Cloudflare WARP routes your traffic through a data center. If you log into strict remote work platforms (like Remotasks or Outlier) while WARP is on, it may violate policy or trigger suspension for using a proxy/VPN ([Outlier Policy](https://outlier.ai/legal/working-location-policy), [Remotasks Guidelines](https://www.remotasks.com/en/legal/community-guidelines)). Always turn WARP off before accessing those platforms.
 
 #### Why `prisma.config.ts` matters here
 
