@@ -580,12 +580,14 @@ Prisma datasource is minimalist (`provider = "postgresql"`); URLs are configured
 If Prisma CLI commands (`db:push`, `db:migrate`) fail with `P1001: Can't reach database server at ...:5432` and the `connect_timeout` fix doesn't work, your network/ISP is likely blocking outbound TCP port 5432 via Deep Packet Inspection (DPI).
 
 **Workaround (Linux/Debian):**
-We use Cloudflare WARP to bypass the ISP's DPI block. As per Cloudflare documentation, WARP is supported on major Debian releases (including Debian 12/Bookworm).
+We use [Cloudflare WARP](https://pkg.cloudflareclient.com/) to bypass the ISP's [DPI block](https://en.wikipedia.org/wiki/Deep_packet_inspection). As per [Cloudflare documentation](https://developers.cloudflare.com/warp-client/get-started/linux/), WARP is supported on major Debian releases (including Debian 12/Bookworm).
 
 1. Add Cloudflare repository and install:
    ```bash
    curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-   echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+   CODENAME=$(lsb_release -cs 2>/dev/null || echo "bookworm")
+   if ! curl -s --head https://pkg.cloudflareclient.com/dists/$CODENAME/Release | grep -q "200 OK"; then CODENAME="bookworm"; fi
+   echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $CODENAME main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
    sudo apt-get update && sudo apt-get install cloudflare-warp
    ```
 2. Register and connect:
@@ -596,7 +598,7 @@ We use Cloudflare WARP to bypass the ISP's DPI block. As per Cloudflare document
    `npm run db:push`
    `npm run db:migrate`
 
-*Note: Turn WARP OFF before logging into strict remote work platforms (e.g., Remotasks), as using a data center IP may violate policy or trigger suspension.*
+*Note: Turn WARP OFF before logging into strict remote work platforms (e.g., Remotasks), as using a data center IP may violate policy or trigger suspension ([Outlier Policy](https://outlier.ai/legal/working-location-policy), [Remotasks Guidelines](https://www.remotasks.com/en/legal/community-guidelines)).*
 
 ### Prisma Client
 
