@@ -20,6 +20,12 @@ if (!projectToken || isSentinel || !host) {
     capture_exceptions: true,
     debug: false,
     disable_external_dependency_loading: false,
-    // before_send hook will be added in a later spec
+    before_send: (event) => {
+      if (!event) return null;
+      event.properties = {};
+      event.$set = {};
+      event.$set_once = {};
+      return event;
+    },
   });
 }

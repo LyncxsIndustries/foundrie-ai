@@ -656,6 +656,70 @@ export async function POST(req: Request) {
 
 ---
 
+## PostHog (Product Analytics)
+
+### Context7 Library ID
+- Client (browser): `/posthog/posthog-js` — use this ID for all `ctx7 library` / `ctx7 docs` lookups covering `before_send`, `identify`, `reset`, capture events, init config.
+- Server (Node): `/posthog/posthog-node` — distinct SDK for server-side telemetry (Route Handlers, Trigger.dev tasks). Client-side patterns do not apply.
+
+### Installation & Versions (project-pinned)
+```
+posthog-js@^1.300.0     # browser — instrumentation-client.ts
+posthog-node@^5.15.0    # Node    — lib/posthog-server.ts, server-only
+```
+
+### Environment Variables
+```
+NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN    # required — Feature 56 guard throws on missing
+NEXT_PUBLIC_POSTHOG_HOST             # required — Feature 56 guard throws on missing
+POSTHOG_API_KEY                      # server-side (posthog-node), Optional in dev.
+```
+Server-only env vars (POSTHOG_* without NEXT_PUBLIC_) are never exposed to the browser bundle.
+
+### Client-Side Integration Pattern (REQUIRED BY SPECS 56 + 57)
+**File**: `instrumentation-client.ts` (imported by Next.js via `experimental.instrumentationHook = true` and an `instrumentation.ts` barrel that re-exports only when `process.env.NEXT_RUNTIME === "node"` is FALSE — the file is browser-scoped by the runtime check inside).
+
+**Global scrubbing pattern (Feature 57) — CANNOT be weakened**:
+```typescript
+posthog.init(projectToken, {
+  api_host: host,
+  defaults: "2026-01-30",
+  capture_exceptions: true,
+  debug: false,
+  disable_external_dependency_loading: false,
+  before_send: (event) => {
+    if (!event) return null;
+    event.properties = {};
+    event.$set = {};
+    event.$set_once = {};
+    return event;
+  },
+});
+```
+
+**CaptureResult envelope (from Context7 /posthog/posthog-js types)**:
+- `event.properties` — event-level fields: `$current_url`, `$pathname`, `$browser`, `$os`, `$geoip_*`, UTM params, `$referrer`, `$screen`, any custom props. **All scrubbed to `{}` by Feature 57.**
+- `event.$set` — person properties written by `posthog.identify()` (email, name). **Scrubbed to `{}` by Feature 57.**
+- `event.$set_once` — first-seen-only person props (`$initial_utm_*`, `$initial_referrer`). **Scrubbed to `{}` by Feature 57.**
+- `event.uuid`, `event.event`, `event.timestamp` — retained; contain no PII.
+- `before_send` runs after the SDK builds the full envelope. Return `null` to drop an event (not used in this spec; Feature 57 only scrubs). Returning a mutated `CaptureResult` continues the event.
+
+**Defense-in-depth layering across specs**:
+| Layer | Spec     | Scope                                 | Mechanism                                |
+|-------|----------|---------------------------------------|------------------------------------------|
+| 1     | 60       | identify() call site                  | No email/name passed in person props     |
+| 2     | 57       | every browser event (wire payload)    | `before_send` wipes properties/$set/$s_o |
+| 3     | 59       | signed-out provider mount boundary    | `posthog.reset()` clears in-memory state |
+
+**Exceptions captured by `capture_exceptions: true`**: also routed through `before_send`. Stack traces, file paths, and query strings that would leak into exception properties are all removed by the blanket `properties = {}` wipe. No separate exception scrubbing hook is required.
+
+**Validation in dev**: In Chrome DevTools → Network, filter by `/e/` (the PostHog ingest endpoint). Body JSON MUST have `properties: {}`, `$set: {}`, `$set_once: {}`. Any non-empty value on those three fields means the before_send hook is NOT applied and is a PII-leak regression.
+
+### Server-Side Integration Pattern
+**File**: `lib/posthog-server.ts` — uses `posthog-node`. Server events are NOT filtered by the client-side `before_send` (different SDKs). Keep server payloads minimal and PII-free by construction.
+
+---
+
 ## Summary
 
 - **Cloudinary**: Use signed uploads, save metadata to DB, download for ZIP export
@@ -665,3 +729,4 @@ export async function POST(req: Request) {
 - **Prisma**: Include relations, transactions for multi-table ops, soft deletes
 - **Trigger.dev**: Durable tasks for long-running jobs, structured logging
 - **Zod**: Validate all API inputs, use safeParse for graceful errors
+- **PostHog**: Client `before_send` 3-field scrub (spec 57) + identify scrub (spec 60) + sign-out reset (spec 59); Context7 IDs `/posthog/posthog-js` and `/posthog/posthog-node`
