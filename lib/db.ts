@@ -6,10 +6,11 @@
 import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "./generated/prisma/client";
+import ws from "ws";
 
 // Required for Neon serverless in Node.js environments.
 // Node 24+ natively supports global WebSocket, which works safely in Next.js Turbopack.
-neonConfig.webSocketConstructor = globalThis.WebSocket;
+neonConfig.webSocketConstructor = globalThis.WebSocket || ws;
 // Pipeline the TLS handshake and auth together to cut connection-setup latency.
 neonConfig.pipelineConnect = "password";
 neonConfig.pipelineTLS = true;
@@ -22,7 +23,17 @@ if (!connectionString) {
   );
 }
 
-const adapter = new PrismaNeon({ connectionString });
+const adapter = new PrismaNeon(
+  {
+    connectionString,
+    idleTimeoutMillis: 20000,
+    connectionTimeoutMillis: 10000,
+  },
+  {
+    onPoolError: (err: Error) => console.error('Neon Pool Error:', err),
+    onConnectionError: (err: Error) => console.error('Neon Connection Error:', err),
+  }
+);
 
 const createPrismaClient = () =>
   new PrismaClient({

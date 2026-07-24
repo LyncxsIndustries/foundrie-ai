@@ -151,14 +151,14 @@ sending a technician. This is the cleanest fix and requires zero code changes.
 
 #### Immediate workaround — Cloudflare WARP
 
-Since the ISP's upstream provider uses DPI to block Postgres traffic, we tunnel all traffic using Cloudflare WARP. This encrypts the traffic and bypasses the DPI rules. It is much faster and simpler than proxychains/Tor.
+Since the ISP's upstream provider uses DPI to block Postgres traffic, we tunnel all traffic using Cloudflare WARP. This encrypts the traffic and bypasses the DPI rules.
 
 **One-time setup (Debian/Parrot OS):**
 
 ```bash
-# Add Cloudflare GPG key and repo (using bookworm codename for compatibility)
+# Add Cloudflare GPG key and repo
 curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ bookworm main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
 
 # Install WARP
 sudo apt-get update && sudo apt-get install cloudflare-warp
@@ -166,6 +166,9 @@ sudo apt-get update && sudo apt-get install cloudflare-warp
 # Register and connect
 warp-cli registration new
 warp-cli connect
+
+# Verify connection
+curl https://www.cloudflare.com/cdn-cgi/trace | grep warp=on
 ```
 
 **Run Prisma commands normally:**
@@ -179,7 +182,7 @@ npm run db:migrate
 npm run db:studio
 ```
 
-> **Warning for Remote Workers:** Cloudflare WARP routes your traffic through a data center. If you log into strict remote work platforms (like Remotasks or Outlier) while WARP is on, you will likely be banned for using a proxy/VPN. Always turn WARP off before accessing those platforms.
+> **Warning for Remote Workers:** Cloudflare WARP routes your traffic through a data center. If you log into strict remote work platforms (like Remotasks or Outlier) while WARP is on, it may violate policy or trigger suspension for using a proxy/VPN. Always turn WARP off before accessing those platforms.
 
 #### Why `prisma.config.ts` matters here
 
