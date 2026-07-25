@@ -684,7 +684,7 @@ Server-only env vars (POSTHOG_* without NEXT_PUBLIC_) are never exposed to the b
 ```typescript
 posthog.init(projectToken, {
   api_host: host,
-  defaults: "2026-01-30",
+  defaults: "2026-05-30",
   capture_exceptions: true,
   debug: false,
   disable_external_dependency_loading: false,
@@ -712,6 +712,14 @@ posthog.init(projectToken, {
 | 1     | 60       | identify() call site                  | No email/name passed in person props           |
 | 2     | 57       | every browser event (wire payload)    | `before_send` wipes properties/$set/$set_once  |
 | 3     | 59       | signed-out provider mount boundary    | `posthog.reset()` clears in-memory state     |
+
+**`defaults` preset policy (Feature 58 — dated preset "2026-05-30")**: The `defaults` field is a `ConfigDefaults` dated string literal (valid values from Context7 `/posthog/posthog-js` types: `'2026-06-25' | '2026-05-30' | '2026-01-30' | '2025-11-30' | '2025-05-24' | 'unset'`). Later dates include ALL earlier behavioral changes. NEVER freehand a date string — only use values that are present in the upstream `ConfigDefaults` union type.
+
+Behavior delta between `'2026-01-30'` (previous) and `'2026-05-30'` (current, Feature 58), per `defaultsThatVaryByConfig()` in posthog-js:
+- **`rageclick`**: Upgraded from `{ content_ignorelist: true }` → `{ content_ignorelist: DEFAULT_CONTENT_IGNORELIST_WITH_STEPPERS, ignore_text_selection: true }`. Ignores more accidental click patterns (input stepper buttons, text-selection drags) reducing false-positive rage-click events.
+- **`session_recording`**: Upgraded from `{ strictMinimumDuration: true }` (2025-11-30 level) → `{ strictMinimumDuration: true, canvasCapture: { resolutionScale: 0.6 } }`. Enables canvas element capture at 0.6x resolution if session recording is ever enabled at the project level; in Foundrie the `properties = {}` wipe (Feature 57) simultaneously blanks `$snapshot_data` so no DOM/Canvas content leaves the browser.
+
+Upgrade path: `2026-06-25` (latest) adds `session_recording.streamNetworkBody: true`; this is NOT adopted because streaming network request/response bodies is irrelevant given the Feature 57 properties wipe and may include sensitive headers/cookies if misconfigured. Reassess during a future spec that explicitly enables session recording as an opt-in feature.
 
 **Exceptions captured by `capture_exceptions: true`**: also routed through `before_send`. Stack traces, file paths, and query strings that would leak into exception properties are all removed by the blanket `properties = {}` wipe. No separate exception scrubbing hook is required.
 

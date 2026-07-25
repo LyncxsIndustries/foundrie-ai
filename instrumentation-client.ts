@@ -16,7 +16,7 @@ if (!projectToken || isSentinel || !host) {
 } else {
   posthog.init(projectToken, {
     api_host: host,
-    defaults: "2026-01-30",
+    defaults: "2026-05-30",
     capture_exceptions: true,
     debug: false,
     disable_external_dependency_loading: false,
