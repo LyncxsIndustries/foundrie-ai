@@ -1,5 +1,8 @@
 # Dependency Upgrade Documentation
 
+## File Relocation (2026-07-25)
+This file was moved from `project-kit/docs/dependencies.md` → `docs/DEPENDENCIES_UPGRADE_NOTES.md` to eliminate a duplicate `docs/` folder hierarchy in Foundrie's root. The canonical docs root is `docs/` because it is a HARD CONTRACT per AGENTS.md Rule 16 (every generated project ZIP exports `docs/` as a required folder) and it already contained all 20 owner-facing operational docs (PostHog configuration, deployment, scaling, security, session logs, Trigger optimizations, environment setup guides). The orphan `project-kit/docs/` contained only this one file referenced exclusively by Feature 64, so it was renamed (for consistency with `docs/POSTHOG_DEFAULTS_UPGRADE_NOTES.md` naming) and merged.
+
 ## Overview
 We addressed several deprecated and vulnerable dependencies that were flagged during the recent `npm install` run.
 
