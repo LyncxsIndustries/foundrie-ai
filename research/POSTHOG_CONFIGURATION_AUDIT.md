@@ -52,7 +52,7 @@ File: `instrumentation-client.ts` `posthog.init()`
 | Option | Current Value | Rationale / Note |
 |---|---|---|
 | `api_host` | `NEXT_PUBLIC_POSTHOG_HOST` | Required; guard in Feature 56 throws on missing. MUST be EU or US self-host host, never `app.posthog.com` if data residency is EU. No hard residency rule in current research; leave per-env. |
-| `defaults` | `"2026-01-30"` | Feature 58 will change to `"2026-05-30"` on its OWN branch per AGENTS.md one-feature-one-branch rule. Audit intentionally does NOT change this value. |
+| `defaults` | `"2026-05-30"` | **UPDATED in Feature 58 (this branch).** Behavior delta vs prior `"2026-01-30"` per Context7 `/posthog/posthog-js` `defaultsThatVaryByConfig()`: (1) `rageclick` upgraded from `{ content_ignorelist: true }` → `{ content_ignorelist: DEFAULT_CONTENT_IGNORELIST_WITH_STEPPERS, ignore_text_selection: true }` to suppress false positives from input stepper buttons and text-selection drag events; (2) `session_recording` upgraded from `{ strictMinimumDuration: true }` (2025-11-30 level) → `{ strictMinimumDuration: true, canvasCapture: { resolutionScale: 0.6 } }` so <canvas/> elements (diagram canvas, any future HTML canvas) are captured at 60% resolution IF session recording is ever enabled via PostHog project settings. **NOT adopted: `"2026-06-25"` (latest)** — the latest preset additionally enables `session_recording.streamNetworkBody: true` which streams network request/response bodies; this is unnecessary given Feature 57's `properties = {}` wipe and may include sensitive headers/cookies if misconfigured. Reassess `"2026-06-25"` only in a future spec that explicitly enables session recording as an opt-in product feature, with its own contract-sync footprint across specs 57/59/60. |
 | `capture_exceptions` | `true` | Auto-captures unhandled errors. Neutralized PII-wise by `before_send` wiping exception properties. Keep enabled (critical for error rate monitoring). |
 | `debug` | `false` | Never in prod. |
 | `disable_external_dependency_loading` | `false` | If set true, disables Session Recording, Toolbar, Heatmaps rendering. Current false primarily so toolbar can be used in non-prod environments. Even if session recording is ever enabled on the project, `properties = {}` wipe (F-07) neutralizes payload. |
@@ -81,6 +81,8 @@ Initial implementation omitted the null-check. Next.js build TypeScript strict m
 ---
 
 ## 5. Contract Synchronization Footprint (Hard Rule 0 Evidence Chain)
+
+### 5.1 Feature 57 — before_send hook (completed)
 Changes required by this audit, confirmed completed on branch `feature/57-posthog-before-send-hook`:
 
 | Artifact | Change | Status |
@@ -90,10 +92,25 @@ Changes required by this audit, confirmed completed on branch `feature/57-postho
 | `project-kit/feature-specs/59-liveblocks-reset-on-sign-out.md` | Add "Feature 57 Defense-in-Depth Note" block | ✅ DONE |
 | `project-kit/feature-specs/60-liveblocks-identify-scrub.md` | Add "Feature 57 Defense-in-Depth Note" block with 3-layer table | ✅ DONE |
 | `project-kit/context/library-docs.md` | Add `## PostHog` section before Summary, add PostHog bullet to Summary | ✅ DONE |
-| `project-kit/context/progress-tracker.md` | Mark Feature 57 DONE; Current Goal = Feature 58; Next Up = Feature 59; append session note | ON BRANCH, after gates pass |
+| `project-kit/context/progress-tracker.md` | Mark Feature 57 DONE; Current Goal = Feature 58; Next Up = Feature 59; append session note | ✅ DONE (merged to master) |
 | `docs/POSTHOG_PRIVACY_IMPLEMENTATION.md` | New: 3-layer defense, before/after envelope, validation checklist, contract boundaries | ✅ DONE |
 | `research/POSTHOG_CONFIGURATION_AUDIT.md` (this file) | New: Context7 evidence, risk matrix, default values audit, decision rationale, sync footprint | ✅ DONE |
 | Server `lib/posthog-server.ts` | **No change** — different SDK, different spec | ❌ N/A (spec 61) |
+
+### 5.2 Feature 58 — defaults preset bump (on branch feature/58-posthog-default-date)
+Feature 58 changes `defaults: "2026-01-30"` → `defaults: "2026-05-30"`. Contract-sync footprint for this change:
+
+| Artifact | Change | Status |
+|---|---|---|
+| `instrumentation-client.ts` | Line 19: `defaults: "2026-01-30"` → `defaults: "2026-05-30"` | ✅ DONE |
+| `project-kit/feature-specs/58-posthog-default-date.md` | Append Setup Instructions, Version Research, Context7 Findings blocks with ConfigDefaults union + delta table | ✅ DONE |
+| `project-kit/feature-specs/59-liveblocks-reset-on-sign-out.md` | Add "Feature 58 Defense-in-Depth Note" block with 4-layer summary | ✅ DONE |
+| `project-kit/feature-specs/60-liveblocks-identify-scrub.md` | Add "Feature 58 Defense-in-Depth Note" block with 4×5 failure-matrix table | ✅ DONE |
+| `project-kit/context/library-docs.md` PostHog section | Change code block date `defaults: "2026-01-30"` → `defaults: "2026-05-30"`; insert new `### defaults preset policy` sub-section (valid ConfigDefaults values, rageclick/session_recording delta, `2026-06-25` deferral rationale) | ✅ DONE |
+| `research/POSTHOG_CONFIGURATION_AUDIT.md` §3 (this file) | Update `defaults` row: previous value + Feature 58 rationale | ✅ DONE |
+| `docs/POSTHOG_DEFAULTS_UPGRADE_NOTES.md` | NEW: upgrade rationale, rageclick+session delta, rollback procedure, 2026-06-25 deferral | ✅ DONE |
+| `research/POSTHOG_DEFAULTS_PRESET_EVOLUTION.md` | NEW: full ConfigDefaults evolution table, every preset vs every vary-by-config field | ✅ DONE |
+| `project-kit/context/progress-tracker.md` | Feature 58 → Completed/DONE; Current Goal = Feature 59; Next Up = Feature 60; append session note 2026-07-25 Feature 58 | ON BRANCH, after gates pass |
 
 ---
 
