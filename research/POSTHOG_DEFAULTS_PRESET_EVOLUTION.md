@@ -89,7 +89,7 @@ Everything from 2026-05-30, PLUS:
 
 For Foundrie itself or for a generated project deciding what `defaults` value to use:
 
-```
+```text
 Start: Does the project need SPA pageview tracking?
   ├─ No (static HTML / multi-page server-rendered): Use 2025-05-24 minimum
   └─ Yes (Next.js / React Router / any SPA): MUST use 2025-05-24 or later
