@@ -25,6 +25,12 @@
       "skillPath": "skills/canvas-design/SKILL.md",
       "computedHash": "a1f288079624402f30682753c1d43920b6664785698d21d3e7aa197450a6448b"
     },
+    "check-posthog-loading": {
+      "source": "posthog/posthog",
+      "sourceType": "github",
+      "skillPath": "skills/check-posthog-loading/SKILL.md",
+      "computedHash": "bcdded53640b6a132d413dcd12186917aa821d80ecfaad477514e8d7e0cc14a3"
+    },
     "clerk": {
       "source": "clerk/skills",
       "sourceType": "github",
@@ -300,6 +306,12 @@
       "sourceType": "github",
       "skillPath": "trigger-tasks/SKILL.md",
       "computedHash": "1f65ede75b8118f3b301ac41836b447808a6e188dbce44e2ed8cc161fb6a8b25"
+    },
+    "verify-posthog-instrumentation": {
+      "source": "posthog/posthog",
+      "sourceType": "github",
+      "skillPath": "skills/verify-posthog-instrumentation/SKILL.md",
+      "computedHash": "3eb1996625d0fa0c2ec3dfa0d8708e70b104b979eea89b2901f516c356077b91"
     },
     "web-artifacts-builder": {
       "source": "anthropics/skills",
