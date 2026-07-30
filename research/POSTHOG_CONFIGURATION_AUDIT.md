@@ -110,7 +110,7 @@ Feature 58 changes `defaults: "2026-01-30"` → `defaults: "2026-05-30"`. Contra
 | `research/POSTHOG_CONFIGURATION_AUDIT.md` §3 (this file) | Update `defaults` row: previous value + Feature 58 rationale | ✅ DONE |
 | `docs/POSTHOG_DEFAULTS_UPGRADE_NOTES.md` | NEW: upgrade rationale, rageclick+session delta, rollback procedure, 2026-06-25 deferral | ✅ DONE |
 | `research/POSTHOG_DEFAULTS_PRESET_EVOLUTION.md` | NEW: full ConfigDefaults evolution table, every preset vs every vary-by-config field | ✅ DONE |
-| `project-kit/context/progress-tracker.md` | Feature 58 → Completed/DONE; Current Goal = Feature 59; Next Up = Feature 60; append session note 2026-07-25 Feature 58 | ON BRANCH, after gates pass |
+| `project-kit/context/progress-tracker.md` | Feature 58 → Completed/DONE; Current Goal = Feature 59; Next Up = Feature 60; append session note 2026-07-25 Feature 58 | ✅ DONE |
 
 ---
 

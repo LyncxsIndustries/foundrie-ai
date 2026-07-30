@@ -21,6 +21,14 @@ Change the default date in `instrumentation-client.ts` to `2026-05-30`.
 2. Update the `defaults` property value from `"2026-01-30"` to `"2026-05-30"` inside the `posthog.init()` config object.
 3. Run the validation pipeline.
 
+## Dependencies
+- Feature 56 (PostHog token guard) — `posthog.init()` and env/token scaffolding must already exist in `instrumentation-client.ts`.
+- Feature 57 (PostHog before_send hook) — wire-payload scrub must remain; this spec only changes the `defaults` literal.
+
+## Future Modifications
+- Reassess adopting `defaults: "2026-06-25"` only in a future spec that explicitly enables session recording as an opt-in product feature (that preset adds `session_recording.streamNetworkBody: true`).
+- none otherwise.
+
 ## Setup Instructions (external account & API keys)
 No new account setup is required by this spec; it only changes a config default. For PostHog account/project creation instructions, see the Feature 57 spec "Setup Instructions" block or `docs/POSTHOG_PRIVACY_IMPLEMENTATION.md`.
 
@@ -39,6 +47,7 @@ export type ConfigDefaults = '2026-06-25' | '2026-05-30' | '2026-01-30' | '2025-
 ```
 
 Behavior change from `defaultsThatVaryByConfig(defaults)`:
+
 | Config key            | 2026-01-30 value (previous)             | 2026-05-30 value (Feature 58)                                                              |
 |-----------------------|-----------------------------------------|---------------------------------------------------------------------------------------------|
 | `rageclick`           | `{ content_ignorelist: true }`          | `{ content_ignorelist: DEFAULT_CONTENT_IGNORELIST_WITH_STEPPERS, ignore_text_selection: true }` — suppresses more false positives (stepper clicks, text drags) |

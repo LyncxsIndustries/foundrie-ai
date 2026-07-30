@@ -65,6 +65,7 @@ session_recording: {
 The Feature 57 `before_send` wire-payload scrub operates AFTER `defaultsThatVaryByConfig()` constructs the config. No matter what `rageclick` or `session_recording` preset the SDK uses, all three envelope fields (`properties`, `$set`, `$set_once`) are zeroed before the XHR to `/e/` is constructed.
 
 ### Per-upgrade-item privacy evaluation
+
 | Upgrade item | What SDK would normally send | Feature 57 before_send effect | Residual risk |
 |---|---|---|---|
 | `rageclick.content_ignorelist` expanded | Better-filtered `$rageclick` events in `properties` | `properties = {}` wipe removes the rageclick event's own properties regardless of ignorelist | NONE — no additional PII surfaced |
