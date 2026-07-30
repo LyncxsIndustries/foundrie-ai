@@ -711,7 +711,23 @@ posthog.init(projectToken, {
 |-------|----------|---------------------------------------|------------------------------------------------|
 | 1     | 60       | identify() call site                  | No email/name passed in person props           |
 | 2     | 57       | every browser event (wire payload)    | `before_send` wipes properties/$set/$set_once  |
-| 3     | 59       | signed-out provider mount boundary    | `posthog.reset()` clears in-memory state     |
+| 3     | 59       | signed-out provider mount boundary    | Unconditional `posthog.reset()` clears persistence + identity |
+
+**Signed-out reset pattern (Feature 59 — REQUIRED)**:
+**File**: `lib/liveblocks/provider.tsx` — inside the Clerk `useUser()` effect, after `isLoaded` is true:
+
+```typescript
+if (!isSignedIn || !user) {
+  posthog.reset(); // Context7 /posthog/posthog-js — clears persistence; do NOT gate on a React ref
+  identifiedUserId.current = null;
+  return;
+}
+```
+
+- Call `posthog.reset()` with no args (do not pass `true` unless a future spec explicitly requires `$device_id` rotation).
+- NEVER gate the signed-out reset on `identifiedUserId.current` — a prior browser session can leave an identified `distinct_id` in localStorage while the React ref is still `null` on cold mount.
+- Wait for `isLoaded` before deciding; calling reset while Clerk is still hydrating races with a subsequent identify.
+- Identify scrub (empty email/name) is Feature 60 — do not change identify props in Feature 59.
 
 **`defaults` preset policy (Feature 58 — dated preset "2026-05-30")**: The `defaults` field is a `ConfigDefaults` dated string literal (valid values from Context7 `/posthog/posthog-js` types: `'2026-06-25' | '2026-05-30' | '2026-01-30' | '2025-11-30' | '2025-05-24' | 'unset'`). Later dates include ALL earlier behavioral changes. NEVER freehand a date string — only use values that are present in the upstream `ConfigDefaults` union type.
 

@@ -112,6 +112,23 @@ Feature 58 changes `defaults: "2026-01-30"` → `defaults: "2026-05-30"`. Contra
 | `research/POSTHOG_DEFAULTS_PRESET_EVOLUTION.md` | NEW: full ConfigDefaults evolution table, every preset vs every vary-by-config field | ✅ DONE |
 | `project-kit/context/progress-tracker.md` | Feature 58 → Completed/DONE; Current Goal = Feature 59; Next Up = Feature 60; append session note 2026-07-25 Feature 58 | ✅ DONE |
 
+### 5.3 Feature 59 — unconditional signed-out `posthog.reset()` (on branch feature/59-liveblocks-reset-on-sign-out)
+Feature 59 removes the `identifiedUserId.current` gate on the signed-out path so cold mounts clear persisted identity. Contract-sync footprint:
+
+| Artifact | Change | Status |
+|---|---|---|
+| `lib/liveblocks/provider.tsx` | Unconditional `posthog.reset()` when `isLoaded && (!isSignedIn \|\| !user)` | ✅ DONE |
+| `lib/liveblocks/provider.test.tsx` | NEW: 4 unit tests (cold signed-out reset, loading no-op, sign-out after identify, user-switch reset) | ✅ DONE |
+| `project-kit/feature-specs/59-liveblocks-reset-on-sign-out.md` | Append Version Research + Context7 Findings + Agent Skills Required | ✅ DONE |
+| `project-kit/feature-specs/60-liveblocks-identify-scrub.md` | Correct Layer 4 failure-mode wording (unconditional reset closes cold-mount gap) | ✅ DONE |
+| `project-kit/context/library-docs.md` | Insert signed-out reset pattern subsection under PostHog defense table | ✅ DONE |
+| `docs/POSTHOG_SIGN_OUT_RESET.md` | NEW: before/after, Context7 rationale, validation, generated-project rule | ✅ DONE |
+| `docs/POSTHOG_PRIVACY_IMPLEMENTATION.md` | Layer 3 wording + checklist item 5 for Feature 59 | ✅ DONE |
+| `research/POSTHOG_SIGN_OUT_RESET.md` | NEW: evidence table, decision matrix, sync footprint | ✅ DONE |
+| `research/POSTHOG_CONFIGURATION_AUDIT.md` §5.3 (this file) | Feature 59 footprint table | ✅ DONE |
+| `project-kit/context/progress-tracker.md` | Feature 59 → Completed/DONE; Current Goal = Feature 60; Next Up = Feature 61 | ✅ DONE (after gates) |
+| Agent skills | Install `verify-posthog-instrumentation` + `check-posthog-loading` from `/posthog/posthog`; lockfile entries | ✅ DONE |
+
 ---
 
 ## 6. Follow-ups and Open Questions
@@ -126,5 +143,8 @@ Feature 58 changes `defaults: "2026-01-30"` → `defaults: "2026-05-30"`. Contra
 - [ARTKINS_STYLE_GUIDE.md §8 Production Security](../../ARTKINS_STYLE_GUIDE.md)
 - [architecture-context.md Context7 Library IDs](../project-kit/context/architecture-context.md)
 - [docs/POSTHOG_PRIVACY_IMPLEMENTATION.md](../docs/POSTHOG_PRIVACY_IMPLEMENTATION.md)
+- [docs/POSTHOG_SIGN_OUT_RESET.md](../docs/POSTHOG_SIGN_OUT_RESET.md)
+- [research/POSTHOG_SIGN_OUT_RESET.md](./POSTHOG_SIGN_OUT_RESET.md)
 - [instrumentation-client.ts](../../instrumentation-client.ts)
+- [lib/liveblocks/provider.tsx](../../lib/liveblocks/provider.tsx)
 - [Feature 57 spec](../project-kit/feature-specs/57-posthog-before-send-hook.md)

@@ -14,7 +14,7 @@ Feature 58 bumps `defaults: "2026-01-30"` → `defaults: "2026-05-30"` which upg
 | 1 | 60 | No email/name in `identify()` person props | `$set` at identify call site | Layer 2 still wipes |
 | 2 | 57 | `before_send` zeroes `properties`/`$set`/`$set_once` | EVERY browser event envelope | Only layers 1/3/4 run; PII LEAK RISK → this is why layer 2 CANNOT be weakened |
 | 3 | 58 | `defaults` preset enables canvas capture at 0.6x AND improved rageclick ignorelist | Session recording config only (project-level enablement still required) | No PII leak if session recording is not enabled; even if it is, layer 2 still wipes `$snapshot_data` per audit F-07 |
-| 4 | 59 | `posthog.reset()` at signed-out mount | In-memory PostHog session state | Layer 2 still wipes residual events; stale `distinct_id` may persist in browser memory until tab close (layer 4 gap, layer 2 still covers wire) |
+| 4 | 59 | Unconditional `posthog.reset()` on every signed-out mount (not gated on React ref) | Persistence + in-memory PostHog identity (`distinct_id`, `$user_state`) | Layer 2 still wipes residual events; if reset is skipped (e.g. provider unmounted before Clerk `isLoaded`), stale persistence can survive until next signed-out mount (layer 2 still covers wire) |
 
 The Feature 58 `defaults` bump is safe because layer 2 is the wire boundary and is unchanged by the preset upgrade. No changes to the `before_send` hook are required for Feature 58 compatibility.
 

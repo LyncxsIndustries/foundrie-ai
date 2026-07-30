@@ -18,7 +18,7 @@ following dashboards have data: Growth Overview, Engagement & Retention, Product
  created_at: user.createdAt,  
  plan: <free|paid> (from your DB/Clerk metadata)  
  }  
-- Call posthog.reset() on sign-out.
+- Call posthog.reset() on every signed-out mount after auth isLoaded (unconditional — do not gate on an in-memory identify ref; persisted distinct_id survives refreshes until reset).
 
 ─────────────────────────────────────────  
 2. SIGNUP FUNNEL EVENTS  

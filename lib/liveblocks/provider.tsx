@@ -14,11 +14,13 @@ export function LiveblocksReactProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Feature 59: always reset on signed-out mount — identified distinct_id
+    // persists across refreshes until reset() clears persistence (Context7
+    // /posthog/posthog-js). Do not gate on identifiedUserId; a prior session
+    // may have left identity in localStorage/cookies with a null React ref.
     if (!isSignedIn || !user) {
-      if (identifiedUserId.current) {
-        posthog.reset();
-        identifiedUserId.current = null;
-      }
+      posthog.reset();
+      identifiedUserId.current = null;
       return;
     }
 
