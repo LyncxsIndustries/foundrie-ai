@@ -9,20 +9,19 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- V15.0.0 Documentation Complete. Features 01-60 implemented. Feature 61 next.
+- V15.0.0 Documentation Complete. Features 01-61 implemented. Feature 62 next.
 
 ## Current Goal
 
-- **Feature 61 - PostHog server logger**: Replace `console.warn` with `logger.warn` in `lib/posthog-server.ts`. Wrap capture calls in try/catch and log via `logger.error`.
+- **Feature 62 - Security script fix**: Update `package.json` to remove the `npm audit --ignore` flag, bump `@opentelemetry/core` to `>= 2.8.0`, and align sharp overrides.
 
 ## Next Up
 
-- **Feature 62 - Security script fix**: Update `package.json` to remove the `npm audit --ignore` flag, bump `@opentelemetry/core` to `>= 2.8.0`, and align sharp overrides.
+- **Feature 63 - Download zip button test**: Add a Vitest + React Testing Library test for `components/project/DownloadZipButton.tsx`.
 
 ## In Progress
 
-- `[ ]` Open `lib/posthog-server.ts`.
-- `[ ]` Replace console warns and add try/catch with `logger.warn` / `logger.error`.
+- `[ ]` Edit `package.json` security:deps / overrides per Feature 62.
 - `[ ]` Run the validation pipeline.
 
 ## Completed
@@ -153,6 +152,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - **Feature 60 - Liveblocks identify scrub** (DONE, BRANCH): Scrubbed `posthog.identify` person props in `lib/liveblocks/provider.tsx` to empty `email`/`name` (Context7 `/posthog/posthog-js`: `userPropertiesToSet` → `$set`). Distinct id remains Clerk `user.id`. Did not add `posthog.group()` (no workspace context in this provider; workspace attrs belong on groups elsewhere). Updated `provider.test.tsx` (5 tests including dedicated Feature 60 PII rejection). Contract sync across provider + tests, Feature 60/61 specs, `library-docs.md` identify scrub pattern, `docs/POSTHOG_IDENTIFY_SCRUB.md` (NEW), `docs/POSTHOG_PRIVACY_IMPLEMENTATION.md`, `research/POSTHOG_IDENTIFY_SCRUB.md` (NEW), `research/POSTHOG_CONFIGURATION_AUDIT.md` R-02 + §5.4, `research/POSTHOG_MASTER_PROMPT.md`. Skills confirmed present: posthog-instrumentation, verify-posthog-instrumentation, check-posthog-loading, liveblocks-best-practices, clerk-nextjs-patterns, context7-cli. Gates: sync:check, security:all (no high/critical), solo provider tests 5/5, full suite 110 files / 551 passed + 1 skipped, build — all exit 0.
 
+- **Feature 61 - PostHog server logger** (DONE, BRANCH): Replaced `console.warn` with structured `logger.warn` in `lib/posthog-server.ts` when PostHog env vars are missing (non-production). Wrapped `posthog.capture` + `await posthog.flush()` in try/catch with `logger.error` so analytics delivery failures never fail route handlers / Trigger tasks. Context7 `/posthog/posthog-js` (`packages/node`): `capture()` is sync fire-and-forget; `flush(): Promise<void>` drains and may reject; legacy `/posthog/posthog-node` ID superseded by monorepo. Added `lib/posthog-server.test.ts` (4 tests: missing-env warn, happy-path capture+flush, flush rejection, sync capture throw) + test-only `resetPostHogServerClientForTests()`. Hard Rule 0 contract sync across implementation + tests, Feature 61/62 specs, `library-docs.md` Server-Side Integration Pattern, `code-standards.md` Logging, `docs/POSTHOG_SERVER_LOGGER.md` (NEW), `docs/POSTHOG_PRIVACY_IMPLEMENTATION.md` checklist item 7 + Feature 61 boundary, `research/POSTHOG_SERVER_LOGGER.md` (NEW), `research/POSTHOG_CONFIGURATION_AUDIT.md` §5.5, `research/POSTHOG_MASTER_PROMPT.md` §7 + implementation rules, progress-tracker. Skills confirmed: posthog-instrumentation, verify-posthog-instrumentation, check-posthog-loading, context7-cli. All four gates passed before tracker flip to Feature 62 / Next Up Feature 63. Solo test green then full suite 555 passed + 1 skipped.
 
 - **Feature 65 - Premium Dashboard UI Redesign** (DONE — 2026-07-04): Implemented premium dashboard redesign with Lynx Theme Pro dark aesthetic, GSAP-powered animations, glass morphism cards, magnetic button interactions, and responsive layout. **GSAP Foundation**: Created `lib/gsap-config.ts` (registers ScrollTrigger and useGSAP plugins), `lib/animations/dashboard.ts` (fadeInStagger, slideInLeft, hoverLift, glowPulse, underlineExpand, gridReveal animation helpers following ui-rules.md < 500ms duration + force3D), `lib/animations/magnetic.ts` (useMagneticHover, createMagneticEffect for smooth mouse-following button effects). **Enhanced Components**: Created `components/dashboard/ProjectCard.tsx` (client component with GSAP hover lift animation on mouseEnter/Leave, glass-medium styling, shadow-high on hover, preserves all Feature 06 functionality with denormalized counters/phase/status/owner badge), `components/dashboard/SectionHeader.tsx` (title + count display with animated underline expansion using GSAP underlineExpand), `components/dashboard/DashboardGrid.tsx` (responsive grid with GSAP gridReveal stagger animation on mount for smooth card appearance). **Magnetic Interactions**: Created `components/dashboard/NewProjectButton.tsx` (enhanced with createMagneticEffect applying 0.3 strength magnetic hover, shadow-high transition, preserves Feature 06 POST /api/projects idempotency + error handling), `components/dashboard/EmptyState.tsx` (fade-in animation with GSAP fadeInStagger for icon/title/message/action sequential reveal). **Dashboard Redesign**: Modified `app/(app)/dashboard/page.tsx` (premium layout with hero section featuring 5xl font-black title + Sparkles icon empty state, SectionHeader for "My Projects" and "Shared With Me" sections with counts, DashboardGrid for animated project cards, floating NewProjectButton on mobile, border-border-subtle dividers, removed old SurfaceHeader). **Glass Morphism CSS**: Added `app/globals.css` utility classes (glass-light 50% opacity 8px blur, glass-medium 70% opacity 12px blur, glass-heavy 85% opacity 16px blur, all with backdrop-filter saturate 180% and subtle white borders). Build passed (sync:check verified 33/33 requirements), TypeScript clean (0 errors). All animations run at 60fps with purposeful motion under 500ms duration per ui-rules.md. Magnetic effects use GSAP power2.out easing with force3D hardware acceleration. Glass morphism provides premium depth with proper fallbacks (-webkit-backdrop-filter). Responsive grid (1 col mobile, 2 md, 3 lg). Accessibility maintained (focus rings, ARIA labels, 44×44px touch targets). Tracker flipped to final end-of-feature state on-branch before commit.
 
@@ -185,6 +185,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - None recorded. Record any missing product decision here before inventing behavior.
 
 ## Session Notes
+
+- **Session 2026-07-31 (Feature 61 - PostHog server logger)**: On `feature/61-posthog-server-logger` after Feature 60 merge. Context7 `/posthog/posthog-js` (packages/node) + `/posthog/posthog-node` queried before finalize: `capture` sync fire-and-forget, `flush(): Promise<void>` may reject. Replaced `console.warn` with `logger.warn`; try/catch around capture+flush with `logger.error`. Added 4 unit tests (solo green). Hard Rule 0 sync across specs/docs/research/library-docs/code-standards. Skills confirmed (posthog-instrumentation, verify-posthog-instrumentation, check-posthog-loading, context7-cli). All four gates passed (`sync:check`, `security:all` no high/critical, `test` 555+1, `build`) before tracker flip to Feature 62 / Next Up Feature 63.
 
 - **Session 2026-07-31 (Feature 60 - Liveblocks identify scrub)**: On `feature/60-liveblocks-identify-scrub` (after tracker order fix commit). Context7 `/posthog/posthog-js` + `/posthog/posthog.com` queried for `identify`/`group` contracts before coding. Adopted `posthog.identify(user.id, { email: "", name: "" })` so stale pre-60 `$set` PII is overwritten; left `group()` out of provider (no workspace id). Hard Rule 0 sync across specs/docs/research/library-docs. All four gates passed before tracker flip to Feature 61 / Next Up Feature 62.
 

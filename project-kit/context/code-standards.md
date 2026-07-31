@@ -117,10 +117,11 @@ Foundrie's own system spans four languages. When working in the deployed system 
 
 ## Logging
 
-- Structured JSON logging only. `console.log` is never the logging mechanism in production paths — this is a generation error.
+- Structured JSON logging only. `console.log` is never the logging mechanism in production paths — this is a generation error. Same ban applies to `console.warn` / `console.error` in analytics wrappers (Feature 61: `lib/posthog-server.ts` uses `logger.warn` / `logger.error`).
 - Log levels: DEBUG (dev only), INFO (normal ops), WARN (recoverable), ERROR (needs attention), FATAL (cannot continue), AUDIT (security/compliance, always on, immutable).
 - Every API request generates a UUID request ID attached to every log entry; logs correlate by `trace_id`.
 - PII (passwords, tokens, API keys, emails, card numbers) is scrubbed before emission.
+- PostHog Node (`posthog-node`) capture/flush failures must be try/caught and logged via structured `logger.error` so analytics outages never fail product requests (see `library-docs.md` Server-Side Integration Pattern).
 - Foundrie's layers use Pino (TS), Logfire (Python), `tracing` crate (Rust), all emitting to one central aggregator chosen in discovery Phase 4.
 
 ## Idempotency
