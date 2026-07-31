@@ -145,10 +145,27 @@ Feature 60 removes raw Clerk email/name from `posthog.identify` person props (`u
 | `research/POSTHOG_MASTER_PROMPT.md` | Identify props scrubbed | ✅ DONE |
 | `project-kit/context/progress-tracker.md` | Feature 60 → DONE; Current Goal = 61; Next Up = 62 | ✅ DONE (after gates) |
 
+### 5.5 Feature 61 — PostHog server structured logger (on branch feature/61-posthog-server-logger)
+Feature 61 replaces `console.warn` with `logger.warn` in `lib/posthog-server.ts` and wraps `capture` + `flush` in try/catch with `logger.error`, so analytics delivery failures never fail product requests. Context7 `/posthog/posthog-js` (`packages/node`): `capture` is sync fire-and-forget; `flush(): Promise<void>` drains and may reject.
+
+| Artifact | Change | Status |
+|---|---|---|
+| `lib/posthog-server.ts` | `logger.warn` + try/catch `logger.error` around capture/flush | ✅ DONE |
+| `lib/posthog-server.test.ts` | NEW: 4 unit tests (missing-env warn, happy path, flush reject, sync capture throw) | ✅ DONE |
+| `project-kit/feature-specs/61-posthog-server-logger.md` | Version Research + Context7 Findings + Skills + Generated Project Contract | ✅ DONE |
+| `project-kit/feature-specs/62-security-script-fix.md` | Feature 61 predecessor note | ✅ DONE |
+| `project-kit/context/library-docs.md` | Server-Side Integration Pattern (Feature 61 REQUIRED) | ✅ DONE |
+| `docs/POSTHOG_SERVER_LOGGER.md` | NEW | ✅ DONE |
+| `docs/POSTHOG_PRIVACY_IMPLEMENTATION.md` | Feature 61 boundary + checklist item 7 | ✅ DONE |
+| `research/POSTHOG_SERVER_LOGGER.md` | NEW | ✅ DONE |
+| `research/POSTHOG_CONFIGURATION_AUDIT.md` §5.5 (this file) | Feature 61 footprint table | ✅ DONE |
+| `project-kit/context/progress-tracker.md` | Feature 61 → DONE; Current Goal = 62; Next Up = 63 | ✅ DONE (after gates) |
+| Agent skills | Confirmed posthog-instrumentation / verify-posthog-instrumentation / check-posthog-loading / context7 | ✅ DONE |
+
 ---
 
 ## 6. Follow-ups and Open Questions
-1. **Q-01 Server-side GeoIP disable**: Not covered by any current feature spec. Should be a settings-only infra change or possibly combined with Feature 61 (PostHog server logger). Filed in this audit for future backlog candidate.
+1. **Q-01 Server-side GeoIP disable**: Not covered by Feature 61 (logging-only). Remains a settings-only infra change or future backlog candidate — Feature 61 deliberately did not expand into project-settings GeoIP.
 2. **Q-02 `$unset` field**: CaptureResult has `$unset?: string[]`. In current implementation, the reset-flow `$unset` would pass through untouched. Assessment: `$unset` removes properties; it does not ADD PII. Values are keys (strings naming props to delete), not user data. Risk = negligible. Future spec (if ever needed): explicit wipe of `event.$unset = []` if a threat model surfaces.
 3. **Q-03 Multiple `before_send` support**: Feature 57 installs one function. `BeforeSendFn[]` array allows composition. If a future spec needs event dropping or event count logging, append to the array rather than replacing — preserves the zero-wipe as the final layer.
 
@@ -161,8 +178,12 @@ Feature 60 removes raw Clerk email/name from `posthog.identify` person props (`u
 - [docs/POSTHOG_PRIVACY_IMPLEMENTATION.md](../docs/POSTHOG_PRIVACY_IMPLEMENTATION.md)
 - [docs/POSTHOG_SIGN_OUT_RESET.md](../docs/POSTHOG_SIGN_OUT_RESET.md)
 - [docs/POSTHOG_IDENTIFY_SCRUB.md](../docs/POSTHOG_IDENTIFY_SCRUB.md)
+- [docs/POSTHOG_SERVER_LOGGER.md](../docs/POSTHOG_SERVER_LOGGER.md)
 - [research/POSTHOG_SIGN_OUT_RESET.md](./POSTHOG_SIGN_OUT_RESET.md)
 - [research/POSTHOG_IDENTIFY_SCRUB.md](./POSTHOG_IDENTIFY_SCRUB.md)
+- [research/POSTHOG_SERVER_LOGGER.md](./POSTHOG_SERVER_LOGGER.md)
 - [instrumentation-client.ts](../../instrumentation-client.ts)
 - [lib/liveblocks/provider.tsx](../../lib/liveblocks/provider.tsx)
+- [lib/posthog-server.ts](../../lib/posthog-server.ts)
 - [Feature 57 spec](../project-kit/feature-specs/57-posthog-before-send-hook.md)
+- [Feature 61 spec](../project-kit/feature-specs/61-posthog-server-logger.md)

@@ -3,7 +3,7 @@
 ## File Ownership
 - Owner: Foundrie runtime operations team
 - Consumed by: Runtime on-call, code reviewers evaluating any instrumentation-client.ts change, release QA performing PII-leak regression testing
-- Related specs: Feature 56 (token guard, gate), Feature 57 (before_send global scrub, THIS FILE), Feature 59 (sign-out reset, boundary), Feature 60 (identify call-site scrub)
+- Related specs: Feature 56 (token guard, gate), Feature 57 (before_send global scrub, THIS FILE), Feature 59 (sign-out reset, boundary), Feature 60 (identify call-site scrub), Feature 61 (server structured logger — `lib/posthog-server.ts`)
 
 ## Three-Layer Privacy Defense
 All browser-sourced PostHog events pass through three cooperating layers before any payload reaches the network. A failure in any single layer is mitigated by the remaining two.
@@ -104,15 +104,17 @@ This checklist must pass on every PR that touches `instrumentation-client.ts` or
 4. **Regression guard** — Uninstall `before_send` locally, confirm properties ARE populated by default (this proves the hook is the difference maker). Then restore the hook and confirm re-wipe.
 5. **Signed-out reset (Feature 59)** — With Clerk signed out (or after sign-out), confirm `LiveblocksReactProvider` calls `posthog.reset()` even when no identify ran in the current React session. Unit coverage: `lib/liveblocks/provider.test.tsx`. Do not reintroduce a gate on `identifiedUserId.current` for the signed-out path.
 6. **Identify scrub (Feature 60)** — Signed-in path must call `posthog.identify(user.id, { email: "", name: "" })`. Unit coverage: `lib/liveblocks/provider.test.tsx` Feature 60 case. Never pass Clerk `primaryEmailAddress` / `fullName`.
-7. **Gate scripts (non-negotiable, per AGENTS.md Hard Rule 0)** — All four pass with exit 0:
+7. **Server logger (Feature 61)** — `lib/posthog-server.ts` must use `logger.warn` / `logger.error` (no `console.*`). `capture` + `flush` must be try/caught so analytics failures never throw. Unit coverage: `lib/posthog-server.test.ts`. Server payloads remain PII-free by construction (no browser `before_send` on Node).
+8. **Gate scripts (non-negotiable, per AGENTS.md Hard Rule 0)** — All four pass with exit 0:
    - `npm run sync:check`
    - `npm run security:all`
    - `npm run test`
    - `npm run build`
 
 ## Contract Boundaries
-- **NOT touched by Feature 57**: server-side PostHog (`lib/posthog-server.ts`, `posthog-node@^5.15.0`). That SDK has NO `before_send` equivalent in the browser process; server payloads must be PII-free by construction.
-- **NOT touched by Feature 57**: Route handlers, middleware, any Node-side process that imports `posthog` from the server package.
+- **NOT touched by Feature 57**: server-side PostHog (`lib/posthog-server.ts`, `posthog-node`). That SDK has NO `before_send` equivalent in the browser process; server payloads must be PII-free by construction.
+- **Feature 61 boundary**: only `lib/posthog-server.ts` (+ tests/docs) — structured logger + try/catch around capture/flush. Does not modify browser `before_send`, identify, or reset.
+- **NOT touched by Feature 57**: Route handlers, middleware, any Node-side process that imports `posthog` from the server package (except Feature 61 logging wrappers).
 - **Feature 59 boundary**: only the signed-out branch of `lib/liveblocks/provider.tsx` + its unit tests. Identify email/name scrub is Feature 60. `instrumentation-client.ts` is untouched by Feature 59.
 - **Feature 60 boundary**: only the signed-in `posthog.identify` person props in `lib/liveblocks/provider.tsx` (+ tests/docs). Does not add `posthog.group()` (no workspace context in this provider). Does not modify `before_send` or server SDK.
 - **NOT weakened by any future spec without a PR that explicitly updates this document AND the Hard Rule 0 contract-sync list**. Feature 57 is marked as CANNOT-be-weakened in `library-docs.md` → PostHog → Client-Side Integration Pattern.
@@ -120,11 +122,14 @@ This checklist must pass on every PR that touches `instrumentation-client.ts` or
 ## References
 - [instrumentation-client.ts](../instrumentation-client.ts#L17-L29)
 - [lib/liveblocks/provider.tsx](../lib/liveblocks/provider.tsx)
+- [lib/posthog-server.ts](../lib/posthog-server.ts)
 - [docs/POSTHOG_SIGN_OUT_RESET.md](./POSTHOG_SIGN_OUT_RESET.md)
 - [docs/POSTHOG_IDENTIFY_SCRUB.md](./POSTHOG_IDENTIFY_SCRUB.md)
+- [docs/POSTHOG_SERVER_LOGGER.md](./POSTHOG_SERVER_LOGGER.md)
 - [ARTKINS_STYLE_GUIDE.md §8 Production Security](../ARTKINS_STYLE_GUIDE.md)
 - [AGENTS.md Hard Rule 0 (contract synchronization)](../AGENTS.md)
 - [Feature 57 spec](../project-kit/feature-specs/57-posthog-before-send-hook.md)
 - [Feature 59 spec](../project-kit/feature-specs/59-liveblocks-reset-on-sign-out.md)
 - [Feature 60 spec](../project-kit/feature-specs/60-liveblocks-identify-scrub.md)
-- [library-docs.md PostHog section](../project-kit/context/library-docs.md#L659-L750)
+- [Feature 61 spec](../project-kit/feature-specs/61-posthog-server-logger.md)
+- [library-docs.md PostHog section](../project-kit/context/library-docs.md)

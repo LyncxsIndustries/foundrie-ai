@@ -758,8 +758,36 @@ Upgrade path: `2026-06-25` (latest) adds `session_recording.streamNetworkBody: t
 
 **Validation in dev**: In Chrome DevTools → Network, filter by `/e/` (the PostHog ingest endpoint). Body JSON MUST have `properties: {}`, `$set: {}`, `$set_once: {}`. Any non-empty value on those three fields means the before_send hook is NOT applied and is a PII-leak regression.
 
-### Server-Side Integration Pattern
-**File**: `lib/posthog-server.ts` — uses `posthog-node`. Server events are NOT filtered by the client-side `before_send` (different SDKs). Keep server payloads minimal and PII-free by construction.
+### Server-Side Integration Pattern (Feature 61 — REQUIRED)
+**File**: `lib/posthog-server.ts` — uses `posthog-node` (Context7 docs via `/posthog/posthog-js` monorepo `packages/node`; legacy ID `/posthog/posthog-node` is superseded).
+
+Server events are NOT filtered by the client-side `before_send` (different SDKs). Keep server payloads minimal and PII-free by construction.
+
+**Structured logging + failure isolation (Feature 61 — CANNOT use bare console)**:
+```typescript
+import { PostHog } from "posthog-node";
+import { logger } from "./logger";
+
+// Missing env (non-production): structured warn, disable client
+logger.warn("PostHog environment variables missing; PostHog client disabled.");
+
+// Context7: capture() is sync fire-and-forget; flush(): Promise<void> drains queue and may reject
+try {
+  posthog.capture({ distinctId, event, properties });
+  await posthog.flush();
+} catch (error) {
+  logger.error("PostHog server capture failed", {
+    event,
+    error: error instanceof Error ? error.message : String(error),
+  });
+}
+```
+
+- NEVER use `console.warn` / `console.error` / `console.log` in this module (AGENTS.md Hard Rule 15).
+- NEVER let capture/flush failures throw into route handlers or Trigger.dev tasks — log and swallow.
+- Prefer Context7 library ID `/posthog/posthog-js` when researching Node APIs (`capture`, `flush`, `captureImmediate`, `shutdown`).
+- `captureImmediate` is an official alternative for immediate send; Foundrie keeps `flushAt: 1` + explicit `flush()` unless a future spec changes delivery semantics.
+- Generated projects that ship `posthog-node` wrappers MUST mirror this logger + try/catch pattern.
 
 ---
 
@@ -772,4 +800,4 @@ Upgrade path: `2026-06-25` (latest) adds `session_recording.streamNetworkBody: t
 - **Prisma**: Include relations, transactions for multi-table ops, soft deletes
 - **Trigger.dev**: Durable tasks for long-running jobs, structured logging
 - **Zod**: Validate all API inputs, use safeParse for graceful errors
-- **PostHog**: Client `before_send` 3-field scrub (spec 57) + identify scrub (spec 60) + sign-out reset (spec 59); Context7 IDs `/posthog/posthog-js` and `/posthog/posthog-node`
+- **PostHog**: Client `before_send` 3-field scrub (spec 57) + identify scrub (spec 60) + sign-out reset (spec 59) + server structured logger/try-catch (spec 61); Context7 IDs `/posthog/posthog-js` and `/posthog/posthog-node`

@@ -113,11 +113,18 @@ These power the "Free-to-paid funnel", "Paywall hit rate", and "Trial expiration
 7. TECHNICAL HEALTH EVENTS (server-side)  
 ─────────────────────────────────────────  
 These power the "Trigger.dev job success/failure" and "API error rate" insights.  
-Fire these from the server using the PostHog Node SDK.
+Fire these from the server using the PostHog Node SDK via `lib/posthog-server.ts`
+(`captureServerEvent`). Feature 61: use structured `logger` — never bare
+`console.warn`/`console.error`. Wrap capture+flush in try/catch so analytics
+outages never fail product requests. Prefer Context7 `/posthog/posthog-js`
+(packages/node): `capture()` is sync fire-and-forget; `flush(): Promise<void>`
+drains and may reject. Keep properties PII-free by construction (no browser
+`before_send` on the Node SDK).
 
 In every Trigger.dev task, wrap the handler:
 
- // On success  
+ // On success — prefer captureServerEvent(userId, 'trigger_job_completed', {...})
+ // which already try/catches capture+flush (Feature 61)
  posthog.capture({  
  distinctId: userId,  
  event: 'trigger_job_completed',  
@@ -126,7 +133,7 @@ In every Trigger.dev task, wrap the handler:
  duration_ms: performance.now() - start  
  }  
  })  
- await posthog.flushAsync()
+ await posthog.flush() // Feature 61: await flush(); swallow after logger.error on reject
 
  // On failure (in the catch block)  
  posthog.capture({  
@@ -181,7 +188,9 @@ Call posthog.people.set() (or pass $set in any capture call) to keep these up to
 IMPLEMENTATION RULES  
 ─────────────────────────────────────────  
 - All client-side captures use the posthog-js browser SDK.  
-- All server-side captures (Trigger.dev jobs, API routes) use posthog-node.  
+- All server-side captures (Trigger.dev jobs, API routes) use posthog-node via
+  `captureServerEvent` / `lib/posthog-server.ts` (Feature 61: structured logger +
+  try/catch around capture+flush; never bare console.*).  
 - Never fire events for internal/admin users — check user role before capturing.  
 - Always include project_id on any canvas or collaboration event.  
 - Keep property names snake_case.  
