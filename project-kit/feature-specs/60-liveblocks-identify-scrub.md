@@ -42,3 +42,36 @@ No new external account or API-key setup is required by this spec. It only remov
 1. Open `lib/liveblocks/provider.tsx`.
 2. Scrub the identify call.
 3. Run the validation pipeline.
+
+## Version Research
+- Context7 library checked: `/posthog/posthog-js`
+- Context7 query executed: `identify userPropertiesToSet empty properties omit email name privacy person properties $set`
+- Secondary product docs: `/posthog/posthog.com` — identifying users / person properties / reset after logout
+- Official source: https://github.com/posthog/posthog-js/blob/main/packages/browser/src/posthog-core.ts (`identify`), https://github.com/posthog/posthog-js/blob/main/packages/types/src/posthog.ts
+- Signature: `identify(new_distinct_id?: string, userPropertiesToSet?: Properties, userPropertiesToSetOnce?: Properties): void`
+  - `userPropertiesToSet` is written to `$set` on the `$identify` capture envelope (and `setPersonProperties` on re-identify).
+  - Empty `{}` / omitted props → no PII in `$set`. Empty-string `email`/`name` matches progress-tracker contract ("pass an empty name and email") and overwrites any prior person props that may have been set before Feature 60.
+- Companion API: `group(groupType, groupKey, groupPropertiesToSet?)` — workspace/org attributes belong on groups, **not** on the person record via `identify`. This provider has no workspace context; do not invent a `group()` call here.
+- Adopted call:
+  ```typescript
+  posthog.identify(user.id, { email: "", name: "" });
+  ```
+
+## Context7 Findings — Identify Call-Site Scrub (Feature 60)
+
+| Scenario | Pre-Feature-60 | Feature 60 |
+|----------|----------------|------------|
+| Signed-in identify | `$set.email` / `$set.name` from Clerk | `$set.email=""` / `$set.name=""` — no raw PII |
+| Layer 2 `before_send` (Feature 57) | Still wipes `$set` on the wire | Unchanged — defense in depth |
+| Workspace attributes | N/A in this file | Out of scope; use `posthog.group()` in workspace-aware call sites later |
+| Distinct id | Clerk `user.id` | Unchanged — identity linking without PII props |
+
+**Privacy-relevant analysis**: Feature 60 is Layer 1 (call-site). Even if Layer 2 is temporarily broken, identify no longer seeds person profiles with email/name. Empty strings are preferred over omitting the object so any stale `$set.email` from pre-60 sessions gets overwritten on next identify (SDK passes `userPropertiesToSet` into `$set`).
+
+## Agent Skills Required
+- `posthog-instrumentation` (existing) — identify/capture/reset patterns
+- `verify-posthog-instrumentation` (existing, installed Feature 59) — post-deploy verification
+- `check-posthog-loading` (existing, installed Feature 59) — SDK load checks
+- `liveblocks-best-practices` (existing) — provider ownership boundary (`lib/liveblocks/provider.tsx`)
+- `clerk-nextjs-patterns` (existing) — `useUser()` contract
+- Context7 CLI (`context7-cli` skill) — mandatory before any PostHog/Clerk/Liveblocks API change

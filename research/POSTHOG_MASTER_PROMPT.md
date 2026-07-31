@@ -10,14 +10,13 @@ following dashboards have data: Growth Overview, Engagement & Retention, Product
 1. POSTHOG SETUP (if not already done)  
 ─────────────────────────────────────────  
 - Initialize PostHog in app/layout.tsx using the PostHogProvider pattern.  
-- Call posthog.identify() after Clerk's useUser() resolves, passing:  
- userId: user.id  
- properties: {  
- email: user.emailAddresses[0].emailAddress,  
- name: user.fullName,  
- created_at: user.createdAt,  
- plan: <free|paid> (from your DB/Clerk metadata)  
- }  
+- Call posthog.identify() after Clerk's useUser() resolves, passing:
+ userId: user.id
+ properties: {
+ email: ""   // Feature 60 — never pass raw Clerk email
+ name: ""    // Feature 60 — never pass raw Clerk name
+ }
+ // Workspace attributes: posthog.group('workspace', workspaceId, props) — NOT on identify person props
 - Call posthog.reset() on every signed-out mount after auth isLoaded (unconditional — do not gate on an in-memory identify ref; persisted distinct_id survives refreshes until reset).
 
 ─────────────────────────────────────────  

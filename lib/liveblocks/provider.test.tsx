@@ -34,7 +34,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("LiveblocksReactProvider — Feature 59 signed-out reset", () => {
+describe("LiveblocksReactProvider — Feature 59 signed-out reset + Feature 60 identify scrub", () => {
   it("calls posthog.reset() on every signed-out mount even when never identified in this session", async () => {
     useUserMock.mockReturnValue({
       isLoaded: true,
@@ -93,10 +93,23 @@ describe("LiveblocksReactProvider — Feature 59 signed-out reset", () => {
 
     await waitFor(() => {
       expect(posthogIdentify).toHaveBeenCalledWith("user_abc", {
-        email: "test@example.com",
-        name: "Test User",
+        email: "",
+        name: "",
       });
     });
+    // Feature 60: raw Clerk email/name must never reach identify person props
+    expect(posthogIdentify).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        email: "test@example.com",
+      }),
+    );
+    expect(posthogIdentify).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        name: "Test User",
+      }),
+    );
 
     useUserMock.mockReturnValue({
       isLoaded: true,
@@ -159,9 +172,44 @@ describe("LiveblocksReactProvider — Feature 59 signed-out reset", () => {
     await waitFor(() => {
       expect(posthogReset).toHaveBeenCalledTimes(1);
       expect(posthogIdentify).toHaveBeenCalledWith("user_b", {
-        email: "b@example.com",
-        name: "User B",
+        email: "",
+        name: "",
       });
     });
+  });
+
+  it("Feature 60: identify person props are empty email/name even when Clerk has PII", async () => {
+    useUserMock.mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      user: {
+        id: "user_scrub",
+        fullName: "PII Person",
+        primaryEmailAddress: { emailAddress: "pii@example.com" },
+      },
+    });
+
+    render(
+      <LiveblocksReactProvider>
+        <span>child</span>
+      </LiveblocksReactProvider>,
+    );
+
+    await waitFor(() => {
+      expect(posthogIdentify).toHaveBeenCalledTimes(1);
+    });
+
+    expect(posthogIdentify).toHaveBeenCalledWith("user_scrub", {
+      email: "",
+      name: "",
+    });
+    const [, props] = posthogIdentify.mock.calls[0] as [
+      string,
+      { email: string; name: string },
+    ];
+    expect(props.email).toBe("");
+    expect(props.name).toBe("");
+    expect(JSON.stringify(props)).not.toContain("pii@example.com");
+    expect(JSON.stringify(props)).not.toContain("PII Person");
   });
 });
