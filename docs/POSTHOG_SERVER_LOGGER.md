@@ -39,9 +39,10 @@ try {
 1. Unit tests in `lib/posthog-server.test.ts` — missing-env warn, happy path, flush rejection, sync capture throw.
 2. Grep gate: `lib/posthog-server.ts` must not contain `console.warn` / `console.error` / `console.log`.
 3. Hard Rule 0 gates: `sync:check` → `security:all` → `test` → `build`.
+4. Agent skills present under `.agents/skills/`: `posthog-instrumentation`, `check-posthog-loading`, `verify-posthog-instrumentation`, plus Context7 (`context7-cli` / `find-docs`). Claude Code mirrors under `.claude/` are gitignored (Hard Rule 21 — absolute-path symlinks are not portable).
 
 ## Generated Project Rule
-Any Foundrie-exported project that ships a PostHog Node wrapper must mirror this pattern: structured logger + try/catch around capture/flush. Documented in Feature 61 Generated Project Contract and `library-docs.md` Server-Side Integration Pattern.
+Any Foundrie-exported project that ships a PostHog Node wrapper must mirror this pattern: structured logger + try/catch around capture/flush. Documented in Feature 61 Generated Project Contract and `library-docs.md` Server-Side Integration Pattern. Generated projects must also gitignore local `.claude/` skill mirrors when installing PostHog agent skills via Context7.
 
 ## References
 - [lib/posthog-server.ts](../lib/posthog-server.ts)

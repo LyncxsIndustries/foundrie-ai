@@ -40,6 +40,8 @@ Server SDK has no client `before_send`. Feature 61 does **not** add PII fields. 
 | `research/POSTHOG_CONFIGURATION_AUDIT.md` | §5.5 footprint | ✅ |
 | `project-kit/context/progress-tracker.md` | Feature 61 → DONE; Goal → 62 | ✅ (after gates) |
 | Agent skills | Confirm posthog-instrumentation / verify / check-loading / context7 | ✅ |
+| `.gitignore` | `.agents/**` + `!.agents/skills/**` un-ignore; `.claude/` ignore for ctx7 Claude mirrors | ✅ |
+| `.agents/skills/posthog-instrumentation/SKILL.md` | Tracked agent skill required by Feature 61 | ✅ |
 
 ## References
 - Feature 61 spec

@@ -64,8 +64,11 @@ next-env.d.ts
 /lib/generated/
 
 # hidden folders
-.agents
+.agents/**
 !.agents/skills/
+!.agents/skills/**
+# Claude Code local skill mirrors (absolute-path symlinks from ctx7; not portable)
+.claude/
 .github
 .trigger
 .clerk

@@ -23,6 +23,8 @@ For any technology, tool, or package we are using in this spec, if it requires c
 ## Files Owned
 - `lib/posthog-server.ts`
 - `lib/posthog-server.test.ts`
+- `.gitignore` (only the `.agents/skills/**` un-ignore + `.claude/` ignore lines for Hard Rule 21 skill install mirrors)
+- `.agents/skills/posthog-instrumentation/SKILL.md` (agent skill required by this spec)
 
 ## Out of Scope
 - Changes to the client logger / `instrumentation-client.ts` / Liveblocks provider.
