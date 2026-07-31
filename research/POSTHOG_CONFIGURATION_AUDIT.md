@@ -143,6 +143,7 @@ Feature 60 removes raw Clerk email/name from `posthog.identify` person props (`u
 | `research/POSTHOG_IDENTIFY_SCRUB.md` | NEW | ✅ DONE |
 | `research/POSTHOG_CONFIGURATION_AUDIT.md` §2 R-02 + §5.4 (this file) | Close R-02; footprint table | ✅ DONE |
 | `research/POSTHOG_MASTER_PROMPT.md` | Identify props scrubbed | ✅ DONE |
+| `project-kit/feature-specs/61-posthog-server-logger.md` | Feature 60 dependency note (server logger must not reintroduce client identify PII) | ✅ DONE |
 | `project-kit/context/progress-tracker.md` | Feature 60 → DONE; Current Goal = 61; Next Up = 62 | ✅ DONE (after gates) |
 
 ---

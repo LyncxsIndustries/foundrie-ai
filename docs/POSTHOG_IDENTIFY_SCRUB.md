@@ -31,6 +31,7 @@ Distinct id remains Clerk `user.id` so sessions still stitch correctly without s
 - Workspace/org data: use `group(groupType, groupKey, groupPropertiesToSet?)` — **not** person props on `identify`. This provider has no workspace context; no `group()` call here.
 
 ## Defense-in-Depth
+
 | Layer | Spec | Role after Feature 60 |
 |-------|------|------------------------|
 | 1 | 60 | Call site never seeds email/name |
@@ -43,4 +44,4 @@ Distinct id remains Clerk `user.id` so sessions still stitch correctly without s
 2. Manual: Network → PostHog `/e/` — `$identify` must not carry real email/name in `$set` even before `before_send` inspection; after Feature 57, `$set` is `{}` on the wire regardless.
 
 ## Generated Projects
-Any Foundrie-generated app that calls `posthog.identify` MUST scrub person props the same way (empty email/name or omit PII fields) and keep workspace attrs on `posthog.group()`. Bake this into generated `library-docs.md` / privacy docs.
+Any Foundrie-generated app that calls `posthog.identify` MUST use the empty-string form — `posthog.identify(user.id, { email: "", name: "" })` — never omit the person-props object (omitting leaves stale pre-scrub `$set.email` / `$set.name`). Keep workspace attrs on `posthog.group()`. Bake this empty-string contract into generated `library-docs.md` and privacy docs.

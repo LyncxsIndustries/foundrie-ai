@@ -37,4 +37,5 @@
 | `research/POSTHOG_IDENTIFY_SCRUB.md` | THIS FILE |
 | `research/POSTHOG_CONFIGURATION_AUDIT.md` | R-02 + §5.4 |
 | `research/POSTHOG_MASTER_PROMPT.md` | Identify props scrubbed |
+| `61-posthog-server-logger.md` | Feature 60 dependency note (no client identify PII on server logger) |
 | `progress-tracker.md` | Feature 60 DONE → Goal 61 / Next 62 |
