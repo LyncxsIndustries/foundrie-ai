@@ -56,10 +56,9 @@ export async function captureServerEvent(
   try {
     posthog.capture({ distinctId, event, properties });
     await posthog.flush();
-  } catch (error) {
-    logger.error("PostHog server capture failed", {
-      event,
-      error: error instanceof Error ? error.message : String(error),
-    });
+  } catch {
+    // lib/logger.ts has no scrub/redact — do not log raw error.message, event names,
+    // or other context that could carry PII (Hard Rule 15 / Feature 61 CodeRabbit).
+    logger.error("PostHog capture error");
   }
 }

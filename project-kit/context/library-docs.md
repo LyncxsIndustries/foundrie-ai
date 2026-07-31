@@ -775,16 +775,15 @@ logger.warn("PostHog environment variables missing; PostHog client disabled.");
 try {
   posthog.capture({ distinctId, event, properties });
   await posthog.flush();
-} catch (error) {
-  logger.error("PostHog server capture failed", {
-    event,
-    error: error instanceof Error ? error.message : String(error),
-  });
+} catch {
+  // No logger scrub/redact — fixed category only; never log error.message or event names
+  logger.error("PostHog capture error");
 }
 ```
 
 - NEVER use `console.warn` / `console.error` / `console.log` in this module (AGENTS.md Hard Rule 15).
-- NEVER let capture/flush failures throw into route handlers or Trigger.dev tasks — log and swallow.
+- NEVER let capture/flush failures throw into route handlers or Trigger.dev tasks — log a fixed category and swallow.
+- NEVER log raw `error.message`, `String(error)`, or the `event` name in the failure path (`lib/logger.ts` has no scrub/redact).
 - Prefer Context7 library ID `/posthog/posthog-js` when researching Node APIs (`capture`, `flush`, `captureImmediate`, `shutdown`).
 - `captureImmediate` is an official alternative for immediate send; Foundrie keeps `flushAt: 1` + explicit `flush()` unless a future spec changes delivery semantics.
 - Generated projects that ship `posthog-node` wrappers MUST mirror this logger + try/catch pattern.
@@ -800,4 +799,4 @@ try {
 - **Prisma**: Include relations, transactions for multi-table ops, soft deletes
 - **Trigger.dev**: Durable tasks for long-running jobs, structured logging
 - **Zod**: Validate all API inputs, use safeParse for graceful errors
-- **PostHog**: Client `before_send` 3-field scrub (spec 57) + identify scrub (spec 60) + sign-out reset (spec 59) + server structured logger/try-catch (spec 61); Context7 IDs `/posthog/posthog-js` and `/posthog/posthog-node`
+- **PostHog**: Client `before_send` 3-field scrub (spec 57) + identify scrub (spec 60) + sign-out reset (spec 59) + server structured logger/try-catch with fixed-category error log (spec 61); Context7 IDs `/posthog/posthog-js` and `/posthog/posthog-node`

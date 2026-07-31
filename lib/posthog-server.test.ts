@@ -94,10 +94,7 @@ describe("posthog-server", () => {
       captureServerEvent("user_1", "project_created", { plan: "FREE" }),
     ).resolves.toBeUndefined();
 
-    expect(logger.error).toHaveBeenCalledWith("PostHog server capture failed", {
-      event: "project_created",
-      error: "network down",
-    });
+    expect(logger.error).toHaveBeenCalledWith("PostHog capture error");
   });
 
   it("logs error when capture throws synchronously", async () => {
@@ -111,9 +108,6 @@ describe("posthog-server", () => {
       captureServerEvent("user_1", "bad_event", { ok: true }),
     ).resolves.toBeUndefined();
 
-    expect(logger.error).toHaveBeenCalledWith("PostHog server capture failed", {
-      event: "bad_event",
-      error: "invalid event",
-    });
+    expect(logger.error).toHaveBeenCalledWith("PostHog capture error");
   });
 });

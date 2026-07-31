@@ -31,7 +31,7 @@ For any technology, tool, or package we are using in this spec, if it requires c
 ## Acceptance Criteria
 - `lib/posthog-server.ts` uses `logger.warn` and `logger.error` for error handling and warnings.
 - Missing env vars in non-production emit `logger.warn` (not `console.warn`) and disable the client.
-- `captureServerEvent` wraps `capture` + `flush` in try/catch; failures log via `logger.error` and never throw to callers.
+- `captureServerEvent` wraps `capture` + `flush` in try/catch; failures log the fixed category `logger.error("PostHog capture error")` with **no** `error.message`, `String(error)`, or `event` context (`lib/logger.ts` has no scrub/redact), and never throw to callers.
 - Unit tests cover missing-env warn, happy-path capture+flush, flush rejection, and sync capture throw.
 - `npm run sync:check`, `npm run security:all`, `npm run test`, and `npm run build` succeed.
 
@@ -57,7 +57,7 @@ For any technology, tool, or package we are using in this spec, if it requires c
 | API | Official contract (Context7 / types) | Foundrie adoption |
 |-----|--------------------------------------|-------------------|
 | `capture(props: EventMessage): void` | Sync fire-and-forget; queues for batch delivery; returns immediately | Call inside try; may throw on invalid prep / warn paths |
-| `flush(): Promise<void>` | Async drain of queued events; can reject on network/transport failure | `await` inside same try; rejection → `logger.error`, swallow |
+| `flush(): Promise<void>` | Async drain of queued events; can reject on network/transport failure | `await` inside same try; rejection → fixed `logger.error("PostHog capture error")` (no raw message/event), swallow |
 | `captureImmediate` | Async immediate HTTP send (no queue) | Not adopted — existing `flushAt: 1` + explicit `flush()` matches prior contract |
 | `EventMessage.properties` | `Record<string \| number, any>` (nested allowed) | Keep Foundrie surface as `Record<string, boolean \| number \| string>` — PII-free by construction |
 | Missing token/host | N/A (app-level) | Non-prod: `logger.warn` + `client = null`; prod: silent disable (unchanged) |

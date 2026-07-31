@@ -121,43 +121,30 @@ outages never fail product requests. Prefer Context7 `/posthog/posthog-js`
 drains and may reject. Keep properties PII-free by construction (no browser
 `before_send` on the Node SDK).
 
-In every Trigger.dev task, wrap the handler:
+In every Trigger.dev task, wrap the handler (always via `captureServerEvent` —
+never call `posthog.capture` / `posthog.flush` directly from product code):
 
- // On success — prefer captureServerEvent(userId, 'trigger_job_completed', {...})
- // which already try/catches capture+flush (Feature 61)
- posthog.capture({  
- distinctId: userId,  
- event: 'trigger_job_completed',  
- properties: {  
- job_name: task.id,  
- duration_ms: performance.now() - start  
- }  
- })  
- await posthog.flush() // Feature 61: await flush(); swallow after logger.error on reject
+ import { captureServerEvent } from "@/lib/posthog-server";
 
- // On failure (in the catch block)  
- posthog.capture({  
- distinctId: userId,  
- event: 'trigger_job_failed',  
- properties: {  
- job_name: task.id,  
- error_message: error.message,  
- error_type: error.constructor.name  
- }  
- })  
- await posthog.flushAsync()
+ // On success
+ await captureServerEvent(userId, "trigger_job_completed", {
+   job_name: task.id,
+   duration_ms: Math.round(performance.now() - start),
+ });
 
-For API routes, add a global error handler middleware that fires:  
- posthog.capture({  
- distinctId: userId ?? 'anonymous',  
- event: 'api_error',  
- properties: {  
- route: req.nextUrl.pathname,  
- method: req.method,  
- status_code: response.status,  
- error_message: error.message  
- }  
- })
+ // On failure (in the catch block) — no error.message (PII risk)
+ await captureServerEvent(userId, "trigger_job_failed", {
+   job_name: task.id,
+   error_type: error instanceof Error ? error.constructor.name : "unknown",
+ });
+
+For API routes, fire via the same helper (no raw error.message):
+
+ await captureServerEvent(userId ?? "anonymous", "api_error", {
+   route: req.nextUrl.pathname,
+   method: req.method,
+   status_code: response.status,
+ });
 
 ─────────────────────────────────────────  
 8. SESSION RECORDINGS — TARGETED FILTERS  

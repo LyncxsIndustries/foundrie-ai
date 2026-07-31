@@ -24,11 +24,9 @@ logger.warn("PostHog environment variables missing; PostHog client disabled.");
 try {
   posthog.capture({ distinctId, event, properties });
   await posthog.flush();
-} catch (error) {
-  logger.error("PostHog server capture failed", {
-    event,
-    error: error instanceof Error ? error.message : String(error),
-  });
+} catch {
+  // Fixed category only — lib/logger.ts has no scrub/redact
+  logger.error("PostHog capture error");
 }
 ```
 
