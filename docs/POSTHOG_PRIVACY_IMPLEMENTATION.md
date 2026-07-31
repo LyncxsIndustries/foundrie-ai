@@ -10,7 +10,7 @@ All browser-sourced PostHog events pass through three cooperating layers before 
 
 | Layer | Spec # | Point of execution                     | What it removes                                                                           |
 |-------|--------|----------------------------------------|-------------------------------------------------------------------------------------------|
-| 1     | 60     | `posthog.identify()` call site         | No email / name / raw user attributes are passed at invoker time                          |
+| 1     | 60     | `posthog.identify()` call site         | **IMPLEMENTED**: empty `email`/`name` strings — no Clerk PII at invoker time              |
 | 2     | 57     | `posthog.init()` global `before_send`  | Envelope fields `properties`, `$set`, `$set_once` zeroed to `{}` on EVERY browser event  |
 | 3     | 59     | signed-out `lib/liveblocks/provider.tsx` mount | Persistence + person state cleared via unconditional `posthog.reset()` (not gated on React ref) |
 
@@ -103,7 +103,8 @@ This checklist must pass on every PR that touches `instrumentation-client.ts` or
    - No geo keys were enriched server-side (note: geo enrichment happens server-side from IP by default; if this is a concern, configure project-level data retention to drop geo fields in PostHog project settings, per `ARTKINS_STYLE_GUIDE.md` §8 "Do not store more than required")
 4. **Regression guard** — Uninstall `before_send` locally, confirm properties ARE populated by default (this proves the hook is the difference maker). Then restore the hook and confirm re-wipe.
 5. **Signed-out reset (Feature 59)** — With Clerk signed out (or after sign-out), confirm `LiveblocksReactProvider` calls `posthog.reset()` even when no identify ran in the current React session. Unit coverage: `lib/liveblocks/provider.test.tsx`. Do not reintroduce a gate on `identifiedUserId.current` for the signed-out path.
-6. **Gate scripts (non-negotiable, per AGENTS.md Hard Rule 0)** — All four pass with exit 0:
+6. **Identify scrub (Feature 60)** — Signed-in path must call `posthog.identify(user.id, { email: "", name: "" })`. Unit coverage: `lib/liveblocks/provider.test.tsx` Feature 60 case. Never pass Clerk `primaryEmailAddress` / `fullName`.
+7. **Gate scripts (non-negotiable, per AGENTS.md Hard Rule 0)** — All four pass with exit 0:
    - `npm run sync:check`
    - `npm run security:all`
    - `npm run test`
@@ -112,16 +113,18 @@ This checklist must pass on every PR that touches `instrumentation-client.ts` or
 ## Contract Boundaries
 - **NOT touched by Feature 57**: server-side PostHog (`lib/posthog-server.ts`, `posthog-node@^5.15.0`). That SDK has NO `before_send` equivalent in the browser process; server payloads must be PII-free by construction.
 - **NOT touched by Feature 57**: Route handlers, middleware, any Node-side process that imports `posthog` from the server package.
-- **Feature 59 boundary**: only the signed-out branch of `lib/liveblocks/provider.tsx` + its unit tests. Identify email/name scrub remains Feature 60. `instrumentation-client.ts` is untouched by Feature 59.
+- **Feature 59 boundary**: only the signed-out branch of `lib/liveblocks/provider.tsx` + its unit tests. Identify email/name scrub is Feature 60. `instrumentation-client.ts` is untouched by Feature 59.
+- **Feature 60 boundary**: only the signed-in `posthog.identify` person props in `lib/liveblocks/provider.tsx` (+ tests/docs). Does not add `posthog.group()` (no workspace context in this provider). Does not modify `before_send` or server SDK.
 - **NOT weakened by any future spec without a PR that explicitly updates this document AND the Hard Rule 0 contract-sync list**. Feature 57 is marked as CANNOT-be-weakened in `library-docs.md` → PostHog → Client-Side Integration Pattern.
 
 ## References
 - [instrumentation-client.ts](../instrumentation-client.ts#L17-L29)
 - [lib/liveblocks/provider.tsx](../lib/liveblocks/provider.tsx)
 - [docs/POSTHOG_SIGN_OUT_RESET.md](./POSTHOG_SIGN_OUT_RESET.md)
+- [docs/POSTHOG_IDENTIFY_SCRUB.md](./POSTHOG_IDENTIFY_SCRUB.md)
 - [ARTKINS_STYLE_GUIDE.md §8 Production Security](../ARTKINS_STYLE_GUIDE.md)
 - [AGENTS.md Hard Rule 0 (contract synchronization)](../AGENTS.md)
 - [Feature 57 spec](../project-kit/feature-specs/57-posthog-before-send-hook.md)
 - [Feature 59 spec](../project-kit/feature-specs/59-liveblocks-reset-on-sign-out.md)
 - [Feature 60 spec](../project-kit/feature-specs/60-liveblocks-identify-scrub.md)
-- [library-docs.md PostHog section](../project-kit/context/library-docs.md#L659-L731)
+- [library-docs.md PostHog section](../project-kit/context/library-docs.md#L659-L750)

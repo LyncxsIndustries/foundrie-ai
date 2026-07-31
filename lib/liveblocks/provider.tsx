@@ -32,9 +32,12 @@ export function LiveblocksReactProvider({ children }: { children: ReactNode }) {
       posthog.reset();
     }
 
+    // Feature 60: identify by Clerk id only — never pass raw email/name into
+    // userPropertiesToSet ($set). Workspace/group attrs belong on posthog.group()
+    // elsewhere, not on the person record (Context7 /posthog/posthog-js).
     posthog.identify(user.id, {
-      email: user.primaryEmailAddress?.emailAddress,
-      name: user.fullName ?? undefined,
+      email: "",
+      name: "",
     });
     identifiedUserId.current = user.id;
   }, [isLoaded, isSignedIn, user]);

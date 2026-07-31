@@ -727,7 +727,24 @@ if (!isSignedIn || !user) {
 - Call `posthog.reset()` with no args (do not pass `true` unless a future spec explicitly requires `$device_id` rotation).
 - NEVER gate the signed-out reset on `identifiedUserId.current` — a prior browser session can leave an identified `distinct_id` in localStorage while the React ref is still `null` on cold mount.
 - Wait for `isLoaded` before deciding; calling reset while Clerk is still hydrating races with a subsequent identify.
-- Identify scrub (empty email/name) is Feature 60 — do not change identify props in Feature 59.
+
+**Identify call-site scrub pattern (Feature 60 — REQUIRED)**:
+**File**: `lib/liveblocks/provider.tsx` — signed-in branch of the same Clerk `useUser()` effect:
+
+```typescript
+// Context7 /posthog/posthog-js:
+// identify(new_distinct_id?, userPropertiesToSet?, userPropertiesToSetOnce?)
+// userPropertiesToSet → $set on the $identify envelope. Never put Clerk email/name here.
+// Workspace attrs belong on posthog.group(groupType, groupKey, groupPropertiesToSet) — not here.
+posthog.identify(user.id, {
+  email: "",
+  name: "",
+});
+```
+
+- ALWAYS pass empty-string `email` and `name` (progress-tracker / Feature 60 contract). Do not pass Clerk `primaryEmailAddress` or `fullName`.
+- Do NOT put workspace/project attributes on the person record; use `posthog.group()` at a workspace-aware call site (out of scope for this provider).
+- Layer 2 (`before_send`) still wipes `$set` on the wire — Layer 1 is defense-in-depth, not a substitute for Layer 2.
 
 **`defaults` preset policy (Feature 58 — dated preset "2026-05-30")**: The `defaults` field is a `ConfigDefaults` dated string literal (valid values from Context7 `/posthog/posthog-js` types: `'2026-06-25' | '2026-05-30' | '2026-01-30' | '2025-11-30' | '2025-05-24' | 'unset'`). Later dates include ALL earlier behavioral changes. NEVER freehand a date string — only use values that are present in the upstream `ConfigDefaults` union type.
 

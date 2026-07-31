@@ -9,20 +9,20 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- V15.0.0 Documentation Complete. Features 01-59 implemented. Feature 60 next.
+- V15.0.0 Documentation Complete. Features 01-60 implemented. Feature 61 next.
 
 ## Current Goal
 
-- **Feature 60 - Liveblocks identify scrub**: When calling `posthog.identify()` inside `lib/liveblocks/provider.tsx`, pass an empty `name` and `email` and scope `group_properties` only to the workspace, not the raw person record.
+- **Feature 61 - PostHog server logger**: Replace `console.warn` with `logger.warn` in `lib/posthog-server.ts`. Wrap capture calls in try/catch and log via `logger.error`.
 
 ## Next Up
 
-- **Feature 61 - PostHog server logger**: Replace `console.warn` with `logger.warn` in `lib/posthog-server.ts`. Wrap capture calls in try/catch and log via `logger.error`.
+- **Feature 62 - Security script fix**: Update `package.json` to remove the `npm audit --ignore` flag, bump `@opentelemetry/core` to `>= 2.8.0`, and align sharp overrides.
 
 ## In Progress
 
-- `[ ]` Open `lib/liveblocks/provider.tsx`.
-- `[ ]` Scrub the `posthog.identify` call of raw email/name.
+- `[ ]` Open `lib/posthog-server.ts`.
+- `[ ]` Replace console warns and add try/catch with `logger.warn` / `logger.error`.
 - `[ ]` Run the validation pipeline.
 
 ## Completed
@@ -151,6 +151,9 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - **Feature 59 - Liveblocks reset on sign out** (DONE, BRANCH): Fixed signed-out identity leak in `lib/liveblocks/provider.tsx`. Pre-59 code gated `posthog.reset()` on `identifiedUserId.current`, which skipped cold signed-out mounts where a prior session left an identified `distinct_id` in PostHog persistence. Context7 `/posthog/posthog-js` confirmed `reset(reset_device_id?: boolean)` clears persistence + sessionPersistence, sets anonymous `$user_state`, and issues a new `distinct_id`; identified state survives refreshes until reset. Adopted unconditional `posthog.reset()` (no device-id rotation) after Clerk `isLoaded` when `!isSignedIn || !user`. Left `posthog.identify` email/name untouched (Feature 60 owns scrub). Added `lib/liveblocks/provider.test.tsx` (4 tests: cold signed-out reset, loading no-op, sign-out after identify, user-switch reset). Contract sync across **10 artifacts**: provider + tests, Feature 59/60 specs, `library-docs.md` signed-out reset pattern, `docs/POSTHOG_SIGN_OUT_RESET.md` (NEW), `docs/POSTHOG_PRIVACY_IMPLEMENTATION.md`, `research/POSTHOG_SIGN_OUT_RESET.md` (NEW), `research/POSTHOG_CONFIGURATION_AUDIT.md` §5.3, progress-tracker. Installed agent skills `verify-posthog-instrumentation` + `check-posthog-loading` from `/posthog/posthog` and updated `skills-lock.json`. Gates: `sync:check`, `security:all` (no high/critical), `test` (110 files / 550 passed + 1 skipped), `build` — all exit 0.
 
+- **Feature 60 - Liveblocks identify scrub** (DONE, BRANCH): Scrubbed `posthog.identify` person props in `lib/liveblocks/provider.tsx` to empty `email`/`name` (Context7 `/posthog/posthog-js`: `userPropertiesToSet` → `$set`). Distinct id remains Clerk `user.id`. Did not add `posthog.group()` (no workspace context in this provider; workspace attrs belong on groups elsewhere). Updated `provider.test.tsx` (5 tests including dedicated Feature 60 PII rejection). Contract sync across provider + tests, Feature 60/61 specs, `library-docs.md` identify scrub pattern, `docs/POSTHOG_IDENTIFY_SCRUB.md` (NEW), `docs/POSTHOG_PRIVACY_IMPLEMENTATION.md`, `research/POSTHOG_IDENTIFY_SCRUB.md` (NEW), `research/POSTHOG_CONFIGURATION_AUDIT.md` R-02 + §5.4, `research/POSTHOG_MASTER_PROMPT.md`. Skills confirmed present: posthog-instrumentation, verify-posthog-instrumentation, check-posthog-loading, liveblocks-best-practices, clerk-nextjs-patterns, context7-cli. Gates: sync:check, security:all (no high/critical), solo provider tests 5/5, full suite 110 files / 551 passed + 1 skipped, build — all exit 0.
+
+
 - **Feature 65 - Premium Dashboard UI Redesign** (DONE — 2026-07-04): Implemented premium dashboard redesign with Lynx Theme Pro dark aesthetic, GSAP-powered animations, glass morphism cards, magnetic button interactions, and responsive layout. **GSAP Foundation**: Created `lib/gsap-config.ts` (registers ScrollTrigger and useGSAP plugins), `lib/animations/dashboard.ts` (fadeInStagger, slideInLeft, hoverLift, glowPulse, underlineExpand, gridReveal animation helpers following ui-rules.md < 500ms duration + force3D), `lib/animations/magnetic.ts` (useMagneticHover, createMagneticEffect for smooth mouse-following button effects). **Enhanced Components**: Created `components/dashboard/ProjectCard.tsx` (client component with GSAP hover lift animation on mouseEnter/Leave, glass-medium styling, shadow-high on hover, preserves all Feature 06 functionality with denormalized counters/phase/status/owner badge), `components/dashboard/SectionHeader.tsx` (title + count display with animated underline expansion using GSAP underlineExpand), `components/dashboard/DashboardGrid.tsx` (responsive grid with GSAP gridReveal stagger animation on mount for smooth card appearance). **Magnetic Interactions**: Created `components/dashboard/NewProjectButton.tsx` (enhanced with createMagneticEffect applying 0.3 strength magnetic hover, shadow-high transition, preserves Feature 06 POST /api/projects idempotency + error handling), `components/dashboard/EmptyState.tsx` (fade-in animation with GSAP fadeInStagger for icon/title/message/action sequential reveal). **Dashboard Redesign**: Modified `app/(app)/dashboard/page.tsx` (premium layout with hero section featuring 5xl font-black title + Sparkles icon empty state, SectionHeader for "My Projects" and "Shared With Me" sections with counts, DashboardGrid for animated project cards, floating NewProjectButton on mobile, border-border-subtle dividers, removed old SurfaceHeader). **Glass Morphism CSS**: Added `app/globals.css` utility classes (glass-light 50% opacity 8px blur, glass-medium 70% opacity 12px blur, glass-heavy 85% opacity 16px blur, all with backdrop-filter saturate 180% and subtle white borders). Build passed (sync:check verified 33/33 requirements), TypeScript clean (0 errors). All animations run at 60fps with purposeful motion under 500ms duration per ui-rules.md. Magnetic effects use GSAP power2.out easing with force3D hardware acceleration. Glass morphism provides premium depth with proper fallbacks (-webkit-backdrop-filter). Responsive grid (1 col mobile, 2 md, 3 lg). Accessibility maintained (focus rings, ARIA labels, 44×44px touch targets). Tracker flipped to final end-of-feature state on-branch before commit.
 
 ## Architecture Decisions
@@ -182,6 +185,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - None recorded. Record any missing product decision here before inventing behavior.
 
 ## Session Notes
+
+- **Session 2026-07-31 (Feature 60 - Liveblocks identify scrub)**: On `feature/60-liveblocks-identify-scrub` (after tracker order fix commit). Context7 `/posthog/posthog-js` + `/posthog/posthog.com` queried for `identify`/`group` contracts before coding. Adopted `posthog.identify(user.id, { email: "", name: "" })` so stale pre-60 `$set` PII is overwritten; left `group()` out of provider (no workspace id). Hard Rule 0 sync across specs/docs/research/library-docs. All four gates passed before tracker flip to Feature 61 / Next Up Feature 62.
 
 - **Session 2026-07-31 (Progress Tracker Completed-section order fix)**: Restored chronological Completed order after Features 56–59 were prepended above Initial Scaffold. Correct order is now: Initial Scaffold → Documentation Foundation → Features 01–55 (V15.0.0 Documentation Overhaul remains between 52 and 53) → Feature 56 PostHog token guard → 57 before_send → 58 defaults → 59 Liveblocks reset. Also renumbered the mislabeled Completed entry **Feature 56 - Premium Dashboard UI Redesign** → **Feature 65 - Premium Dashboard UI Redesign** (per AGENTS.md renumber 56–70 → 65–79; canonical spec is `65-premium-dashboard-ui.md`). Current Goal remains Feature 60; Next Up Feature 61. No product code changed.
 

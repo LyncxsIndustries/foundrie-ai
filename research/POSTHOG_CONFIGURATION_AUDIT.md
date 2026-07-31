@@ -29,7 +29,7 @@
 | Risk | Class | Likelihood | Impact | Notes |
 |---|---|---|---|---|
 | R-01 URL param PII leak via `$current_url` | PII disclosure | HIGH — users frequently paste share links carrying `?email=`/`?token=` query params | HIGH — GDPR / CCPA personal data | |
-| R-02 Raw email/name in `$set` after `identify()` | PII disclosure | HIGH — Feature 60 not yet implemented | CRITICAL — direct personal-identifiable fields | |
+| R-02 Raw email/name in `$set` after `identify()` | PII disclosure | CLOSED — Feature 60 passes empty `email`/`name` at call site; Layer 2 still wipes `$set` | CRITICAL residual closed at Layers 1+2 | |
 | R-03 First-seen attribution leak via `$set_once` | Behavioral fingerprinting | MEDIUM — only at creation time | MEDIUM — allows cross-site reidentification | |
 | R-04 Geo-inference from `$geoip_*` auto-captured | Location leak | HIGH — server-side GeoIP enrichment runs by default | MEDIUM — coarse city-level | |
 | R-05 Exception messages containing PII | PII disclosure (secondary) | MEDIUM — depends on code paths | HIGH — stack traces leak file system paths including `$HOME` | |
@@ -129,6 +129,22 @@ Feature 59 removes the `identifiedUserId.current` gate on the signed-out path so
 | `project-kit/context/progress-tracker.md` | Feature 59 → Completed/DONE; Current Goal = Feature 60; Next Up = Feature 61 | ✅ DONE (after gates) |
 | Agent skills | Install `verify-posthog-instrumentation` + `check-posthog-loading` from `/posthog/posthog`; lockfile entries | ✅ DONE |
 
+### 5.4 Feature 60 — identify call-site scrub (on branch feature/60-liveblocks-identify-scrub)
+Feature 60 removes raw Clerk email/name from `posthog.identify` person props (`userPropertiesToSet` → `$set`). Empty strings overwrite any stale pre-60 person props. Workspace attrs stay on `posthog.group()` (not invented in this provider).
+
+| Artifact | Change | Status |
+|---|---|---|
+| `lib/liveblocks/provider.tsx` | `identify(user.id, { email: "", name: "" })` | ✅ DONE |
+| `lib/liveblocks/provider.test.tsx` | Update expectations + Feature 60 PII-rejection test | ✅ DONE |
+| `project-kit/feature-specs/60-liveblocks-identify-scrub.md` | Version Research + Context7 Findings + Agent Skills | ✅ DONE |
+| `project-kit/context/library-docs.md` | Identify scrub pattern subsection | ✅ DONE |
+| `docs/POSTHOG_IDENTIFY_SCRUB.md` | NEW | ✅ DONE |
+| `docs/POSTHOG_PRIVACY_IMPLEMENTATION.md` | Layer 1 implemented + checklist item 6 | ✅ DONE |
+| `research/POSTHOG_IDENTIFY_SCRUB.md` | NEW | ✅ DONE |
+| `research/POSTHOG_CONFIGURATION_AUDIT.md` §2 R-02 + §5.4 (this file) | Close R-02; footprint table | ✅ DONE |
+| `research/POSTHOG_MASTER_PROMPT.md` | Identify props scrubbed | ✅ DONE |
+| `project-kit/context/progress-tracker.md` | Feature 60 → DONE; Current Goal = 61; Next Up = 62 | ✅ DONE (after gates) |
+
 ---
 
 ## 6. Follow-ups and Open Questions
@@ -144,7 +160,9 @@ Feature 59 removes the `identifiedUserId.current` gate on the signed-out path so
 - [architecture-context.md Context7 Library IDs](../project-kit/context/architecture-context.md)
 - [docs/POSTHOG_PRIVACY_IMPLEMENTATION.md](../docs/POSTHOG_PRIVACY_IMPLEMENTATION.md)
 - [docs/POSTHOG_SIGN_OUT_RESET.md](../docs/POSTHOG_SIGN_OUT_RESET.md)
+- [docs/POSTHOG_IDENTIFY_SCRUB.md](../docs/POSTHOG_IDENTIFY_SCRUB.md)
 - [research/POSTHOG_SIGN_OUT_RESET.md](./POSTHOG_SIGN_OUT_RESET.md)
+- [research/POSTHOG_IDENTIFY_SCRUB.md](./POSTHOG_IDENTIFY_SCRUB.md)
 - [instrumentation-client.ts](../../instrumentation-client.ts)
 - [lib/liveblocks/provider.tsx](../../lib/liveblocks/provider.tsx)
 - [Feature 57 spec](../project-kit/feature-specs/57-posthog-before-send-hook.md)
