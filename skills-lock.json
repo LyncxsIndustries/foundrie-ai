@@ -133,6 +133,12 @@
       "skillPath": "skills/features/clerk-webhooks/SKILL.md",
       "computedHash": "1e64996a3993027a25dcf1032a4ed13f0aa8607801fb2d1d27d653666aa9b929"
     },
+    "cloudinary": {
+      "source": "local/foundrie-ai",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/cloudinary/SKILL.md",
+      "computedHash": "8b919748446a71b18609d02404d38709fec6efde3fadd4ad0fd048150b147ccb"
+    },
     "code-review": {
       "source": "coderabbitai/skills",
       "sourceType": "github",
