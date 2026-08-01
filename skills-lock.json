@@ -253,6 +253,12 @@
       "skillPath": "prisma-upgrade-v7/SKILL.md",
       "computedHash": "2e4d54a4c7a0fc2476e81686718a765f5eb2cacfb2fb0822f3109c76bf4a9bb0"
     },
+    "security-audit": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "skillPath": "cli-tool/components/skills/security/security-audit/SKILL.md",
+      "computedHash": "8d74ce70b597ce8d780a094dbc5ff66bbe95ccb814e86fc5dad9ba3c638b7d08"
+    },
     "skill-creator": {
       "source": "anthropics/skills",
       "sourceType": "github",
