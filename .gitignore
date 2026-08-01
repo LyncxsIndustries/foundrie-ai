@@ -64,8 +64,10 @@ next-env.d.ts
 /lib/generated/
 
 # hidden folders
-.agents
+.agents/*
 !.agents/skills/
+!.agents/skills/**
+.claude/
 .github
 .trigger
 .clerk

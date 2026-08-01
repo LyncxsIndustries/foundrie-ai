@@ -951,7 +951,7 @@ All 108 invariants from v1.0.0 through v14.0.0 are in force. Grouped summary:
 
 **Polyglot & GSAP (14–17)**: agentic tool calls run in WASM sandboxes with `tools/permissions.yaml`; language selection follows the decision matrix (deviations → ADR); Rust is mandatory for all generated CLI tools; GSAP is mandatory for Awwwards-level web UIs with `ctx.revert()` cleanup.
 
-**Security & CI/CD (18–23)**: `security:all` script in every project; structured JSON logging (never `console.log`); behavioral regression golden set + CI step (≥ 95%); no Foundrie file overrides RUWA integration invariants; 22-step pipeline is a mandatory spec; model IDs pinned, never `"latest"`.
+**Security & CI/CD (18–23)**: `security:all` script in every project; `security:deps` = `npm audit --audit-level=high` with no ignore/suppress flags that hide high/critical CVEs (Feature 62); structured JSON logging (never `console.log`); behavioral regression golden set + CI step (≥ 95%); no Foundrie file overrides RUWA integration invariants; 22-step pipeline is a mandatory spec; model IDs pinned, never `"latest"`.
 
 **Flywheel, web vitals, Tauri (24–28)**: Core Web Vitals acceptance criteria in Feature 01; Tauri for desktop (never Electron); GSAP rules in `code-standards.md`; Tier 1–4 telemetry with PII scrubbing; C.L.E.A.N. applied to all training data.
 

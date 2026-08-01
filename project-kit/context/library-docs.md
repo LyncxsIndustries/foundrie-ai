@@ -791,6 +791,34 @@ try {
 
 ---
 
+## npm Security Gate & Overrides (Feature 62)
+
+**Context7 library IDs:** `/npm/cli`, `/lovell/sharp`, `/open-telemetry/opentelemetry-js`
+
+### Scripts contract
+```json
+{
+  "security:deps": "npm audit --audit-level=high",
+  "security:all": "npm run security:sast && npm run security:deps && npm run security:secrets"
+}
+```
+
+- **MUST NOT** use `--audit-level=none` or any advisory-ignore flag that hides high/critical CVEs (Context7 `/npm/cli`: `none` always exits 0).
+- Hard Rule 0 order: `sync:check` → `security:all` → `test` → `build`.
+
+### Transitive overrides (Feature 62)
+| Package | Override | Evidence |
+|---|---|---|
+| `sharp` | `0.35.3` (exact) | Context7 `/lovell/sharp` v0.35.3 security hardening; `allowScripts["sharp@0.35.3"]=true` must match |
+| `@opentelemetry/core` | `>=2.8.0` | Context7 `/open-telemetry/opentelemetry-js`; resolves under `@trigger.dev/core` (currently 2.10.0) |
+
+Operator doc: `docs/SECURITY_SCRIPT_OVERRIDES.md`. Research audit: `research/NPM_SECURITY_OVERRIDE_AUDIT.md`.
+
+### Generated projects
+Bake the same `security:deps` / `security:all` scripts and document any overrides with Context7/npm evidence. Never ship an audit gate that can pass while high/critical CVEs remain.
+
+---
+
 ## Summary
 
 - **Cloudinary**: Use signed uploads, save metadata to DB, download for ZIP export
@@ -801,3 +829,4 @@ try {
 - **Trigger.dev**: Durable tasks for long-running jobs, structured logging
 - **Zod**: Validate all API inputs, use safeParse for graceful errors
 - **PostHog**: Client `before_send` 3-field scrub (spec 57) + identify scrub (spec 60) + sign-out reset (spec 59) + server structured logger/try-catch (spec 61); Context7 IDs `/posthog/posthog-js` and `/posthog/posthog-node`
+- **npm security gate (Feature 62)**: `security:deps` = `npm audit --audit-level=high` with no suppress flags; overrides `sharp@0.35.3` + `@opentelemetry/core@>=2.8.0`; Context7 IDs `/npm/cli`, `/lovell/sharp`, `/open-telemetry/opentelemetry-js`
