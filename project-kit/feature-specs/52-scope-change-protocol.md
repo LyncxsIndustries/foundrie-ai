@@ -54,8 +54,6 @@ npx ctx7 docs <libraryId> "<specific question>"
 - `components/project/ScopeChangePanel.tsx`
 - `scripts/security/sast-scan.mjs`
 - `scripts/security/secret-scan.mjs`
-- `package.json`
-- `package-lock.json`
 - `eslint.config.mjs`
 - `AGENTS.md` (security gate wording only)
 - `project-kit/context/architecture-context.md`
@@ -63,6 +61,8 @@ npx ctx7 docs <libraryId> "<specific question>"
 - `project-kit/context/ai-workflow-rules.md`
 - `project-kit/context/progress-tracker.md`
 - `project-kit/feature-specs/*.md` (Quality Gates wording only)
+
+> **Historical (Feature 52 only):** `package.json` / `package-lock.json` were modified here to introduce `security:*` scripts and the first transitive overrides. **Active ownership of those files moved to Feature 62** (`62-security-script-fix.md`). Do not treat Feature 52 as the current owner.
 
 ## Files
 
@@ -76,7 +76,7 @@ CREATE: `scripts/security/secret-scan.mjs` - local secret-detection gate used by
 MODIFY: `lib/ai/model-routing.ts` - add `scope_change_impact_analysis` to the canonical task map.
 MODIFY: `lib/ai/prompts/feature-specs.ts` - ensure newly generated specs include explicit Quality Gates and executable `npm run security:all` wording.
 MODIFY: `lib/research/providers/context7.ts` - replace shell `exec` with `execFile` argument arrays so SAST can enforce no shell interpolation.
-MODIFY: `package.json` / `package-lock.json` - add `security:sast`, `security:deps`, `security:secrets`, `security:all`; add exact npm overrides for vulnerable transitive packages.
+MODIFY (historical — Feature 52 introduced; **active owner is Feature 62**): `package.json` / `package-lock.json` - add `security:sast`, `security:deps`, `security:secrets`, `security:all`; add exact npm overrides for vulnerable transitive packages.
 MODIFY: `eslint.config.mjs` - ignore generated `.trigger/**` and generated Prisma client output.
 MODIFY: `AGENTS.md`, `context/architecture-context.md`, `context/code-standards.md`, `context/ai-workflow-rules.md` - synchronize the executable `npm run security:all` contract.
 MODIFY: `project-kit/feature-specs/*.md` - add explicit Quality Gates commands across the spec corpus.
@@ -101,7 +101,7 @@ MODIFY: `context/progress-tracker.md` - mark feature progress.
 - Feature removal: a NOT STARTED feature is marked CANCELLED in content/tracker; an IN PROGRESS feature pauses for the user's choice; a COMPLETE (merged) feature generates a new `REMOVAL` feature spec (delete files, remove references, clean migrations, grep for residual references) so dead code is never left behind.
 - Use transactions when applying multi-record regeneration. Buttons disable on click. Rejected change requests are recorded with a rejected ADR, not silently dropped.
 - The security gate is executable through `npm run security:all`: local SAST, `npm audit --audit-level=high`, and local secret detection. Exact npm overrides are used for transitive `@hono/node-server@1.19.14`, `postcss@8.5.15`, `systeminformation@5.31.9`, and `ws@8.21.0`; current `@trigger.dev/sdk@4.4.6`, `@trigger.dev/build@4.4.6`, `prisma@7.8.0`, and `@prisma/client@7.8.0` were checked with official npm metadata on 2026-06-24.
-- **Feature 62 extension (package.json ownership moved to Feature 62):** `security:deps` remains `npm audit --audit-level=high` with **no** ignore/suppress flags; additional overrides `sharp@0.35.3` (exact, `allowScripts` aligned) and `@opentelemetry/core@>=2.8.0`. See `62-security-script-fix.md`, `docs/SECURITY_SCRIPT_OVERRIDES.md`.
+- **Feature 62 extension (sole active `package.json` / `package-lock.json` owner):** `security:deps` remains `npm audit --audit-level=high` with **no** ignore/suppress flags; overrides `sharp@0.35.3` (exact, `allowScripts` aligned) and `@opentelemetry/core` `>=2.8.0 <3.0.0-0`. See `62-security-script-fix.md`, `docs/SECURITY_SCRIPT_OVERRIDES.md`.
 
 ## Out of Scope
 
