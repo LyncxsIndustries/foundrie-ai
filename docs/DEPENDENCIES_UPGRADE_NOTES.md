@@ -13,7 +13,7 @@ We addressed several deprecated and vulnerable dependencies that were flagged du
 | `uuid`             | `^10.0.0` (deprecated) | `^11.0.2` | Latest stable version, removes deprecation warnings. |
 | `glob`             | `^9.3.5` (security vulnerabilities) | `11.1.0` | Fixed known security issues; matches the version used in `devDependencies`. |
 | `node-domexception`| `^1.0.0` (deprecated) | `^2.0.1` | Updated to the most recent version before deprecation; note that the package is still deprecated in favor of native `DOMException`. |
-| `sharp` (Feature 62) | `^0.35.0` override + stale `allowScripts` `sharp@0.34.5` | `0.35.3` exact + `allowScripts["sharp@0.35.3"]` + `engines.node` `>=20.9.0` | Context7 `/lovell/sharp` v0.35.3 security hardening; Node floor matches sharp@0.35.x; align allowScripts key. |
+| `sharp` (Feature 62) | `^0.35.0` override + stale `allowScripts` `sharp@0.34.5` | `0.35.3` exact + `allowScripts["sharp@0.35.3"]` + `engines.node` `>=20.17.0` | Context7 `/lovell/sharp` v0.35.3 security hardening; Node floor matches sharp@0.35.x; align allowScripts key. |
 | `@opentelemetry/core` (Feature 62) | unresolved transitive (e.g. 2.7.1) | `>=2.8.0 <3.0.0-0` (resolves 2.10.0) | Context7 `/open-telemetry/opentelemetry-js` 2.x-only floor under Trigger.dev OTel tree. |
 
 ## Feature 62 Security Script Invariant
@@ -27,7 +27,7 @@ We addressed several deprecated and vulnerable dependencies that were flagged du
 - Resolved a conflict for `glob` by aligning the override version (`11.1.0`) with the direct dev dependency version.
 - Ran `npm install` to apply the overrides and verify that the project builds correctly.
 - Post‑install script (`prisma generate`) ran successfully.
-- Feature 62 additionally aligned sharp allowScripts, declared `engines.node` `>=20.9.0`, bounded OTel to 2.x, and enabled `strict-allow-scripts`.
+- Feature 62 additionally aligned sharp allowScripts, declared `engines.node` `>=20.17.0`, bounded OTel to 2.x, and enabled `strict-allow-scripts`.
 
 ## Post‑Upgrade Checks
 Hard Rule 0 order:
@@ -35,7 +35,7 @@ Hard Rule 0 order:
 2. Ran `npm run security:all` — Feature 62 passes with zero high/critical.
 3. Executed `npm run test` — passed without errors.
 4. Executed `npm run build` — passed without errors.
-- Noted remaining moderate severity vulnerabilities; these can be addressed later with `npm audit fix --dry-run` after verifying lockfile integrity and tracking them in a dedicated issue.
+- Noted remaining moderate severity vulnerabilities; these can be addressed later with `npm audit fix --dry-run` (per [npm audit documentation](https://docs.npmjs.com/cli/v11/commands/npm-audit)) after verifying lockfile integrity and tracking them in a dedicated security-debt issue.
 
 ## Recommendations
 - Consider migrating away from `node-domexception` entirely by using the native `DOMException` (available in Node.js v17+) per [Node.js Globals Documentation](https://nodejs.org/api/globals.html#domexception).

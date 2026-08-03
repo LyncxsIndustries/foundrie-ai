@@ -112,11 +112,11 @@ Run npm run security:all and use @code-review to triage dependency advisories
 #### Copy-Paste Prompts
 
 ```text
-Ensure written authorization, approved ROE, and human approval exist before testing external targets. Use @webapp-testing to test for SQL injection vulnerabilities on in-scope endpoints.
+Do not test external targets unless written authorization, an approved ROE, and recorded human approval are verified. If any prerequisite is missing, stop and do not invoke @webapp-testing. Then use @webapp-testing to test for SQL injection vulnerabilities on in-scope endpoints.
 ```
 
 ```text
-Ensure written authorization, approved ROE, and human approval exist before testing external targets. Use @webapp-testing to test for cross-site scripting on in-scope forms.
+Do not test external targets unless written authorization, an approved ROE, and recorded human approval are verified. If any prerequisite is missing, stop and do not invoke @webapp-testing. Then use @webapp-testing to test for cross-site scripting on in-scope forms.
 ```
 
 ```text
@@ -244,8 +244,8 @@ Source: https://owasp.org/www-project-api-security/
 - [ ] Report generated
 - [ ] **Evidence handling (blocking):** secrets/PII redacted from PoCs and reports
 - [ ] **Evidence handling (blocking):** evidence stored in a defined access-controlled storage system with a designated owner
-- [ ] **Evidence handling (blocking):** retention duration defined and enforced
-- [ ] **Evidence handling (blocking):** secure deletion verified and evidence of deletion retained after retention expires
+- [ ] **Evidence handling (blocking):** primary evidence retention duration defined and enforced
+- [ ] **Evidence handling (blocking):** secure deletion verified; retain only a PII-minimized deletion receipt for a separately defined, bounded audit period
 
 Sources: [NIST SP 800-115](https://csrc.nist.gov/publications/detail/sp/800-115/final) (handling sensitive findings); [OWASP](https://owasp.org/) reporting practices.
 

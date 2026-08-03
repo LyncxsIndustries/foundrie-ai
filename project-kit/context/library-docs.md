@@ -810,7 +810,7 @@ try {
 
 | Package | Override | Evidence |
 |---|---|---|
-| `sharp` | `0.35.3` (exact) | Context7 `/lovell/sharp` v0.35.3 security hardening; `allowScripts["sharp@0.35.3"]=true` must match; `engines.node` `>=20.9.0` |
+| `sharp` | `0.35.3` (exact) | Context7 `/lovell/sharp` v0.35.3 security hardening; `allowScripts["sharp@0.35.3"]=true` must match; `engines.node` `>=20.17.0` |
 | `@opentelemetry/core` | `>=2.8.0 <3.0.0-0` | Context7 `/open-telemetry/opentelemetry-js`; resolves under `@trigger.dev/core` (currently 2.10.0); major-bounded |
 
 Operator doc: `docs/SECURITY_SCRIPT_OVERRIDES.md`. Research audit: `research/NPM_SECURITY_OVERRIDE_AUDIT.md`. `.npmrc`: `strict-allow-scripts=true`.

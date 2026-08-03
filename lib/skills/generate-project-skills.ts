@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { readFile } from "fs/promises";
+import fs from "fs/promises";
 import { join } from "path";
 
 interface SkillsLock {
@@ -100,16 +100,26 @@ export async function generateProjectSkills(projectId: string, userId: string) {
 
 async function readSkillsLock(): Promise<SkillsLock> {
   const path = join(process.cwd(), "skills-lock.json");
-  const content = await readFile(path, "utf-8");
+  const content = await fs.readFile(path, "utf-8");
   return JSON.parse(content);
 }
 
-async function readSkillContent(skillSlug: string, skillsLock: SkillsLock): Promise<string> {
+async function readSkillContent(
+  skillSlug: string,
+  skillsLock: SkillsLock,
+  resolving: ReadonlySet<string> = new Set<string>()
+): Promise<string> {
   const skill = skillsLock.skills[skillSlug];
   if (!skill) return "";
 
+  if (resolving.has(skillSlug)) {
+    throw new Error(`Circular skill alias detected: ${[...resolving, skillSlug].join(" -> ")}`);
+  }
+
   if (skill.aliasOf) {
-    let content = await readSkillContent(skill.aliasOf, skillsLock);
+    const nextResolving = new Set(resolving);
+    nextResolving.add(skillSlug);
+    let content = await readSkillContent(skill.aliasOf, skillsLock, nextResolving);
     if (skill.notes) {
       content = `> **Alias Note for ${skillSlug}:** ${skill.notes}\n\n` + content;
     }
@@ -117,7 +127,7 @@ async function readSkillContent(skillSlug: string, skillsLock: SkillsLock): Prom
   }
 
   const path = join(process.cwd(), ".agents/skills", skillSlug, "SKILL.md");
-  return readFile(path, "utf-8");
+  return fs.readFile(path, "utf-8");
 }
 
 function detectStacks(architectureContent: string): string[] {

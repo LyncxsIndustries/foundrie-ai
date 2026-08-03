@@ -54,4 +54,4 @@ Chose `>=2.8.0 <3.0.0-0` (2.x-only floor) rather than pinning exact `2.10.0` or 
 - Feature 64 continues `docs/DEPENDENCIES_UPGRADE_NOTES.md` formatting cleanup only.
 
 ## Generated Project Rule
-Generated projects must reproduce this audit pattern: Context7 evidence → `security:deps` without suppressors → major-bounded overrides → `strict-allow-scripts` → enforce full Node/npm runtime toolchain compatibility (e.g., `packageManager` and `engines.npm`) → Hard Rule 0 gate order.
+Generated projects must reproduce this audit pattern: Context7 evidence → `security:deps` without suppressors → major-bounded overrides → `strict-allow-scripts` → enforce full Node/npm runtime toolchain compatibility (Node >=20.17.0 and npm 11.17.0, via `packageManager` and `engines.npm`) → Hard Rule 0 gate order.
