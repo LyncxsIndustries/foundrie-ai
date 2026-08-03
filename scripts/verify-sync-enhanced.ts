@@ -21,6 +21,7 @@
 import fs from 'fs';
 import path from 'path';
 import { glob } from 'glob';
+import { execFileSync } from 'child_process';
 
 // ANSI color codes
 const RED = '\x1b[31m';
@@ -142,7 +143,6 @@ function detectBranchName(): string | null {
 
   // Local git
   try {
-    const { execFileSync } = require('child_process');
     return execFileSync('git', ['branch', '--show-current'], {
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -174,9 +174,12 @@ function getCurrentFeature(): number | null {
       info('On production branch — skipping spec audit (completed features already gated)');
       return -1; // sentinel: skip spec audit
     }
+
+    info(`Branch "${branch}" does not match a feature pattern — falling back to progress-tracker.md`);
   }
 
-  // Fall back to progress tracker (only if we have no branch info at all)
+  // Fall back to progress tracker when branch detection failed, or the detected
+  // branch matched neither the feature pattern nor a production branch name.
   const trackerPath = path.join(process.cwd(), 'project-kit/context/progress-tracker.md');
   
   if (!fs.existsSync(trackerPath)) {

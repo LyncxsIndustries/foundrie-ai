@@ -22,7 +22,7 @@ Before use, configure the preset with at least:
 
 Source: [Cloudinary upload presets — secure unsigned preset](https://cloudinary.com/documentation/upload_presets).
 
-Prefer **signed uploads** (Method 2) specifying delivery type (`private` or `authenticated`) for sensitive workflows. Ensure examples generate signed delivery URLs. Use unsigned only for intentionally public client uploads behind a hardened preset.
+Prefer **signed uploads** (Method 2) for authenticated or sensitive media workflows. Enforce authenticated or private delivery for sensitive media, using signed uploads plus signed or eager transformations/Strict Transformations. Ensure generated delivery URLs use the matching signed type, or use the `private_download_url` access flow for private assets. Retain unsigned uploads only for intentionally public client uploads with a hardened preset.
 
 ```bash
 curl -X POST "https://api.cloudinary.com/v1_1/<your-cloud-name>/image/upload" -F "file=@/path/to/image.png" -F "upload_preset=your_preset_name"
@@ -192,7 +192,7 @@ https://res.cloudinary.com/{cloud_name}/video/upload/l_intro_image,fl_splice,du_
 
 ### Limitations
 
-- Delivery URL constraints dictate the number of chained videos. Use documented transformation-string limits and measured performance instead of arbitrary video counts ([HTTP URI practical limits / CDN delivery constraints](https://cloudinary.com/documentation/video_trimming_and_concatenating))
+- The transformation string component of a Cloudinary URL is limited to 1,024 characters. Recommend named transformations for long or complex URLs ([Advanced URL delivery options - URL length](https://cloudinary.com/documentation/advanced_url_delivery_options)).
 - First request triggers server-side processing (slow) — Cloudinary generates derivatives on demand ([transformation overview](https://cloudinary.com/documentation/image_transformations))
 - For complex compositions, prefer server-side composition (e.g. ffmpeg) or dedicated video APIs to avoid timeout and processing failure modes documented above
 
@@ -229,8 +229,8 @@ Cloudinary Free / self-service plans use a **credits** model ([billing and plans
 1. **Prefer signed uploads** for authenticated/sensitive flows; unsigned presets only when locked down with `allowed_formats`, `max_file_size`, and `disallow_public_id` ([upload presets](https://cloudinary.com/documentation/upload_presets))
 2. **Signature order**: Parameters must be alphabetically sorted when generating signature ([upload API authentication](https://cloudinary.com/documentation/image_upload_api_reference))
 3. **Auto optimization**: Add `f_auto,q_auto` to URLs for automatic format/quality ([transformation reference](https://cloudinary.com/documentation/transformation_reference))
-4. **Folders**: Use `public_id="folder/subfolder/name"` to organize media; encode `/` as `:` in `l_video` overlays
-5. **Video concatenation**: Keep URLs within documented transformation-string limits; for complex sequences use external tools ([video concatenating](https://cloudinary.com/documentation/video_trimming_and_concatenating))
+4. **Folders**: Distinguish Media Library organization from delivery identifiers: use `asset_folder` for storage, and mention `public_id_prefix` or `use_asset_folder_as_public_id_prefix` only when the folder should appear in delivery URLs. Restrict colon encoding in `l_video` overlays to layer assets whose `public_id` contains a slash, rather than presenting it as a general folder convention.
+5. **Video concatenation**: Keep URLs within documented transformation-string limits; for complex sequences use named transformations or external tools ([video concatenating](https://cloudinary.com/documentation/video_trimming_and_concatenating))
 
 ## API Reference
 

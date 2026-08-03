@@ -34,7 +34,7 @@ No new external account or API-key setup is required by this spec. It only adjus
 | Technology | Context7 library ID | How to get started |
 |---|---|---|
 | npm CLI (`audit`, `overrides`, `allowScripts`) | `/npm/cli` | Bundled with Node.js. Verify with `node -v` / `npm -v`. No account required for local `npm audit`. |
-| sharp (transitive via Next.js) | `/lovell/sharp` | Not a direct Foundrie dependency; remediated via `overrides.sharp`. Requires Node `>=20.9.0`. No API key. |
+| sharp (transitive via Next.js) | `/lovell/sharp` | Not a direct Foundrie dependency; remediated via `overrides.sharp`. Requires Node `>=20.17.0`. No API key. |
 | `@opentelemetry/core` (transitive via Trigger.dev) | `/open-telemetry/opentelemetry-js` | Not a direct Foundrie dependency; remediated via `overrides["@opentelemetry/core"]`. No API key. |
 
 ## Version Research (Context7)
@@ -47,8 +47,8 @@ No new external account or API-key setup is required by this spec. It only adjus
 
 ### sharp (`/lovell/sharp`) — 2026-08-01
 - Latest secure release at research time: **0.35.3** (changelog 2026-07-01) — dimension/bound checks, overflow hardening for `trim`/`clahe`/`extend`/etc.
-- v0.35.0 breaking: Node `>=20.9.0`, install script removed.
-- Contract: `overrides.sharp = "0.35.3"` (exact) and `allowScripts["sharp@0.35.3"] = true` must stay version-aligned; `engines.node` declares `>=20.9.0`.
+- v0.35.0 breaking: Node `>=20.17.0`, install script removed.
+- Contract: `overrides.sharp = "0.35.3"` (exact) and `allowScripts["sharp@0.35.3"] = true` must stay version-aligned; `engines.node` declares `>=20.17.0`.
 
 ### `@opentelemetry/core` (`/open-telemetry/opentelemetry-js`) — 2026-08-01
 - Spec range: `>=2.8.0 <3.0.0-0` (2.x-only floor). Registry latest at research time: **2.10.0**.
@@ -57,7 +57,7 @@ No new external account or API-key setup is required by this spec. It only adjus
 ## Implemented Contract (`package.json` / `.npmrc`)
 
 ```json
-"engines": { "node": ">=20.9.0" },
+"engines": { "node": ">=20.17.0" },
 "scripts": {
   "security:deps": "npm audit --audit-level=high",
   "security:all": "npm run security:sast && npm run security:deps && npm run security:secrets"
@@ -90,14 +90,14 @@ Every Foundrie-exported TypeScript project MUST bake:
 1. `security:deps` = `npm audit --audit-level=high` with **no** `--audit-level=none` and no advisory-ignore flags that hide high/critical CVEs.
 2. `security:all` composing SAST + deps + secrets.
 3. Exact/range npm `overrides` only for transitive CVEs when direct deps are current and `npm audit fix --force` would break ranges — record evidence in the feature spec / `docs/SECURITY_SCRIPT_OVERRIDES.md` equivalent. OpenTelemetry overrides must stay within a documented major (e.g. `>=2.8.0 <3.0.0-0`), never unbounded majors.
-4. When overriding `sharp`, keep `allowScripts` key version-aligned with the override pin. The toolchain must explicitly declare the supported npm version via `packageManager` and `engines.npm`, and declare `engines.node` compatible with sharp’s Node floor. CI validation must enforce this full Node/npm pair.
+4. When overriding `sharp`, keep `allowScripts` key version-aligned with the override pin. The toolchain must explicitly declare the supported npm version via `packageManager` and `engines.npm`, and declare `engines.node` compatible with sharp’s Node floor. CI validation must enforce this full Node/npm pair (Node >=20.17.0 and npm 11.17.0).
 5. Enable `strict-allow-scripts=true` in `.npmrc` so CI/`npm install` fail on unreviewed install scripts.
 
 ## Acceptance Criteria
 - [x] `scripts.security:deps` is `npm audit --audit-level=high` with no ignore/suppress flags.
 - [x] `overrides["@opentelemetry/core"]` is `>=2.8.0 <3.0.0-0` (2.x-only).
 - [x] `overrides.sharp` is exact `0.35.3` and `allowScripts["sharp@0.35.3"]` is `true`.
-- [x] `engines.node` is `>=20.9.0`; `.npmrc` has `strict-allow-scripts=true`.
+- [x] `engines.node` is `>=20.17.0`; `.npmrc` has `strict-allow-scripts=true`.
 - [x] Contract sync applied across spec, context, docs, research, and progress tracker.
 - [x] `npm run sync:check`, `npm run security:all`, `npm run test`, and `npm run build` succeed.
 

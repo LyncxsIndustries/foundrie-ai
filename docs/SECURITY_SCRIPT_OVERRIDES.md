@@ -14,7 +14,7 @@
 | `overrides.sharp` | `^0.35.0` | `0.35.3` (exact) |
 | `overrides.@opentelemetry/core` | (absent) | `>=2.8.0 <3.0.0-0` (resolves to 2.10.0) |
 | `allowScripts` sharp key | `sharp@0.34.5` | `sharp@0.35.3` (aligned with override) |
-| `engines.node` | (absent) | `>=20.9.0` (sharp@0.35.x floor) |
+| `engines.node` | (absent) | `>=20.17.0` (sharp@0.35.x floor) |
 | `.npmrc` `strict-allow-scripts` | (absent) | `true` |
 
 ## Why (Context7)
@@ -40,7 +40,7 @@
 5. Hard Rule 0 gates: `sync:check` → `security:all` → `test` → `build`.
 
 ## Generated Project Rule
-Exported TypeScript projects must ship the same `security:deps` / `security:all` scripts **without** ignore/suppress flags that hide high/critical CVEs, document any transitive `overrides` with Context7/npm evidence, keep OTel overrides major-bounded, enable `strict-allow-scripts`, and enforce the complete Node/npm runtime toolchain compatibility (e.g., `packageManager` and `engines.npm`).
+Exported TypeScript projects must ship the same `security:deps` / `security:all` scripts **without** ignore/suppress flags that hide high/critical CVEs, document any transitive `overrides` with Context7/npm evidence, keep OTel overrides major-bounded, enable `strict-allow-scripts`, and enforce the complete Node/npm runtime toolchain compatibility (Node >=20.17.0 and npm 11.17.0, via `packageManager` and `engines.npm`).
 
 ## References
 - [package.json](../package.json)

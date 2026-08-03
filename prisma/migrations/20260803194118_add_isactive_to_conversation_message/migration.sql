@@ -26,7 +26,8 @@ CREATE TABLE "TaskProgressLog" (
     "metadata" JSONB,
     "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "TaskProgressLog_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "TaskProgressLog_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "TaskProgressLog_progress_check" CHECK (progress >= 0 AND progress <= 100)
 );
 
 -- CreateIndex
@@ -48,7 +49,7 @@ CREATE INDEX "TaskProgressLog_projectId_timestamp_idx" ON "TaskProgressLog"("pro
 CREATE INDEX "TaskProgressLog_projectId_taskType_timestamp_idx" ON "TaskProgressLog"("projectId", "taskType", "timestamp" DESC);
 
 -- AddForeignKey
-ALTER TABLE "ConversationMessage" ADD CONSTRAINT "ConversationMessage_replyToId_fkey" FOREIGN KEY ("replyToId") REFERENCES "ConversationMessage"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "ConversationMessage" ADD CONSTRAINT "ConversationMessage_replyToId_fkey" FOREIGN KEY ("replyToId") REFERENCES "ConversationMessage"("id") ON DELETE SET NULL ON UPDATE CASCADE NOT VALID;
 
 -- AddForeignKey
 ALTER TABLE "RequirementsBackup" ADD CONSTRAINT "RequirementsBackup_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
