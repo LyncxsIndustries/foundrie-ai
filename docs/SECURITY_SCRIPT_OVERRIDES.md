@@ -40,7 +40,7 @@
 5. Hard Rule 0 gates: `sync:check` → `security:all` → `test` → `build`.
 
 ## Generated Project Rule
-Exported TypeScript projects must ship the same `security:deps` / `security:all` scripts **without** ignore/suppress flags that hide high/critical CVEs, document any transitive `overrides` with Context7/npm evidence, keep OTel overrides major-bounded, enable `strict-allow-scripts`, and enforce the complete Node/npm runtime toolchain compatibility (Node >=20.17.0 and npm 11.17.0, via `packageManager` and `engines.npm`).
+Exported TypeScript projects must ship the same `security:deps` / `security:all` scripts **without** ignore/suppress flags that hide high/critical CVEs, document any transitive `overrides` with Context7/npm evidence, keep OTel overrides major-bounded, enable `strict-allow-scripts`, and enforce Node >=20.17.0 via `engines.node` and npm >=10.0.0 via `engines.npm` (npm 11+ features like `strict-allow-scripts` and `allowScripts` are enforced locally/CI only).
 
 ## References
 - [package.json](../package.json)
