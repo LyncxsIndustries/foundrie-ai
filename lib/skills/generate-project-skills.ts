@@ -4,7 +4,7 @@ import { join } from "path";
 
 interface SkillsLock {
   version: number;
-  skills: Record<string, { source: string; sourceType: string; skillPath: string }>;
+  skills: Record<string, { source: string; sourceType: string; skillPath: string; aliasOf?: string; notes?: string }>;
 }
 
 interface GeneratedSkill {
@@ -46,7 +46,7 @@ export async function generateProjectSkills(projectId: string, userId: string) {
   const skillsLock = await readSkillsLock();
   for (const skillSlug of UNIVERSAL_SKILLS) {
     if (skillsLock.skills[skillSlug]) {
-      const content = await readSkillContent(skillSlug);
+      const content = await readSkillContent(skillSlug, skillsLock);
       const name = skillSlug
         .split("-")
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -61,7 +61,7 @@ export async function generateProjectSkills(projectId: string, userId: string) {
     const stackSkills = STACK_SKILL_MAP[stack] || [];
     for (const skillSlug of stackSkills) {
       if (skillsLock.skills[skillSlug]) {
-        const content = await readSkillContent(skillSlug);
+        const content = await readSkillContent(skillSlug, skillsLock);
         const name = skillSlug
           .split("-")
           .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -104,7 +104,18 @@ async function readSkillsLock(): Promise<SkillsLock> {
   return JSON.parse(content);
 }
 
-async function readSkillContent(skillSlug: string): Promise<string> {
+async function readSkillContent(skillSlug: string, skillsLock: SkillsLock): Promise<string> {
+  const skill = skillsLock.skills[skillSlug];
+  if (!skill) return "";
+
+  if (skill.aliasOf) {
+    let content = await readSkillContent(skill.aliasOf, skillsLock);
+    if (skill.notes) {
+      content = `> **Alias Note for ${skillSlug}:** ${skill.notes}\n\n` + content;
+    }
+    return content;
+  }
+
   const path = join(process.cwd(), ".agents/skills", skillSlug, "SKILL.md");
   return readFile(path, "utf-8");
 }

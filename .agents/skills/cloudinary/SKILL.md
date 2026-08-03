@@ -16,13 +16,13 @@ First, create an unsigned upload preset in Cloudinary Console:
 Settings > Upload > Upload presets > Add upload preset > Signing Mode: Unsigned
 
 Before use, configure the preset with at least:
-- `allowed_formats` (restrict MIME/extensions)
+- `allowed_formats` (restrict formats/extensions)
 - `max_file_size` (bytes)
 - `disallow_public_id` (true)
 
 Source: [Cloudinary upload presets — secure unsigned preset](https://cloudinary.com/documentation/upload_presets).
 
-Prefer **signed uploads** (Method 2) for authenticated or sensitive workflows. Use unsigned only for intentionally public client uploads behind a hardened preset.
+Prefer **signed uploads** (Method 2) specifying delivery type (`private` or `authenticated`) for sensitive workflows. Ensure examples generate signed delivery URLs. Use unsigned only for intentionally public client uploads behind a hardened preset.
 
 ```bash
 curl -X POST "https://api.cloudinary.com/v1_1/<your-cloud-name>/image/upload" -F "file=@/path/to/image.png" -F "upload_preset=your_preset_name"
@@ -38,11 +38,11 @@ Generate signature and upload:
 # Generate timestamp
 TIMESTAMP=$(date +%s)
 
-# Generate signature (alphabetical order of params)
-SIGNATURE=$(echo -n "timestamp=$TIMESTAMP$CLOUDINARY_API_SECRET" | sha1sum | cut -d" " -f1)
+# Generate signature (alphabetical order of params: timestamp, type)
+SIGNATURE=$(echo -n "timestamp=$TIMESTAMP&type=private$CLOUDINARY_API_SECRET" | sha1sum | cut -d" " -f1)
 
 # Upload
-curl -X POST "https://api.cloudinary.com/v1_1/<your-cloud-name>/image/upload" -F "file=@/path/to/image.png" -F "api_key=$CLOUDINARY_TOKEN" -F "timestamp=$TIMESTAMP" -F "signature=$SIGNATURE"
+curl -X POST "https://api.cloudinary.com/v1_1/<your-cloud-name>/image/upload" -F "file=@/path/to/image.png" -F "type=private" -F "api_key=$CLOUDINARY_TOKEN" -F "timestamp=$TIMESTAMP" -F "signature=$SIGNATURE"
 ```
 
 ### Upload from URL
@@ -192,9 +192,9 @@ https://res.cloudinary.com/{cloud_name}/video/upload/l_intro_image,fl_splice,du_
 
 ### Limitations
 
-- URL length limit (~2000 chars) restricts number of videos ([HTTP URI practical limits / CDN delivery constraints](https://cloudinary.com/documentation/video_trimming_and_concatenating); long composed URLs fail at intermediaries)
+- Delivery URL constraints dictate the number of chained videos. Use documented transformation-string limits and measured performance instead of arbitrary video counts ([HTTP URI practical limits / CDN delivery constraints](https://cloudinary.com/documentation/video_trimming_and_concatenating))
 - First request triggers server-side processing (slow) — Cloudinary generates derivatives on demand ([transformation overview](https://cloudinary.com/documentation/image_transformations))
-- For many videos (10+), prefer server-side composition (e.g. ffmpeg) or dedicated video APIs to avoid URL-length and cold-processing failure modes documented above
+- For complex compositions, prefer server-side composition (e.g. ffmpeg) or dedicated video APIs to avoid timeout and processing failure modes documented above
 
 ## Delete Media
 
@@ -216,12 +216,13 @@ curl -X POST "https://api.cloudinary.com/v1_1/<your-cloud-name>/video/destroy" -
 
 Cloudinary Free / self-service plans use a **credits** model ([billing and plans](https://cloudinary.com/documentation/billing_and_plans); [credits FAQ](https://cloudinary.com/documentation/developer_onboarding_faq_credits)):
 
-- **25 credits** on the Free plan, usable across resource types
+- **25 credits** per month on the Free plan, usable across resource types
 - Bandwidth is measured on a **rolling 30-day window** (or billing month, depending on plan)
 - Resource rates (1 credit equals):
   - **1,000** new transformation derivatives
   - **1 GB** stored
-  - **1 GB** delivered image bandwidth **or** **1 GB** delivered video bandwidth (Free; paid self-service may count 2 GB video per credit)
+  - **1 GB** delivered image bandwidth
+  - Video processing is charged based on video duration and resolution
 
 ## Guidelines
 
@@ -229,7 +230,7 @@ Cloudinary Free / self-service plans use a **credits** model ([billing and plans
 2. **Signature order**: Parameters must be alphabetically sorted when generating signature ([upload API authentication](https://cloudinary.com/documentation/image_upload_api_reference))
 3. **Auto optimization**: Add `f_auto,q_auto` to URLs for automatic format/quality ([transformation reference](https://cloudinary.com/documentation/transformation_reference))
 4. **Folders**: Use `public_id="folder/subfolder/name"` to organize media; encode `/` as `:` in `l_video` overlays
-5. **Video concatenation**: Keep URLs short; for 10+ videos use external tools ([video concatenating](https://cloudinary.com/documentation/video_trimming_and_concatenating))
+5. **Video concatenation**: Keep URLs within documented transformation-string limits; for complex sequences use external tools ([video concatenating](https://cloudinary.com/documentation/video_trimming_and_concatenating))
 
 ## API Reference
 

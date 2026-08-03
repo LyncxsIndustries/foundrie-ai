@@ -70,7 +70,7 @@ Use @webapp-testing to inventory exposed services listed in the ROE (no out-of-s
 
 ### Phase 2: Vulnerability Scanning
 
-**Citation:** [NIST SP 800-115](https://csrc.nist.gov/publications/detail/sp/800-115/final) §4.2 (vulnerability analysis); [OWASP Dependency-Check / component guidance](https://owasp.org/www-project-top-ten/).
+**Citation:** [NIST SP 800-115](https://csrc.nist.gov/publications/detail/sp/800-115/final) §4.2 (vulnerability analysis); [OWASP Top 10](https://owasp.org/www-project-top-ten/) and [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/).
 
 #### Skills to Invoke
 - `code-review` — vulnerability analysis / SAST-oriented review
@@ -112,11 +112,11 @@ Run npm run security:all and use @code-review to triage dependency advisories
 #### Copy-Paste Prompts
 
 ```text
-Use @webapp-testing to test for SQL injection vulnerabilities on in-scope endpoints
+Ensure written authorization, approved ROE, and human approval exist before testing external targets. Use @webapp-testing to test for SQL injection vulnerabilities on in-scope endpoints.
 ```
 
 ```text
-Use @webapp-testing to test for cross-site scripting on in-scope forms
+Ensure written authorization, approved ROE, and human approval exist before testing external targets. Use @webapp-testing to test for cross-site scripting on in-scope forms.
 ```
 
 ```text
@@ -243,9 +243,9 @@ Source: https://owasp.org/www-project-api-security/
 - [ ] Remediation steps provided
 - [ ] Report generated
 - [ ] **Evidence handling (blocking):** secrets/PII redacted from PoCs and reports
-- [ ] **Evidence handling (blocking):** evidence stored in an access-controlled location
-- [ ] **Evidence handling (blocking):** retention period enforced
-- [ ] **Evidence handling (blocking):** secure deletion after retention expires
+- [ ] **Evidence handling (blocking):** evidence stored in a defined access-controlled storage system with a designated owner
+- [ ] **Evidence handling (blocking):** retention duration defined and enforced
+- [ ] **Evidence handling (blocking):** secure deletion verified and evidence of deletion retained after retention expires
 
 Sources: [NIST SP 800-115](https://csrc.nist.gov/publications/detail/sp/800-115/final) (handling sensitive findings); [OWASP](https://owasp.org/) reporting practices.
 

@@ -35,11 +35,11 @@ Hard Rule 0 order:
 2. Ran `npm run security:all` — Feature 62 passes with zero high/critical.
 3. Executed `npm run test` — passed without errors.
 4. Executed `npm run build` — passed without errors.
-- Noted remaining moderate severity vulnerabilities; these can be addressed later with `npm audit fix`.
+- Noted remaining moderate severity vulnerabilities; these can be addressed later with `npm audit fix --dry-run` after verifying lockfile integrity and tracking them in a dedicated issue.
 
 ## Recommendations
-- Consider migrating away from `node-domexception` entirely by using the native `DOMException` (available in Node.js v17+).
-- Periodically run `npm audit` and apply fixes to keep dependencies up‑to‑date.
+- Consider migrating away from `node-domexception` entirely by using the native `DOMException` (available in Node.js v17+) per [Node.js Globals Documentation](https://nodejs.org/api/globals.html#domexception).
+- Periodically run `npm audit` and apply fixes to keep dependencies up‑to‑date (following the [npm audit documentation](https://docs.npmjs.com/cli/v11/commands/npm-audit)).
 - Keep `allowScripts` keys version-aligned whenever `sharp` (or other native) overrides change (Context7 `/lovell/sharp` v0.35.x pins + Feature 62 contract in `project-kit/feature-specs/62-security-script-fix.md`).
 
 ## References
