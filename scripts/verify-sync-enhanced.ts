@@ -124,43 +124,59 @@ function info(message: string) {
 }
 
 /**
- * Get current feature number from git branch or progress tracker
+ * Detect the current branch name from CI env vars or git.
+ * Returns the branch name string (e.g. "master", "feature/63-download-zip-button-test")
+ * or null if detection fails.
  */
-function getCurrentFeature(): number | null {
-  // Try Vercel environment variable
+function detectBranchName(): string | null {
+  // CI environment variables
   if (process.env.VERCEL_GIT_COMMIT_REF) {
-    const branchMatch = process.env.VERCEL_GIT_COMMIT_REF.match(/feature\/(\d+)-/);
-    if (branchMatch) {
-      return parseInt(branchMatch[1], 10);
-    }
+    return process.env.VERCEL_GIT_COMMIT_REF;
+  }
+  if (process.env.GITHUB_HEAD_REF) {
+    return process.env.GITHUB_HEAD_REF;
+  }
+  if (process.env.GITHUB_REF_NAME) {
+    return process.env.GITHUB_REF_NAME;
   }
 
-  // Try GitHub Actions environment variable
-  if (process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME) {
-    const branch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || '';
-    const branchMatch = branch.match(/feature\/(\d+)-/);
-    if (branchMatch) {
-      return parseInt(branchMatch[1], 10);
-    }
-  }
-  // First, try to get feature number from git branch name
+  // Local git
   try {
     const { execFileSync } = require('child_process');
-    const branchName = execFileSync('git', ['branch', '--show-current'], { 
+    return execFileSync('git', ['branch', '--show-current'], {
       encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe']
-    }).trim();
-    
-    // Pattern: feature/NN-slug or feature/NNN-slug
-    const branchMatch = branchName.match(/feature\/(\d+)-/);
-    if (branchMatch) {
-      return parseInt(branchMatch[1], 10);
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get current feature number from git branch or progress tracker.
+ * Returns the feature number, or -1 if on a non-feature branch
+ * (master/main/develop) where spec auditing should be skipped.
+ */
+function getCurrentFeature(): number | null {
+  const branch = detectBranchName();
+
+  // If we detected a branch name, check for feature pattern
+  if (branch) {
+    const featureMatch = branch.match(/feature\/(\d+)-/);
+    if (featureMatch) {
+      return parseInt(featureMatch[1], 10);
     }
-  } catch (err) {
-    // Git command failed, fall back to progress tracker
+
+    // On master/main/develop the progress-tracker points at the NEXT feature
+    // (not yet implemented). Spec auditing must be skipped — completed features
+    // already passed the gate on their own branch before merge.
+    if (/^(master|main|develop)$/.test(branch)) {
+      info('On production branch — skipping spec audit (completed features already gated)');
+      return -1; // sentinel: skip spec audit
+    }
   }
 
-  // Fall back to progress tracker
+  // Fall back to progress tracker (only if we have no branch info at all)
   const trackerPath = path.join(process.cwd(), 'project-kit/context/progress-tracker.md');
   
   if (!fs.existsSync(trackerPath)) {
@@ -640,6 +656,26 @@ function main() {
     process.exit(1);
   }
 
+  // Run structural checks (always)
+  checkContractSync();
+  checkPrismaSync();
+  checkRequiredFiles();
+
+  // On production branches (master/main/develop), skip spec audit.
+  // Completed features already passed the gate on their own branch.
+  if (currentFeature === -1) {
+    info('Production branch detected — spec audit skipped\n');
+
+    const noAuditResult: AuditResult = {
+      passed: true,
+      errors: [],
+      warnings: [],
+      requirements: { total: 0, verified: 0, missing: 0 },
+    };
+    printAuditSummary(noAuditResult, errorsOnly);
+    return; // printAuditSummary calls process.exit
+  }
+
   info(`Current feature: ${currentFeature}\n`);
 
   // Find current feature spec file
@@ -654,11 +690,6 @@ function main() {
 
   const currentSpecPath = specFiles[0];
   info(`Checking spec: ${path.basename(currentSpecPath)}\n`);
-
-  // Run all checks
-  checkContractSync();
-  checkPrismaSync();
-  checkRequiredFiles();
   
   // Audit ONLY the current spec
   const auditResult = auditCurrentSpec(currentSpecPath);

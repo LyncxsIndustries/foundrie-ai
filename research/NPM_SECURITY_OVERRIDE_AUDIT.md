@@ -11,7 +11,7 @@ Record Context7-backed evidence for Foundrie’s Feature 62 security-script and 
 | 2 | `/npm/cli` — package.json `overrides` | Override values may be exact versions or semver ranges; used to force transitive package versions. |
 | 3 | `/lovell/sharp` — changelog v0.35.3 | Latest secure release (2026-07-01) with bound checks / overflow hardening. |
 | 4 | `/lovell/sharp` — changelog v0.35.0 | Breaking: Node ≥20.9.0; install script removed. |
-| 5 | `/open-telemetry/opentelemetry-js` — `@opentelemetry/core` | Stable 2.x line; Feature 62 range is `>=2.8.0 <3.0.0-0`; npm registry latest at audit: `2.10.0`. |
+| 5 | `/open-telemetry/opentelemetry-js` — `@opentelemetry/core` | Stable 2.x line; Feature 62 range is `>=2.8.0 <3.0.0-0`; npm registry latest at audit: `2.10.0`. Pinned to prevent transitive unbounded major float from `@trigger.dev/core` and `@trigger.dev/build` resolving a breaking 3.x release. |
 | 6 | Live `npm audit --audit-level=high` | Exit 0 after Feature 62 overrides; remaining advisories are moderate only (10). |
 | 7 | Live `npm ls` | `sharp@0.35.3 overridden` (via Next.js); `@opentelemetry/core@2.10.0` under `@trigger.dev/core`. |
 | 8 | `/npm/cli` — `strict-allow-scripts` | When true, unreviewed install scripts fail the install instead of warning. |
@@ -54,4 +54,4 @@ Chose `>=2.8.0 <3.0.0-0` (2.x-only floor) rather than pinning exact `2.10.0` or 
 - Feature 64 continues `docs/DEPENDENCIES_UPGRADE_NOTES.md` formatting cleanup only.
 
 ## Generated Project Rule
-Generated projects must reproduce this audit pattern: Context7 evidence → `security:deps` without suppressors → major-bounded overrides → `strict-allow-scripts` → Hard Rule 0 gate order.
+Generated projects must reproduce this audit pattern: Context7 evidence → `security:deps` without suppressors → major-bounded overrides → `strict-allow-scripts` → enforce full Node/npm runtime toolchain compatibility (e.g., `packageManager` and `engines.npm`) → Hard Rule 0 gate order.

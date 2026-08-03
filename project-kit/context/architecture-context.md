@@ -10,7 +10,7 @@
 - `npm run test` — all tests must pass
 - `npm run build` — build must succeed with no errors
 
-These gates are enforced in `package.json` scripts and `.husky/pre-commit` hook. A feature is not ready for review while later specs or context still describe stale fields, old API shapes, or invalid contracts. Transitive CVE remediations use npm `overrides` (e.g. Feature 62: `sharp@0.35.3`, `@opentelemetry/core` `>=2.8.0 <3.0.0-0`) and must keep `allowScripts` keys version-aligned with override pins. `.npmrc` sets `strict-allow-scripts=true`.
+These gates are enforced in `package.json` scripts and `.husky/pre-commit` hook. A feature is not ready for review while later specs or context still describe stale fields, old API shapes, or invalid contracts. Transitive CVE remediations use npm `overrides` (e.g. Feature 62: `sharp@0.35.3`, `@opentelemetry/core` `>=2.8.0 <3.0.0-0`) and must keep `allowScripts` keys version-aligned with override pins. The toolchain requires a complete Node/npm pair enforced in CI (e.g., `packageManager` and `engines.npm`). `.npmrc` sets `strict-allow-scripts=true`.
 
 
 Foundrie AI's own stack is fixed by this document. Generated project stacks are dynamic and chosen through research and user approval. Never copy Foundrie's stack into a generated project unless the user chooses it or the research justifies it.

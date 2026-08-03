@@ -14,6 +14,7 @@ Feature 61 replaced `console.warn` with structured `logger.warn` / `logger.error
 ## Files Owned
 - `package.json`
 - `package-lock.json` (lockfile refresh for overrides)
+- `.npmrc`
 
 ## Files
 MODIFY: `package.json` — `security:deps` invariant; `overrides.sharp` / `overrides["@opentelemetry/core"]`; `allowScripts` alignment; `engines.node`; `strict-allow-scripts` companion via `.npmrc`
@@ -66,7 +67,9 @@ No new external account or API-key setup is required by this spec. It only adjus
   "@opentelemetry/core": ">=2.8.0 <3.0.0-0"
 },
 "allowScripts": {
-  "sharp@0.35.3": true
+  "sharp@0.35.3": true,
+  "core-js@3.49.0": true,
+  "fsevents@2.3.3": false
 }
 ```
 
@@ -87,7 +90,7 @@ Every Foundrie-exported TypeScript project MUST bake:
 1. `security:deps` = `npm audit --audit-level=high` with **no** `--audit-level=none` and no advisory-ignore flags that hide high/critical CVEs.
 2. `security:all` composing SAST + deps + secrets.
 3. Exact/range npm `overrides` only for transitive CVEs when direct deps are current and `npm audit fix --force` would break ranges — record evidence in the feature spec / `docs/SECURITY_SCRIPT_OVERRIDES.md` equivalent. OpenTelemetry overrides must stay within a documented major (e.g. `>=2.8.0 <3.0.0-0`), never unbounded majors.
-4. When overriding `sharp`, keep `allowScripts` key version-aligned with the override pin and declare `engines.node` compatible with sharp’s Node floor.
+4. When overriding `sharp`, keep `allowScripts` key version-aligned with the override pin. The toolchain must explicitly declare the supported npm version via `packageManager` and `engines.npm`, and declare `engines.node` compatible with sharp’s Node floor. CI validation must enforce this full Node/npm pair.
 5. Enable `strict-allow-scripts=true` in `.npmrc` so CI/`npm install` fail on unreviewed install scripts.
 
 ## Acceptance Criteria
