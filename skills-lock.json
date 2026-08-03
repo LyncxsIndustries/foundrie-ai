@@ -137,7 +137,7 @@
       "source": "local/foundrie-ai",
       "sourceType": "local",
       "skillPath": ".agents/skills/cloudinary/SKILL.md",
-      "computedHash": "8b919748446a71b18609d02404d38709fec6efde3fadd4ad0fd048150b147ccb"
+      "computedHash": "10c85ceb819acb3d443d7aad0aab9af61a82e7e097967c23e4a8569ad2288daa"
     },
     "code-review": {
       "source": "coderabbitai/skills",
@@ -259,11 +259,26 @@
       "skillPath": "prisma-upgrade-v7/SKILL.md",
       "computedHash": "2e4d54a4c7a0fc2476e81686718a765f5eb2cacfb2fb0822f3109c76bf4a9bb0"
     },
+    "scanning-tools": {
+      "source": "alias/webapp-testing",
+      "sourceType": "alias",
+      "skillPath": "skills/webapp-testing/SKILL.md",
+      "computedHash": "51b7349e77ec63b7744a6f63647e7566a0b4d2e301121cc10e8c2113af6556a2",
+      "aliasOf": "webapp-testing"
+    },
     "security-audit": {
       "source": "davila7/claude-code-templates",
       "sourceType": "github",
       "skillPath": "cli-tool/components/skills/security/security-audit/SKILL.md",
-      "computedHash": "8d74ce70b597ce8d780a094dbc5ff66bbe95ccb814e86fc5dad9ba3c638b7d08"
+      "computedHash": "fc9ad514e9e1208b7d965d070dc157c3e51a020dc95b5d208d97fcfa57fa42ca"
+    },
+    "shodan-reconnaissance": {
+      "source": "alias/webapp-testing",
+      "sourceType": "alias",
+      "skillPath": "skills/webapp-testing/SKILL.md",
+      "computedHash": "51b7349e77ec63b7744a6f63647e7566a0b4d2e301121cc10e8c2113af6556a2",
+      "aliasOf": "webapp-testing",
+      "notes": "No dedicated Shodan skill provisioned; ROE-scoped OSINT via webapp-testing only"
     },
     "skill-creator": {
       "source": "anthropics/skills",
@@ -282,6 +297,13 @@
       "sourceType": "github",
       "skillPath": "skills/theme-factory/SKILL.md",
       "computedHash": "c35893e221e28895c52143cc11bf30e41a44817796b39d4b15727dadc9796552"
+    },
+    "top-web-vulnerabilities": {
+      "source": "alias/code-review",
+      "sourceType": "alias",
+      "skillPath": "skills/code-review/SKILL.md",
+      "computedHash": "6eef6ded8c90f0c76764e76f12d06b4d873525ee4b401972e359b5920d1d6d4e",
+      "aliasOf": "code-review"
     },
     "trigger-agents": {
       "source": "triggerdotdev/skills",
