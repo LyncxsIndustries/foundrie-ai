@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth, AuthError } from "@/lib/auth/require-auth";
 import { requireProjectMember, ProjectAuthError } from "@/lib/projects/auth";
-import { getDiscoveryConversation, appendConversationMessage, ChatMessage } from "@/lib/conversations/chat";
+import { getDiscoveryConversation, ChatMessage } from "@/lib/conversations/chat";
 import { db } from "@/lib/db";
 import { AttachmentType } from "@/lib/generated/prisma/client";
 import { auth, tasks } from "@trigger.dev/sdk";
@@ -27,7 +27,27 @@ export async function GET(
     const { projectId } = await params;
     await requireProjectMember(projectId, user.id);
 
-    const { messages } = await getDiscoveryConversation(projectId);
+    const conversation = await db.conversation.findUnique({
+      where: { projectId },
+      include: {
+        conversationMessages: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+          take: 100,
+        },
+      },
+    });
+
+    if (!conversation) {
+      return NextResponse.json({ messages: [] });
+    }
+
+    const messages = conversation.conversationMessages.reverse().map(m => ({
+      id: m.id,
+      role: m.role.toLowerCase(),
+      content: m.content,
+      createdAt: m.createdAt,
+    }));
     return NextResponse.json({ messages });
   } catch (error) {
     if (error instanceof AuthError) return new NextResponse(error.message, { status: error.status });
@@ -51,60 +71,37 @@ export async function POST(
       return new NextResponse("Invalid message", { status: 400 });
     }
 
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: message.content,
-      createdAt: new Date().toISOString(),
-    };
+    let { conversation } = await getDiscoveryConversation(projectId);
 
-    // Append to legacy JSON storage
-    const updatedMessages = await appendConversationMessage(projectId, userMessage);
-
-    // Also persist to structured ConversationMessage table (Feature 54) - best effort
-    let conversation: { id: string } | null = null;
-    try {
-      conversation = await db.conversation.findUnique({
-        where: { projectId },
-        select: { id: true },
-      });
-
-      if (conversation) {
-        await db.conversationMessage.create({
-          data: {
-            conversationId: conversation.id,
-            projectId,
-            role: 'USER',
-            content: message.content,
-            attachments: message.attachments
-              ? {
-                  create: message.attachments.map((att: IncomingAttachment) => ({
-                    type: att.type,
-                    cloudinaryId: att.cloudinaryId,
-                    cloudinaryUrl: att.cloudinaryUrl,
-                    originalName: att.originalName,
-                    mimeType: att.mimeType,
-                    sizeBytes: att.sizeBytes,
-                    width: att.width,
-                    height: att.height,
-                  })),
-                }
-              : undefined,
-          },
-        });
-      }
-    } catch (structuredError) {
-      // Log but don't fail the request - legacy JSON storage is source of truth
-      console.error('Failed to persist structured user message:', {
+    await db.conversationMessage.create({
+      data: {
+        conversationId: conversation.id,
         projectId,
-        conversationId: conversation?.id,
-        error: structuredError instanceof Error ? structuredError.message : 'Unknown error',
-        attachmentCount: message.attachments?.length || 0,
-      });
-    }
+        role: 'USER',
+        content: message.content,
+        attachments: message.attachments
+          ? {
+              create: message.attachments.map((att: IncomingAttachment) => ({
+                type: att.type,
+                cloudinaryId: att.cloudinaryId,
+                cloudinaryUrl: att.cloudinaryUrl,
+                originalName: att.originalName,
+                mimeType: att.mimeType,
+                sizeBytes: att.sizeBytes,
+                width: att.width,
+                height: att.height,
+              })),
+            }
+          : undefined,
+      },
+    });
 
-    // Format conversation history for the AI. Truncate to the last 6 messages to avoid context window limit exhaustion.
-    const recentMessages = updatedMessages.slice(-6);
+    const recentDbMessages = await db.conversationMessage.findMany({
+      where: { conversationId: conversation.id, isActive: true },
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+    });
+    const recentMessages = recentDbMessages.reverse();
     
     // Add attachment context if present
     let attachmentContext = '';
@@ -119,7 +116,7 @@ export async function POST(
     }
     
     const historyText = recentMessages.map(m => {
-      const roleName = m.role === "user" ? "User" : "Assistant";
+      const roleName = m.role === "USER" ? "User" : "Assistant";
       return `${roleName}:\n${m.content}`;
     }).join("\n\n");
 

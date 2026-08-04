@@ -57,7 +57,7 @@ Use known library IDs from `project-kit/context/architecture-context.md` when av
 
 Feature specs are in `project-kit/feature-specs/`. Implement them in strict numeric order, one spec at a time. Phase names are roadmap labels, not implementation batches. Do not implement `01-06` as a group, do not bundle multiple specs into one pull request, and do not start the next spec until the current one passes review.
 
-**Note on Spec Renumbering:** Specs originally numbered 63-79 have been shifted forward to 83-99 to accommodate 20 new UI/UX Taste Skill specs (63-82) added to the beginning of this block.
+**Note on Spec Renumbering:** Specs originally numbered 63-79 have been shifted forward to 83-99 to accommodate 20 new UI/UX Foundrie AI Skill specs (63-82) added to the beginning of this block.
 
 For every single feature spec:
 
@@ -167,7 +167,7 @@ Never skip ahead, batch specs, or mark a spec done before the GitHub review loop
    
    This rule applies to ALL AI agents in ALL contexts: Foundrie's own development, generated project development, and any agent-assisted workflow. Throttling prevention is a **hard requirement** for agent reliability.
 
-26. **TASTE SKILLS MANDATE:** All AI agents working on/with Foundrie MUST read all research files added, MUST use all the Taste Skills, and MUST MOST IMPORTANTLY have and use the `examples` folder and files to ensure similar high-end UI. Agents MUST also use the `inspo` folder for UI inspiration on how the UI should look. This applies to both Foundrie itself and every project Foundrie generates. This workflow is fully documented in `docs/TASTE_SKILLS_WORKFLOW.md`.
+26. **Foundrie AI Skills MANDATE:** All AI agents working on/with Foundrie MUST read all research files added, MUST use all the Foundrie AI Skills, and MUST MOST IMPORTANTLY have and use the `examples` folder and files to ensure similar high-end UI. Agents MUST also use the `inspo` folder for UI inspiration on how the UI should look. This applies to both Foundrie itself and every project Foundrie generates. This workflow is fully documented in `docs/TASTE_SKILLS_WORKFLOW.md`.
 
 
 ## When To Split A Task

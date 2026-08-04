@@ -66,8 +66,8 @@ export function ChatMessageList({
     prevMessageCountRef.current = messages.length;
     prevLastContentRef.current = lastContent;
 
-    // Force scroll if we're waiting for stream to start, or if new message is added by user
-    const shouldScroll = (newMessageAdded && lastMessage?.role === 'user') || isWaitingForStream || (contentChanged && isAtBottom);
+    // Force scroll if we're waiting for stream to start, or if new message is added, or if content changed while at bottom
+    const shouldScroll = newMessageAdded || isWaitingForStream || (contentChanged && isAtBottom);
 
     if (shouldScroll) {
       // Small delay to ensure DOM has updated
@@ -109,21 +109,58 @@ export function ChatMessageList({
     );
   }
 
+  // Group messages by date
+  const groupedMessages: { dateLabel: string; messages: Message[] }[] = [];
+  let currentGroup: { dateLabel: string; messages: Message[] } | null = null;
+
+  const formatDateLabel = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+  };
+
+  messages.forEach((msg) => {
+    const dateLabel = formatDateLabel(msg.createdAt);
+    if (!currentGroup || currentGroup.dateLabel !== dateLabel) {
+      currentGroup = { dateLabel, messages: [] };
+      groupedMessages.push(currentGroup);
+    }
+    currentGroup.messages.push(msg);
+  });
+
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+        className="flex-1 overflow-y-auto px-6 py-4 space-y-6"
       >
-        {messages.map((message) => (
-          <ChatMessage 
-            key={message.id} 
-            message={message} 
-            activeRun={activeRunMessageId === message.id ? activeRun : null}
-            isWaitingForStream={activeRunMessageId === message.id ? isWaitingForStream : false}
-            onAction={onAction}
-          />
+        {groupedMessages.map((group) => (
+          <div key={group.dateLabel} className="space-y-4">
+            <div className="flex justify-center my-6">
+              <span className="text-[11px] uppercase tracking-wider font-semibold bg-bg-surface/50 text-text-secondary px-4 py-1.5 rounded-full border border-border/50 shadow-sm backdrop-blur-md">
+                {group.dateLabel}
+              </span>
+            </div>
+            {group.messages.map((message) => (
+              <ChatMessage 
+                key={message.id} 
+                message={message} 
+                activeRun={activeRunMessageId === message.id ? activeRun : null}
+                isWaitingForStream={activeRunMessageId === message.id ? isWaitingForStream : false}
+                onAction={onAction}
+              />
+            ))}
+          </div>
         ))}
       </div>
 

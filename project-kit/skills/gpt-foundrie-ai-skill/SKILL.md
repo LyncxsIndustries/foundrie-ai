@@ -72,3 +72,6 @@ Before writing ANY React/UI code, you MUST output a `<design_plan>` block contai
 4. **Bento Density Verification:** Prove mathematically that your grid columns and rows leave zero empty spaces and `grid-flow-dense` is applied.
 5. **Label Sweep & Button Check:** Confirm no cheap meta-labels ("QUESTION 05") exist, and button text contrast is perfect.
 Only output the UI code after this rigorous verification is complete.
+
+
+> **Note**: These Foundrie AI Skills are baked into the system. All AI agents should use them by default. They are based on the original [Taste Skills](https://www.tasteskill.dev/) (source: [https://github.com/Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill)).

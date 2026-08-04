@@ -1,7 +1,7 @@
 # Feature Spec: Global Layout & Interactions
 
 ## 1. Overview
-Enhance global layouts and interactions across the Foundrie app, strictly applying Taste Skills UI/UX principles.
+Enhance global layouts and interactions across the Foundrie app, strictly applying Foundrie AI Skills UI/UX principles.
 
 ## 2. Requirements
 - Add micro-animations across all interactive elements (buttons, inputs, links).

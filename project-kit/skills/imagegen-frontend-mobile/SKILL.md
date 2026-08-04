@@ -1463,3 +1463,6 @@ It should actively avoid:
 - oversized device framing that distracts from the design
 
 The final result should look like a high-end mobile app concept with clean hierarchy, good flow logic, strong visual taste, richer image direction, a clean controlled color palette, non-generic art direction, strong multi-screen consistency, readable typography, premium phone mockup framing, and clear platform-aware structure.
+
+
+> **Note**: These Foundrie AI Skills are baked into the system. All AI agents should use them by default. They are based on the original [Taste Skills](https://www.tasteskill.dev/) (source: [https://github.com/Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill)).

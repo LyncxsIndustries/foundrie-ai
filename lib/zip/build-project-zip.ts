@@ -443,7 +443,7 @@ export async function buildProjectZip(
     }
   }
 
-  reportProgress("Adding local Taste Skills, Examples, Inspo, and Research...", 78);
+  reportProgress("Adding local Foundrie AI Skills, Examples, Inspo, and Research...", 78);
   
   try {
     const basePath = process.cwd();

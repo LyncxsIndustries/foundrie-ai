@@ -246,12 +246,12 @@ export const ChatMessage = React.memo(function ChatMessage({
           href={attachment.cloudinaryUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="block mt-2 rounded-lg overflow-hidden border border-border hover:opacity-90 transition-opacity"
+          className="block relative overflow-hidden rounded-xl border border-white/10 shadow-sm transition-all hover:shadow-md hover:scale-[1.01] max-w-[280px]"
         >
           <img
             src={attachment.cloudinaryUrl}
             alt={attachment.originalName}
-            className="max-w-full h-auto max-h-[400px] object-contain"
+            className="w-full h-auto object-cover bg-bg-surface/50"
           />
         </a>
       );
@@ -312,61 +312,77 @@ export const ChatMessage = React.memo(function ChatMessage({
       >
         {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
       </div>
-      <div
-        className={cn(
-          'flex min-w-[120px] max-w-[80%] flex-col gap-2 rounded-lg px-4 py-3 text-sm',
-          isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
-        )}
-      >
+      <div className={cn(
+        "flex min-w-[120px] max-w-[80%] flex-col gap-2 text-sm",
+        isUser ? "items-end" : "items-start"
+      )}>
         {/* Engine logs from Trigger.dev metadata */}
         {activeRun && renderEngineLogs()}
 
         {/* Agent thinking phases (pre-stream) */}
         {renderAgentThinking()}
 
-        {/* Collapsible thinking block (DeepSeek R1 <think> tags) */}
-        {thinkingContent && (
-          <div className="rounded-lg border border-border/50 bg-background/50 overflow-hidden mb-1">
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-secondary/50 transition-colors select-none"
-            >
-              {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-              <Brain className="w-3.5 h-3.5" />
-              <span>{isThinkingFinished ? 'Thought Process' : 'Thinking…'}</span>
-              {!isThinkingFinished && (
-                <Loader2 className="w-3 h-3 animate-spin ml-auto text-accent-primary" />
-              )}
-            </button>
-            {isExpanded && (
-              <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border/50 bg-background/30 prose prose-sm dark:prose-invert break-words max-h-96 overflow-y-auto">
-                <ReactMarkdown>{thinkingContent}</ReactMarkdown>
+        {(isEditing || displayContent.trim() || thinkingContent || (!displayContent.trim() && !thinkingContent && !isUser && !isWaitingForStream && !activeRun)) && (
+          <div className={cn(
+            'flex flex-col gap-2 rounded-2xl px-5 py-3 shadow-sm',
+            isUser ? 'bg-primary text-primary-foreground rounded-tr-sm' : 'bg-muted text-foreground rounded-tl-sm'
+          )}>
+            {/* Collapsible thinking block (DeepSeek R1 <think> tags) */}
+            {thinkingContent && (
+              <div className="rounded-lg border border-border/50 bg-background/50 overflow-hidden mb-1">
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-secondary/50 transition-colors select-none"
+                >
+                  {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                  <Brain className="w-3.5 h-3.5" />
+                  <span>{isThinkingFinished ? 'Thought Process' : 'Thinking…'}</span>
+                  {!isThinkingFinished && (
+                    <Loader2 className="w-3 h-3 animate-spin ml-auto text-accent-primary" />
+                  )}
+                </button>
+                {isExpanded && (
+                  <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border/50 bg-background/30 prose prose-sm dark:prose-invert break-words max-h-96 overflow-y-auto">
+                    <ReactMarkdown>{thinkingContent}</ReactMarkdown>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {/* Main content */}
-        {isEditing ? (
-          <Textarea 
-            value={editContent} 
-            onChange={(e) => setEditContent(e.target.value)} 
-            className="min-h-[100px] text-sm mt-2 text-foreground"
-            autoFocus
-          />
-        ) : displayContent.trim() && (
-          <div className="prose prose-sm dark:prose-invert break-words">
-            <ReactMarkdown>{displayContent}</ReactMarkdown>
-          </div>
-        )}
-        
-        {/* Bouncing dots fallback — shown only when there's no content AND no
-            thinking indicator (i.e. a brief moment before the phase UI kicks in) */}
-        {(!displayContent.trim() && !thinkingContent && !isUser && !isWaitingForStream && !activeRun) && (
-          <div className="flex items-center gap-1.5 text-muted-foreground h-5">
-            <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            {/* Main content */}
+            {isEditing ? (
+              <Textarea 
+                value={editContent} 
+                onChange={(e) => setEditContent(e.target.value)} 
+                className="min-h-[100px] text-sm mt-2 text-foreground bg-background"
+                autoFocus
+              />
+            ) : displayContent.trim() && (
+              <div className="prose prose-sm dark:prose-invert break-words">
+                <ReactMarkdown>{displayContent}</ReactMarkdown>
+              </div>
+            )}
+            
+            {/* Bouncing dots fallback — shown only when there's no content AND no
+                thinking indicator (i.e. a brief moment before the phase UI kicks in) */}
+            {(!displayContent.trim() && !thinkingContent && !isUser && !isWaitingForStream && !activeRun) && (
+              <div className="flex items-center gap-1.5 text-muted-foreground h-5">
+                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            )}
+            
+            {/* Timestamp */}
+            {!isEditing && (displayContent.trim() || thinkingContent) && (
+              <div className={cn(
+                "text-[10px] mt-1 self-end font-medium opacity-60 flex items-center gap-1",
+                isUser ? "text-primary-foreground/80" : "text-muted-foreground"
+              )}>
+                {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {isUser && <Check className="w-3 h-3 opacity-70" />}
+              </div>
+            )}
           </div>
         )}
 

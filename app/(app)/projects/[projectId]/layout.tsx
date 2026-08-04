@@ -55,7 +55,7 @@ export default async function ProjectLayout({
     >
       <ProjectHeader projectId={project.id} userRole={userRole} />
       <ResumeSessionPrompt projectId={project.id} />
-      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">{children}</div>
     </WorkspaceShell>
   );
 }
