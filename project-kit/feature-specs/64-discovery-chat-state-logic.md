@@ -41,6 +41,9 @@ npx ctx7 library next.js "server actions and optimistic updates"
 
 ## Files Owned
 
+**This feature exclusively owns these files. No other spec may modify them.**
+
+### New Files (11)
 - `lib/discovery/state-manager.ts` (NEW)
 - `lib/discovery/completion-detector.ts` (NEW)
 - `components/chat/ImageGallery.tsx` (NEW)
@@ -52,6 +55,10 @@ npx ctx7 library next.js "server actions and optimistic updates"
 - `lib/conversations/reply.ts` (NEW)
 - `app/api/conversations/[projectId]/messages/[messageId]/route.ts` (NEW)
 - `app/api/conversations/[projectId]/messages/[messageId]/reply/route.ts` (NEW)
+
+### Dependency Files (2)
+- `package.json` - Add `react-masonry-css@1.0.16`, `yet-another-react-lightbox@3.21.6`
+- `package-lock.json` - Lock transitive dependencies
 
 ## Files
 
@@ -150,14 +157,53 @@ Use semantic analysis of message content to detect when sufficient information i
 // lib/conversations/reply.ts
 export interface ReplyData {
   parentMessageId: string
+  conversationId: string  // Required for validation
+  projectId: string       // Required for validation
   replyContent: string
   attachments?: AttachmentInput[]
 }
 
 export async function createReply(
-  projectId: string,
+  userId: string,
   replyData: ReplyData
-): Promise<ConversationMessage>
+): Promise<ConversationMessage> {
+  const { parentMessageId, projectId, conversationId, replyContent, attachments } = replyData;
+
+  // Step 1: Verify parent message exists and is active
+  const parentMessage = await db.conversationMessage.findFirst({
+    where: {
+      id: parentMessageId,
+      projectId: projectId,        // ✅ Must match request projectId
+      conversationId: conversationId,  // ✅ Must match request conversationId
+      isActive: true,              // ✅ Cannot reply to deleted messages
+    },
+    select: { id: true, projectId: true, conversationId: true },
+  });
+
+  if (!parentMessage) {
+    throw new Error("Parent message not found, inactive, or belongs to different conversation");
+  }
+
+  // Step 2: Create reply with validated parent reference
+  const reply = await db.conversationMessage.create({
+    data: {
+      conversationId,
+      projectId,
+      replyToId: parentMessageId,  // Now guaranteed to be same project/conversation
+      role: "USER",
+      content: replyContent,
+      attachments: {
+        create: attachments || [],
+      },
+    },
+    include: {
+      replyTo: true,
+      attachments: true,
+    },
+  });
+
+  return reply;
+}
 
 export async function getMessageThread(messageId: string): Promise<ConversationMessage[]>
 ```
@@ -173,8 +219,16 @@ export async function getMessageThread(messageId: string): Promise<ConversationM
 Use `react-masonry-css` for efficient staggered grid:
 
 ```bash
-npm install react-masonry-css@^1.0.16 --save-exact
+# Install with exact versions (no caret/tilde)
+npm install react-masonry-css@1.0.16 --save-exact
 ```
+
+**Package Status:**
+- **Version**: 1.0.16
+- **Last Published**: 2019-11-07 (5 years ago)
+- **Risk Assessment**: ⚠️ Low - Simple CSS columns wrapper, no security vulnerabilities, battle-tested
+- **Alternative**: Native CSS `column-count` if issues arise
+- **Justification**: Minimal API (3 props), zero dependencies, proven in production
 
 **Layout Algorithm:**
 - 1 image: Full width (max 400px)
@@ -204,15 +258,32 @@ export function ImageGallery({ images, onImageClick, messageRole }: ImageGallery
 Use `yet-another-react-lightbox` for professional image viewing:
 
 ```bash
-npm install yet-another-react-lightbox@^3.21.6 --save-exact
+# Install with exact version
+npm install yet-another-react-lightbox@3.21.6 --save-exact
+```
+
+**Package Status:**
+- **Version**: 3.21.6
+- **Last Updated**: 2024-12-19
+- **Maintenance**: ✅ Actively maintained
+- **Dependencies**: Zero dependencies, TypeScript-first
+
+**Required Imports:**
+```typescript
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";  // Required core styles
+
+// Required plugins
+import { Counter, Zoom, Download } from "yet-another-react-lightbox/plugins";
+import "yet-another-react-lightbox/plugins/counter.css";  // Required for counter display
 ```
 
 **Features:**
 - Full-screen modal overlay
 - Keyboard navigation (arrow keys, Esc)
-- Zoom controls
-- Download button
-- Image counter (e.g., "3 of 12")
+- Zoom controls (via Zoom plugin)
+- Download button (via Download plugin)
+- Image counter (via Counter plugin - e.g., "3 of 12")
 - Swipe gestures on mobile
 
 ### Bulk Cloudinary Deletion
@@ -220,21 +291,73 @@ npm install yet-another-react-lightbox@^3.21.6 --save-exact
 ```typescript
 // lib/cloudinary-bulk-delete.ts
 import { v2 as cloudinary } from 'cloudinary'
+import { AttachmentType } from '@/lib/generated/prisma/client'
+
+type CloudinaryResourceType = "image" | "video" | "raw";
+
+// Map Prisma AttachmentType to Cloudinary resource_type
+const RESOURCE_TYPE_MAP: Record<AttachmentType, CloudinaryResourceType> = {
+  IMAGE: "image",
+  VIDEO: "video",
+  DOCUMENT: "raw",
+  DESIGN_FILE: "raw",
+};
 
 export async function bulkDeleteFromCloudinary(
-  publicIds: string[]
-): Promise<{ deleted: string[]; errors: string[] }> {
+  publicIds: string[],
+  attachmentType: AttachmentType  // Required: determines resource_type
+): Promise<{ deleted: string[]; errors: Array<{ id: string; error: string }> }> {
+  const resourceType = RESOURCE_TYPE_MAP[attachmentType];
+  
   // Batch delete up to 100 resources per request
   // Return deleted IDs and any errors
   // Use admin API with CLOUDINARY_API_KEY/CLOUDINARY_API_SECRET
+  
+  const batches = chunk(publicIds, 100);
+  const results = { deleted: [], errors: [] };
+  
+  for (const batch of batches) {
+    try {
+      const result = await cloudinary.api.delete_resources(batch, {
+        resource_type: resourceType,
+        type: "upload",
+      });
+      
+      for (const [publicId, status] of Object.entries(result.deleted)) {
+        if (status === "deleted") {
+          results.deleted.push(publicId);
+        } else {
+          results.errors.push({ id: publicId, error: `Status: ${status}` });
+        }
+      }
+    } catch (error) {
+      results.errors.push(...batch.map(id => ({ id, error: error.message })));
+    }
+  }
+  
+  return results;
 }
+```
+
+**Usage in deletion flow:**
+```typescript
+// Group attachments by type for correct resource_type
+const imageIds = attachments.filter(a => a.type === "IMAGE").map(a => a.cloudinaryId);
+const videoIds = attachments.filter(a => a.type === "VIDEO").map(a => a.cloudinaryId);
+const docIds = attachments.filter(a => a.type === "DOCUMENT" || a.type === "DESIGN_FILE").map(a => a.cloudinaryId);
+
+await Promise.all([
+  imageIds.length > 0 && bulkDeleteFromCloudinary(imageIds, "IMAGE"),
+  videoIds.length > 0 && bulkDeleteFromCloudinary(videoIds, "VIDEO"),
+  docIds.length > 0 && bulkDeleteFromCloudinary(docIds, "DOCUMENT"),
+]);
 ```
 
 **Safety:**
 - Queue deletion in background (Trigger.dev task for safety)
 - Log all deletions for audit trail
 - Continue on individual failures (don't fail entire batch)
-- Return error list for retry logic
+- Return error list for logging only (not surfaced to user)
 
 ### Message Deletion with Cascade
 
@@ -244,16 +367,208 @@ export async function deleteMessageCascade(
   messageId: string,
   projectId: string,
   userId: string
-): Promise<{ success: boolean; deletedAttachments: number }>
+): Promise<{ success: boolean; deletedCount: number; jobId: string }>
 
-// Process:
-// 1. Verify ownership (message.project.userId === userId)
-// 2. Fetch all attachments for message
-// 3. Extract Cloudinary public IDs
-// 4. Queue Cloudinary bulk delete (background)
-// 5. Delete attachments from Attachment table
-// 6. Set message.isActive = false (soft delete, preserves history)
-// 7. Return success + count
+// 14-Step Process:
+// 1. Verify ownership via requireProjectMember(projectId, userId)
+// 2. Fetch all Attachment records for message
+// 3. Extract cloudinaryId array from attachments
+// 4. **Hard delete Attachment records from Neon** (immediate, permanent)
+// 5. Queue Trigger.dev background task for Cloudinary media deletion
+// 6. Set message.isActive = false (soft delete message only)
+// 7. Return success + deletedCount + jobId (Trigger.dev run ID)
+// 8. Frontend optimistically removes from UI
+// 9. Background task groups attachments by type (IMAGE/VIDEO/DOCUMENT)
+// 10. Background task calls bulkDeleteFromCloudinary per type
+// 11. Background task logs all deletions for audit trail
+// 12. Background task continues on individual failures (logged, not surfaced)
+// 13. No undo/recovery - deletion is permanent after confirmation
+// 14. Reply thread integrity preserved (FK constraints valid with isActive = false)
+```
+
+**Why soft delete the message but hard delete attachments:**
+- **Message soft delete**: Preserves reply thread integrity (FK constraints remain valid), enables conversation history queries with `WHERE isActive = true`
+- **Attachment hard delete**: Media storage is expensive; immediate cleanup prevents orphaned Cloudinary assets
+- **No undo/recovery**: This is intentional - deletion is permanent after user confirmation
+- **Audit trail**: Structured logs record all deletions for compliance
+
+### API Route Contracts
+
+```typescript
+// app/api/conversations/[projectId]/messages/[messageId]/route.ts
+
+DELETE /api/conversations/[projectId]/messages/[messageId]
+
+Request:
+  - Auth: requireProjectMember(projectId, userId)
+  - Params: projectId, messageId
+
+Response:
+  {
+    success: true,
+    deletedCount: number,  // Number of Attachment records deleted from Neon
+    jobId: string          // Trigger.dev task run ID for background Cloudinary cleanup
+  }
+
+Errors:
+  - 401: Unauthenticated
+  - 404: Message not found or unauthorized
+  - 500: Database deletion failed
+
+Note: Cloudinary media deletion happens asynchronously via Trigger.dev.
+      The response confirms database deletion only.
+      Background task failures are logged but not surfaced to the user.
+```
+
+```typescript
+// app/api/conversations/[projectId]/messages/[messageId]/reply/route.ts
+
+POST /api/conversations/[projectId]/messages/[messageId]/reply
+
+Request:
+  - Auth: requireProjectMember(projectId, userId)
+  - Body: {
+      content: string
+      attachments?: AttachmentInput[]
+    }
+  - Validation:
+    - Parent message must exist
+    - Parent message must be in same projectId
+    - Parent message must be in same conversationId  
+    - Parent message must be active (isActive = true)
+
+Response:
+  {
+    message: ConversationMessage & {
+      replyTo: ConversationMessage | null
+      attachments: Attachment[]
+    }
+  }
+
+Errors:
+  - 401: Unauthenticated
+  - 404: Parent message not found, inactive, or belongs to different conversation
+  - 400: Invalid content or attachments
+```
+
+### GET Messages with Composite Cursor
+
+```typescript
+// app/api/conversations/[projectId]/messages/route.ts (MODIFIED)
+
+GET /api/conversations/[projectId]/messages
+
+Request:
+  - Auth: requireProjectMember(projectId, userId)
+  - Query: cursor?: string (format: "timestamp_id")
+
+Response:
+  {
+    messages: ConversationMessage[],  // Max 200 per page
+    nextCursor: string | null
+  }
+
+Implementation:
+  // Composite cursor: createdAt + id for stable pagination
+  let whereClause = {
+    projectId,
+    conversationId,
+    isActive: true,
+  };
+  
+  if (cursor) {
+    const [timestamp, id] = cursor.split("_");
+    whereClause = {
+      ...whereClause,
+      OR: [
+        { createdAt: { lt: new Date(timestamp) } },
+        { createdAt: new Date(timestamp), id: { lt: id } },
+      ],
+    };
+  }
+  
+  const messages = await db.conversationMessage.findMany({
+    where: whereClause,
+    orderBy: [
+      { createdAt: "desc" },
+      { id: "desc" },  // ✅ Deterministic tiebreaker
+    ],
+    take: 200,
+    include: {
+      replyTo: { select: { id: true, content: true, role: true, createdAt: true } },
+      attachments: true,
+    },
+  });
+  
+  const nextCursor = messages.length === 200
+    ? `${messages[199].createdAt.toISOString()}_${messages[199].id}`
+    : null;
+
+Required Database Index:
+  @@index([projectId, conversationId, isActive, createdAt, id])
+```
+
+### AI Integration for Reply Threading
+
+When the AI generates a reply to a user message:
+
+**AI Routing Contract**:
+1. All AI calls route through the rotation engine (`lib/ai/rotation-engine.ts`)
+2. **Model Selection**:
+   - **FREE users**: DeepSeek R1 (`deepseek-reasoner`)
+   - **PAID users**: Claude Sonnet 4 (`claude-sonnet-4-5-20250929`)
+3. **Reply Context**: AI receives parent message content + thread history in the prompt
+4. **Reply Creation**: AI response saved with `replyToId` pointing to user's message
+
+**Implementation**:
+```typescript
+// When AI replies
+const aiReply = await callAI('discovery_chat', {
+  plan: user.plan,  // Selects FREE→DeepSeek R1 or PAID→Claude Sonnet 4
+  systemPrompt: getDiscoverySystemPrompt(),
+  userPrompt: buildPromptWithThreadContext(parentMessage, threadHistory),
+  maxTokens: 4000,
+});
+
+await createReply(user.id, {
+  parentMessageId: userMessage.id,
+  conversationId: conversation.id,
+  projectId: project.id,
+  replyContent: aiReply.text,
+});
+```
+
+### Accessibility Standards (WCAG 2.1 AA)
+
+| Requirement | Implementation |
+|-------------|---------------|
+| **Keyboard Navigation** | Tab through actions (`:focus-within` makes container visible), arrow keys in lightbox, Esc to close |
+| **Touch Accessibility** | Long-press on bubble shows action menu (no hover dependency on mobile) |
+| **Action Visibility** | Actions visible on hover AND keyboard focus via CSS: `opacity-0 group-hover:opacity-100 group-focus-within:opacity-100` |
+| **Screen Reader Labels** | "Reply to message from [user]", "Image 3 of 12", "Delete message from [user]" |
+| **Focus Indicators** | Visible 2px outline in `var(--accent-primary)` color on all interactive elements |
+| **ARIA Roles** | `role="article"` for messages, `role="button"` for actions, `role="menu"` for action container |
+| **Alt Text** | Image filenames as fallback, AI descriptions when available |
+| **Color Contrast** | Minimum 4.5:1 for text, 3:1 for UI components (test with axe DevTools) |
+| **Touch Targets** | Minimum 44×44px on mobile (all action buttons) |
+
+**Mobile Long-Press Handler**:
+```typescript
+const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+
+const handleTouchStart = () => {
+  const timer = setTimeout(() => {
+    setActionsVisible(true);  // Show action menu after 300ms
+  }, 300);
+  setLongPressTimer(timer);
+};
+
+const handleTouchEnd = () => {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    setLongPressTimer(null);
+  }
+};
 ```
 
 ### Attachment Bubble Rendering
@@ -272,12 +587,13 @@ interface AttachmentBubbleProps {
 export function AttachmentBubble(props: AttachmentBubbleProps) {
   // Individual bubble for each attachment
   // Avatar + bubble styling matching text messages
-  // Hover action menu (Copy URL, Delete, Reply)
+  // Action container with :focus-within visibility
+  // Long-press handler for mobile
 }
 ```
 
 **Rendering Order:**
-```
+```text
 1. Text Bubble (if content exists)
 2. Image Bubble 1
 3. Image Bubble 2
@@ -293,10 +609,113 @@ Each gets its own avatar, timestamp, and action menu.
 - Requirements generation logic (Feature 11)
 - Requirements page integration (Feature 65)
 - Real-time collaborative editing (Feature 33 handles presence only)
-- Message editing (defer to future messaging enhancement feature)
+- **Message editing (PATCH)** - Intentionally not supported; defer to future messaging enhancement feature
+- **Single-attachment deletion** - Intentionally not supported; Delete action always removes entire message
+- **Undo/recovery UI** - Deletion is permanent after confirmation
 - Message reactions/emoji (defer to future enhancement)
 - Voice/audio messages (defer to future enhancement)
 - Message search/filtering (defer to future enhancement)
+
+## Setup Instructions
+
+### 1. Cloudinary Configuration
+
+**Create Account** (if not exists):
+1. Visit https://cloudinary.com/users/register/free
+2. Choose "Free Plan" (25GB storage, 25GB bandwidth)
+3. Confirm email
+
+**Get Credentials**:
+1. Login → Dashboard → https://console.cloudinary.com/console
+2. Copy from "Account Details" widget:
+   - **Cloud Name**: `dxxxxxxxxxxxx`
+   - **API Key**: `123456789012345`
+   - **API Secret**: `AbCdEfGhIjKlMnOpQrStUvWxYz`
+
+**Add to .env.local**:
+```dotenv
+# Cloudinary (Feature 54 + Feature 64 bulk delete)
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dxxxxxxxxxxxx
+CLOUDINARY_API_KEY=123456789012345
+CLOUDINARY_API_SECRET=AbCdEfGhIjKlMnOpQrStUvWxYz
+```
+
+**Verify Setup**:
+```bash
+# Test upload (should return 200)
+curl -X POST "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload" \
+  -F "file=@test-image.jpg" \
+  -F "api_key=YOUR_API_KEY" \
+  -F "timestamp=$(date +%s)" \
+  -F "signature=GENERATED_SIGNATURE"
+```
+
+### 2. Trigger.dev Configuration
+
+**Create Project** (if not exists):
+1. Visit https://trigger.dev (login with GitHub)
+2. Create New Project → "Foundrie AI Background Tasks"
+3. Copy **Project Ref**: `proj_abc123xyz`
+
+**Get API Key**:
+1. Project Settings → API Keys
+2. Copy **Secret Key**: `tr_dev_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+
+**Add to .env.local**:
+```dotenv
+# Trigger.dev (Feature 11+, Feature 31, Feature 64 bulk delete)
+TRIGGER_SECRET_KEY=tr_dev_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+**Deploy Background Task**:
+```bash
+# Deploy the bulk-deletion task
+npx trigger.dev@latest deploy
+
+# Verify deployment
+npx trigger.dev@latest list-tasks
+# Should show: bulk-delete-cloudinary-media
+```
+
+**Verify Setup**:
+```bash
+# Test trigger (from Next.js API route)
+curl -X POST http://localhost:3000/api/conversations/PROJ_ID/messages/MSG_ID \
+  -H "Authorization: Bearer YOUR_CLERK_TOKEN" \
+  -X DELETE
+# Should return: { success: true, jobId: "run_xxx", deletedCount: N }
+```
+
+### 3. Database Index (Performance)
+
+**Add Composite Cursor Index**:
+```sql
+-- Run in Neon SQL Editor
+CREATE INDEX CONCURRENTLY IF NOT EXISTS 
+  "idx_conversation_messages_pagination"
+ON "ConversationMessage" ("projectId", "conversationId", "isActive", "createdAt" DESC, "id" DESC)
+WHERE "isActive" = true;
+```
+
+**Verify**:
+```sql
+EXPLAIN ANALYZE
+SELECT * FROM "ConversationMessage"
+WHERE "projectId" = 'proj_xxx'
+  AND "conversationId" = 'conv_xxx'
+  AND "isActive" = true
+ORDER BY "createdAt" DESC, "id" DESC
+LIMIT 200;
+-- Should use idx_conversation_messages_pagination
+```
+
+### 4. Install Dependencies
+
+```bash
+# Install exact versions
+npm install react-masonry-css@1.0.16 --save-exact
+npm install yet-another-react-lightbox@3.21.6 --save-exact
+```
 
 ## Future Modifications
 
@@ -339,6 +758,15 @@ Each gets its own avatar, timestamp, and action menu.
 - [ ] Reply threads display correctly after page refresh
 - [ ] Multiple levels of replies supported (reply to a reply)
 
+### AI Integration
+- [ ] All AI replies route through rotation engine (`callAI('discovery_chat')`)
+- [ ] FREE tier users get DeepSeek R1 model
+- [ ] PAID tier users get Claude Sonnet 4 model
+- [ ] AI receives parent message + thread history in context
+- [ ] AI replies save with correct `replyToId` reference
+- [ ] Model selection test verifies FREE→DeepSeek R1 path
+- [ ] Model selection test verifies PAID→Claude Sonnet 4 path
+
 ### Image Gallery & Media Handling
 - [ ] Text and images render in separate bubbles
 - [ ] Single image displays full-width (max 400px)
@@ -362,6 +790,19 @@ Each gets its own avatar, timestamp, and action menu.
 - [ ] Reply action works on all attachment types
 - [ ] Action buttons appear on hover for both text and media
 - [ ] Action buttons have consistent visual styling
+
+### Accessibility (WCAG 2.1 AA)
+- [ ] Actions visible on keyboard focus (`:focus-within` CSS)
+- [ ] Long-press on mobile shows action menu (300ms timeout)
+- [ ] Tab navigation cycles through all action buttons
+- [ ] Screen reader labels include context ("Delete message from Alice")
+- [ ] Focus indicators have 2px outline in accent color
+- [ ] ARIA roles applied (`role="article"`, `role="button"`, `role="menu"`)
+- [ ] Alt text provided for all images
+- [ ] Color contrast meets 4.5:1 for text, 3:1 for UI
+- [ ] All touch targets minimum 44×44px
+- [ ] Keyboard test passes (all features accessible without mouse)
+- [ ] Screen reader test passes (VoiceOver/NVDA/JAWS)
 
 ### Delete Cascade
 - [ ] Deleting a message with attachments triggers cascade

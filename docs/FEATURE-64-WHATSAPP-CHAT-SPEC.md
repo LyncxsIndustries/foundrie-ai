@@ -18,11 +18,13 @@ Feature 64 transforms Discovery Chat from basic state management into a professi
 - **Database**: Uses existing `ConversationMessage.replyToId` field (Feature 57)
 - **Multi-level support**: Reply to a reply is fully supported
 
-### 2. Staggered Image Gallery (Masonry Layout)
+### 2. Staggered Image Gallery (Masonry Layout Within Message Group)
+- Each image attachment renders as a **separate bubble** with its own avatar/timestamp/actions
+- Multiple image bubbles from the same message visually flow in a masonry-style layout
 - **1 image**: Full-width display (max 400px)
-- **2 images**: Side-by-side grid
-- **3+ images**: Pinterest/Instagram-style staggered masonry layout
-- **Handles 20+ images** without performance degradation
+- **2 images**: Side-by-side grid pattern
+- **3+ images**: Pinterest/Instagram-style staggered masonry visual flow
+- **Handles 20+ images** (as separate bubbles) without performance degradation
 - **Lazy loading** via Intersection Observer API
 - **Lightbox modal** with:
   - Full-screen overlay
@@ -47,14 +49,15 @@ Feature 64 transforms Discovery Chat from basic state management into a professi
 - Rendering order: Text → Image 1 → Image 2 → ... → Documents → Videos
 
 ### 4. Unified Actions
-All actions work consistently across text and media:
+All actions work consistently across text and media bubbles:
 
 | Action | Text Messages | Image Attachments | Documents | Videos |
 |--------|--------------|-------------------|-----------|--------|
-| Copy | Copies content | Copies URL | Copies URL | Copies URL |
-| Delete | Cascade cleanup | Cascade cleanup | Cascade cleanup | Cascade cleanup |
+| Copy | Copies content | Copies Cloudinary URL | Copies Cloudinary URL | Copies Cloudinary URL |
+| **Delete Message** | Deletes message + all attachments | Deletes message + all attachments | Deletes message + all attachments | Deletes message + all attachments |
 | Reply | Creates thread | Creates thread | Creates thread | Creates thread |
-| Edit | ✅ Supported | ❌ Preserve integrity | ❌ Preserve integrity | ❌ Preserve integrity |
+
+**Note**: The Delete action always removes the entire message and cascades to all attachments. Single-attachment deletion is intentionally not supported to preserve message integrity.
 
 ### 5. Delete Cascade System
 
@@ -63,27 +66,31 @@ All actions work consistently across text and media:
 2. Frontend shows confirmation dialog
 3. DELETE request to `/api/conversations/[projectId]/messages/[messageId]`
 4. Server verifies ownership via `requireProjectMember`
+**14-Step Deletion Flow:**
+1. User clicks "Delete message" on any bubble
+2. Frontend shows confirmation dialog
+3. DELETE request to `/api/conversations/[projectId]/messages/[messageId]`
+4. Server verifies ownership via `requireProjectMember`
 5. Fetch all `Attachment` records for message
 6. Extract `cloudinaryId` array
-7. **Queue Trigger.dev task** for background Cloudinary deletion
-8. Delete `Attachment` records from Neon
-9. Set `ConversationMessage.isActive = false` (soft delete)
-10. Return success response with deletion count
+7. **Hard delete `Attachment` records from Neon** (immediate, permanent)
+8. **Queue Trigger.dev task** for background Cloudinary media deletion
+9. Set `ConversationMessage.isActive = false` (soft delete message only)
+10. Return success response with deletedCount + jobId
 11. Frontend optimistically removes from UI
-12. Background task deletes from Cloudinary (max 100/request)
-13. Log all deletions for audit trail
-14. Continue on individual failures (return error list)
+12. Background task groups attachments by type (IMAGE/VIDEO/DOCUMENT)
+13. Background task deletes from Cloudinary (max 100/batch per resource_type)
+14. Background task logs all deletions for audit trail
 
-**Why soft delete:**
-- Preserves conversation history
-- Maintains reply thread integrity
-- Enables undo/recovery
-- Audit compliance
-- Database FK constraints remain valid
+**Why soft delete the message but hard delete attachments:**
+- **Message soft delete**: Preserves reply thread integrity (FK constraints remain valid), enables conversation history queries with `WHERE isActive = true`
+- **Attachment hard delete**: Media storage is expensive; immediate cleanup prevents orphaned Cloudinary assets
+- **No undo/recovery**: This is intentional - deletion is permanent after user confirmation
+- **Audit trail**: Structured logs record all deletions for compliance
 
-## New Files & Components
+## Planned New Files & Components
 
-### New Files Created
+### Planned New Files (11)
 1. `lib/discovery/state-manager.ts` - Chat state tracking
 2. `lib/discovery/completion-detector.ts` - Dynamic completion
 3. `components/chat/ImageGallery.tsx` - Masonry layout
@@ -93,20 +100,28 @@ All actions work consistently across text and media:
 7. `lib/cloudinary-bulk-delete.ts` - Bulk Cloudinary deletion
 8. `lib/conversations/delete.ts` - Message deletion with cascade
 9. `lib/conversations/reply.ts` - Reply creation helpers
-10. `app/api/conversations/[projectId]/messages/[messageId]/route.ts` - DELETE/PATCH
+10. `app/api/conversations/[projectId]/messages/[messageId]/route.ts` - DELETE only
 11. `app/api/conversations/[projectId]/messages/[messageId]/reply/route.ts` - POST reply
 
-### Modified Files
+### Planned Modified Files (4)
 1. `components/chat/ChatMessage.tsx` - Separate bubbles, reply integration
+2. `components/chat/ChatInput.tsx` - Reply context UI
+3. `components/chat/ChatMessageList.tsx` - Thread rendering
+4. `app/api/conversations/[projectId]/messages/route.ts` - Include reply data + composite cursor
 2. `components/chat/ChatInput.tsx` - Reply context UI
 3. `components/chat/ChatMessageList.tsx` - Thread rendering
 4. `app/api/conversations/[projectId]/messages/route.ts` - Include reply data
 
 ### New Dependencies
 ```bash
-npm install react-masonry-css@^1.0.16 --save-exact
-npm install yet-another-react-lightbox@^3.21.6 --save-exact
+# Install with exact versions (no caret/tilde)
+npm install react-masonry-css@1.0.16 --save-exact
+npm install yet-another-react-lightbox@3.21.6 --save-exact
 ```
+
+**Package Status:**
+- **react-masonry-css** (1.0.16): ⚠️ Last published 2019 (5 years ago), but low risk - simple CSS wrapper, no vulnerabilities, battle-tested
+- **yet-another-react-lightbox** (3.21.6): ✅ Actively maintained (last update Dec 2024), zero dependencies
 
 ## Database Contracts
 
@@ -171,14 +186,18 @@ Request:
 Response:
   {
     success: true,
-    deletedAttachments: number,
-    errors: string[]  // Individual Cloudinary failures
+    deletedCount: number,  // Number of Attachment records deleted from Neon
+    jobId: string          // Trigger.dev task run ID for background Cloudinary cleanup
   }
 
 Errors:
   - 401: Unauthenticated
   - 404: Message not found or unauthorized
-  - 500: Deletion failed
+  - 500: Database deletion failed
+
+Note: Cloudinary media deletion happens asynchronously via Trigger.dev.
+      The response confirms database deletion only.
+      Background task failures are logged but not surfaced to the user.
 ```
 
 ### Reply Creation
@@ -191,6 +210,11 @@ Request:
       content: string
       attachments?: AttachmentInput[]
     }
+  - Validation:
+    - Parent message must exist
+    - Parent message must be in same projectId
+    - Parent message must be in same conversationId
+    - Parent message must be active (isActive = true)
 
 Response:
   {
@@ -202,55 +226,119 @@ Response:
 
 Errors:
   - 401: Unauthenticated
-  - 404: Parent message not found or inactive
+  - 404: Parent message not found, inactive, or belongs to different conversation
   - 400: Invalid content or attachments
 ```
 
-### Message Update
+### GET Messages with Composite Cursor
 ```typescript
-PATCH /api/conversations/[projectId]/messages/[messageId]
+GET /api/conversations/[projectId]/messages
 
 Request:
   - Auth: requireProjectMember(projectId, userId)
-  - Body: { content: string }
+  - Query: cursor?: string (format: "timestamp_id")
 
 Response:
   {
-    message: ConversationMessage
+    messages: ConversationMessage[],  // Max 200 per page
+    nextCursor: string | null
   }
 
-Note: Cannot edit attachments (preserve media integrity)
-
-Errors:
-  - 401: Unauthenticated
-  - 404: Message not found or unauthorized
-  - 400: Invalid content
+Implementation Note:
+  Uses composite cursor (createdAt + id) for stable pagination.
+  Required database index: [projectId, conversationId, isActive, createdAt, id]
 ```
 
-## Performance Optimizations
+## Performance Benchmarks & Acceptance Criteria
+
+All tests run on:
+- **Desktop**: Chrome 131 on MacBook Pro M1, Simulated Fast 3G throttling
+- **Mobile**: iPhone 14 Safari, Native network conditions
+
+### Image Gallery Performance
+
+| Metric | 1 Image | 10 Images | 20 Images | Target | Source |
+|--------|---------|-----------|-----------|--------|--------|
+| **Initial Render** | <100ms | <250ms | <500ms | <1000ms | Core Web Vitals LCP |
+| **Scroll FPS** | 60fps | 60fps | 55fps+ | 55fps+ | Chrome DevTools Performance |
+| **Memory Usage** | <50MB | <120MB | <200MB | <300MB | Chrome Task Manager |
+| **Network** | <500KB | <2MB | <3MB | <5MB | Chrome Network tab with thumbnails |
+| **Long Tasks** | 0 | 0 | ≤2 | <5 @50ms | Lighthouse Performance |
+
+**Test Dataset**:
+- 20 images: Mix of 2MB JPEG, 500KB PNG, 1MB WebP
+- Cloudinary transformation: `c_fill,w_300,h_300,q_auto,f_auto`
+- Test script: `scripts/performance-test-gallery.ts`
+
+**Sources**:
+- Core Web Vitals: https://web.dev/vitals/
+- React Performance: https://react.dev/learn/render-and-commit
+- Cloudinary Optimization: https://cloudinary.com/documentation/image_transformations
+
+### Scroll Performance
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| **Auto-scroll Duration** | <300ms | `performance.measure()` API |
+| **Scroll Jank** | 0 frames dropped | Chrome DevTools FPS meter |
+| **Virtual Scrolling Threshold** | Activate at 200+ messages | TanStack Virtual |
+
+### Performance Optimizations
 
 1. **Virtual Scrolling**: TanStack Virtual for 1000+ messages
-2. **Lazy Loading**: Intersection Observer for images
-3. **Cloudinary Thumbnails**: `/image/upload/c_fill,w_300,h_300/` instead of full-size
-4. **Debounced Scroll**: Prevent thrashing on auto-scroll detection
-5. **Optimistic Updates**: Show messages immediately, sync async
-6. **Cursor Pagination**: Fetch 200 messages per load, no offset drift
-7. **CSS Masonry**: Better performance than JS layout calculations
+2. **Lazy Loading**: Intersection Observer for images below fold
+3. **Cloudinary Thumbnails**: `c_fill,w_300,h_300,q_auto,f_auto` (75% smaller than full-size)
+4. **Debounced Scroll**: 150ms debounce on auto-scroll detection
+5. **Optimistic Updates**: Show messages immediately, sync async with rollback on error
+6. **Composite Cursor Pagination**: Fetch 200 messages per load, stable ordering (createdAt + id)
+7. **CSS Masonry**: Native CSS columns, better performance than JS layout
 8. **Image Preloading**: Lightbox next/prev images for smooth navigation
 
 ## Accessibility Standards (WCAG 2.1 AA)
 
 | Requirement | Implementation |
 |-------------|---------------|
-| Keyboard Navigation | Tab through actions, arrow keys in lightbox, Esc to close |
-| Screen Reader Labels | "Reply to message from [user]", "Image 3 of 12", "Delete message" |
-| Focus Indicators | Visible 2px outline in accent color on all interactive elements |
-| ARIA Roles | `role="article"` for messages, `role="button"` for actions |
+| **Keyboard Navigation** | Tab through actions (`:focus-within` makes container visible), arrow keys in lightbox, Esc to close |
+| **Touch Accessibility** | Long-press on bubble shows action menu (300ms timeout, no hover dependency on mobile) |
+| **Action Visibility** | Actions visible on hover AND keyboard focus: `opacity-0 group-hover:opacity-100 group-focus-within:opacity-100` |
+| **Screen Reader Labels** | "Reply to message from [user]", "Image 3 of 12", "Delete message from [user]" |
+| **Focus Indicators** | Visible 2px outline in `var(--accent-primary)` color on all interactive elements |
+| **ARIA Roles** | `role="article"` for messages, `role="button"` for actions, `role="menu"` for action container |
 | Alt Text | Image filenames as fallback, AI descriptions when available |
 | Color Contrast | Minimum 4.5:1 for text, 3:1 for UI components |
 | Touch Targets | Minimum 44×44px on mobile |
 
-## Acceptance Criteria (66 Total)
+## AI Integration for Reply Threading
+
+When the AI generates a reply to a user message:
+
+**AI Routing Contract**:
+1. All AI calls route through the rotation engine (`lib/ai/rotation-engine.ts`)
+2. **Model Selection**:
+   - **FREE users**: DeepSeek R1 (`deepseek-reasoner`)
+   - **PAID users**: Claude Sonnet 4 (`claude-sonnet-4-5-20250929`)
+3. **Reply Context**: AI receives parent message content + thread history in the prompt
+4. **Reply Creation**: AI response saved with `replyToId` pointing to user's message
+
+**Implementation**:
+```typescript
+// When AI replies
+const aiReply = await callAI('discovery_chat', {
+  plan: user.plan,  // Selects FREE→DeepSeek R1 or PAID→Claude Sonnet 4
+  systemPrompt: getDiscoverySystemPrompt(),
+  userPrompt: buildPromptWithThreadContext(parentMessage, threadHistory),
+  maxTokens: 4000,
+});
+
+await createReply(user.id, {
+  parentMessageId: userMessage.id,
+  conversationId: conversation.id,
+  projectId: project.id,
+  replyContent: aiReply.text,
+});
+```
+
+## Acceptance Criteria (73 Total)
 
 ### State Management (13 criteria)
 - [ ] Message count increments on each message
@@ -271,6 +359,15 @@ Errors:
 - [ ] Threads display after refresh
 - [ ] Multi-level replies work
 - [ ] AI can reply to user messages
+
+### AI Integration (7 criteria)
+- [ ] All AI replies route through rotation engine
+- [ ] FREE tier test verifies DeepSeek R1 selection
+- [ ] PAID tier test verifies Claude Sonnet 4 selection
+- [ ] AI receives parent message context
+- [ ] AI receives thread history
+- [ ] AI replies save with correct replyToId
+- [ ] Both subscription paths tested
 
 ### Image Gallery & Media (12 criteria)
 - [ ] Text and images in separate bubbles
@@ -305,6 +402,26 @@ Errors:
 - [ ] Error list returned
 - [ ] Deleted messages show placeholder
 - [ ] Reply integrity maintained
+
+### Accessibility (11 criteria)
+- [ ] Actions visible on keyboard focus (`:focus-within`)
+- [ ] Long-press shows actions on mobile (300ms)
+- [ ] Tab navigation through all actions
+- [ ] Screen reader labels include context
+- [ ] Focus indicators 2px outline in accent
+- [ ] ARIA roles applied correctly
+- [ ] Alt text provided for images
+- [ ] Color contrast meets 4.5:1 / 3:1
+- [ ] Touch targets minimum 44×44px
+- [ ] Keyboard test passes (no mouse needed)
+- [ ] Screen reader test passes (VoiceOver/NVDA)
+
+### Performance (5 criteria)
+- [ ] All metrics pass test dataset benchmarks
+- [ ] Lighthouse Performance score ≥90
+- [ ] No console performance warnings
+- [ ] 20+ images load without jank
+- [ ] Virtual scrolling activates at 200+ messages
 
 ### Testing & Quality (16 criteria)
 - [ ] State transitions tested
