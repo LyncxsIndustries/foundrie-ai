@@ -38,8 +38,6 @@ None - this feature modifies existing Discovery Chat files but does not own them
 ## Files
 
 MODIFY: `components/chat/ChatMessage.tsx` - separate text and image rendering into distinct bubbles
-MODIFY: `components/chat/ChatMessageList.tsx` - verify scroll behavior (already correct)
-MODIFY: `app/(app)/projects/[projectId]/discovery/page.tsx` - verify layout hierarchy (already correct)
 CREATE: `components/chat/ChatMessage.test.tsx` - add tests for separate bubble rendering
 
 ## Implementation Notes
@@ -140,7 +138,7 @@ useEffect(() => {
 - [ ] Text messages render in their own bubble
 - [ ] Images render in separate bubbles from text
 - [ ] Multiple images in sequence each get their own bubble
-- [ ] Scroll behavior is tested in `components/chat/ChatMessage.test.tsx`
+- [ ] Separate bubble rendering is tested in `components/chat/ChatMessage.test.tsx`
 - [ ] Layout works on mobile, tablet, and desktop viewports
 - [ ] `context/progress-tracker.md` is updated to mark this feature DONE and point Current Goal/Next Up at Feature 64
 - [ ] All quality gates pass

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ChatMessage } from './ChatMessage';
 
 describe('ChatMessage - Feature 63: Separate Text and Image Bubbles', () => {
@@ -209,9 +209,10 @@ describe('ChatMessage - Feature 63: Separate Text and Image Bubbles', () => {
     };
 
     // Mock clipboard API
+    const mockWriteText = vi.fn();
     Object.assign(navigator, {
       clipboard: {
-        writeText: vi.fn(),
+        writeText: mockWriteText,
       },
     });
 
@@ -219,21 +220,31 @@ describe('ChatMessage - Feature 63: Separate Text and Image Bubbles', () => {
       <ChatMessage message={messageWithImage} onAction={mockOnAction} />
     );
     
-    // Find copy button for attachment (should be in attachment bubble group)
+    // Find and click copy button for attachment
     const copyButtons = container.querySelectorAll('button[title="Copy URL"]');
     expect(copyButtons.length).toBeGreaterThan(0);
+    
+    // Click the first copy button
+    fireEvent.click(copyButtons[0]);
+    
+    // Assert clipboard.writeText was called with the attachment URL
+    expect(mockWriteText).toHaveBeenCalledWith('https://example.com/image.jpg');
   });
 
   it('preserves message actions for text bubble', () => {
     const mockOnAction = vi.fn();
-    render(<ChatMessage message={mockMessage} onAction={mockOnAction} />);
+    const { container } = render(
+      <ChatMessage message={mockMessage} onAction={mockOnAction} />
+    );
     
-    // Action buttons should be present (Reply, Copy, Edit, Delete, etc.)
-    // These are shown on hover via opacity-0 group-hover:opacity-100
-    const { container } = render(<ChatMessage message={mockMessage} />);
-    const actionButtons = container.querySelectorAll('button[title]');
+    // Find and click the Copy action button
+    const copyButton = container.querySelector('button[title="Copy"]');
+    expect(copyButton).toBeInTheDocument();
     
-    // Should have action buttons (exact count depends on role)
-    expect(actionButtons.length).toBeGreaterThan(0);
+    // Click the Copy button
+    fireEvent.click(copyButton!);
+    
+    // Assert onAction was called with 'copy' action and the message
+    expect(mockOnAction).toHaveBeenCalledWith('copy', mockMessage);
   });
 });
