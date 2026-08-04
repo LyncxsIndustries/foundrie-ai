@@ -1,10 +1,11 @@
-import { task, metadata } from "@trigger.dev/sdk";
+import { task, metadata, logger } from "@trigger.dev/sdk";
 import { aiChatStream } from "./streams";
 import { callAIStream } from "@/lib/ai/rotation-engine";
 import { getDiscoverySystemPrompt } from "@/lib/ai/prompts/discovery";
 import { ChatMessage } from "@/lib/conversations/chat";
 import { db } from "@/lib/db";
 import { AIMediaAttachment } from "@/lib/ai/providers/types";
+import { validateCloudinaryUrl } from "@/lib/validation/cloudinary";
 
 export const streamingChatTask = task({
   id: "streaming-chat-task",
@@ -18,7 +19,7 @@ export const streamingChatTask = task({
     attachmentContext: string;
     conversationId: string | undefined;
     attachments?: any[];
-  }) => {
+  }, { ctx }) => {
     const { projectId, userPlan, historyText, attachmentContext, conversationId, attachments } = payload;
     
     // Initialize metadata with rich status for frontend display
@@ -38,8 +39,17 @@ export const streamingChatTask = task({
       for (const att of attachments) {
         if (att.type === 'IMAGE' && att.cloudinaryUrl) {
           try {
+            // Revalidate URL before fetching (SSRF protection)
+            const urlValidation = validateCloudinaryUrl(att.cloudinaryUrl);
+            if (!urlValidation.valid) {
+              metadata.append("logs", `⚠️ Skipping invalid URL for ${att.originalName}: ${urlValidation.error}`);
+              continue;
+            }
+
             metadata.append("logs", `Fetching media: ${att.originalName}`);
-            const res = await fetch(att.cloudinaryUrl);
+            const res = await fetch(att.cloudinaryUrl, {
+              redirect: 'error' // Reject redirects to prevent SSRF
+            });
             if (res.ok) {
               const arrayBuffer = await res.arrayBuffer();
               const buffer = Buffer.from(arrayBuffer);
@@ -113,6 +123,9 @@ export const streamingChatTask = task({
       .append("logs", "Stream complete, saving message to database");
 
     if (aiFullText.trim() && conversationId) {
+      // Use Trigger.dev run ID as stable idempotency key
+      const generationId = ctx.run.id;
+
       // Helper to retry database saves 
       const saveWithRetry = async (operation: () => Promise<any>, maxRetries = 3) => {
         for (let i = 0; i < maxRetries; i++) {
@@ -120,22 +133,77 @@ export const streamingChatTask = task({
             return await operation();
           } catch (error: any) {
             if (i === maxRetries - 1) throw error;
-            console.warn(`DB write failed (attempt ${i + 1}/${maxRetries}), retrying in ${Math.pow(2, i)}s...`, error?.message || 'Unknown error');
+            logger.warn("DB write failed, retrying", {
+              attempt: i + 1,
+              maxRetries,
+              errorMessage: error?.message || 'Unknown error',
+              trace_id: ctx.run.id,
+            });
             await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
           }
         }
       };
 
-      await saveWithRetry(() => db.conversationMessage.create({
-        data: {
-          conversationId,
+      try {
+        // Check if message already exists (idempotency check)
+        const existingMessage = await db.conversationMessage.findFirst({
+          where: {
+            conversationId,
+            projectId,
+            role: 'ASSISTANT',
+            metadata: {
+              path: ['generationId'],
+              equals: generationId,
+            },
+          },
+        });
+
+        if (existingMessage) {
+          logger.info("Assistant message already persisted, skipping duplicate insert", {
+            messageId: existingMessage.id,
+            generationId,
+            trace_id: ctx.run.id,
+          });
+          metadata.append("logs", "Message already saved (idempotency check passed)");
+        } else {
+          // Create new message with generation ID in metadata
+          await saveWithRetry(() => db.conversationMessage.create({
+            data: {
+              conversationId,
+              projectId,
+              role: 'ASSISTANT',
+              content: aiFullText,
+              metadata: {
+                generationId,
+                runId: ctx.run.id,
+              },
+            },
+          }));
+
+          logger.info("Assistant message persisted successfully", {
+            generationId,
+            trace_id: ctx.run.id,
+            contentLength: aiFullText.length,
+          });
+        }
+      } catch (err: any) {
+        // Log structured error and rethrow to fail the task
+        logger.error("Failed to persist assistant message after retries", {
+          error: err.message,
+          stack: err.stack,
+          trace_id: ctx.run.id,
           projectId,
-          role: 'ASSISTANT',
-          content: aiFullText,
-        },
-      })).catch(err => {
-        console.error("Failed to persist structured AI message after retries:", err);
-      });
+          conversationId,
+        });
+
+        metadata
+          .set("stage", "error")
+          .set("status", "Failed to save message")
+          .append("logs", `ERROR: ${err.message}`);
+
+        // Rethrow to ensure task fails visibly
+        throw err;
+      }
     }
 
     metadata

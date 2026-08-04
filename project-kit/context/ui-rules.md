@@ -36,13 +36,13 @@ Foundrie uses a fixed-header, fixed-sidebar, scrolling-content layout on all pag
 ```tsx
 <div className="h-screen flex flex-col">
   {/* TopBar - Fixed */}
-  <header className="h-16 border-b border-border flex-shrink-0">
+  <header className="h-16 border-b border-border shrink-0">
     <TopBar />
   </header>
 
   <div className="flex-1 flex overflow-hidden">
     {/* Sidebar - Fixed */}
-    <aside className="w-64 border-r border-border flex-shrink-0 overflow-y-auto">
+    <aside className="w-64 border-r border-border shrink-0 overflow-y-auto">
       <Sidebar />
     </aside>
 
@@ -66,7 +66,7 @@ Foundrie uses a fixed-header, fixed-sidebar, scrolling-content layout on all pag
 // Chat container structure
 <div className="flex flex-col h-full">
   {/* Chat header - Fixed */}
-  <div className="h-16 border-b border-border flex-shrink-0">
+  <div className="h-16 border-b border-border shrink-0">
     <ChatHeader />
   </div>
 
@@ -76,7 +76,7 @@ Foundrie uses a fixed-header, fixed-sidebar, scrolling-content layout on all pag
   </div>
 
   {/* Input - Fixed at bottom */}
-  <div className="border-t border-border flex-shrink-0">
+  <div className="border-t border-border shrink-0">
     <MessageInput />
   </div>
 </div>
@@ -324,7 +324,7 @@ const form = useForm({
 - **Mobile**: Increase button padding on touch devices
 
 ```tsx
-<Button className="min-h-[44px] px-6">
+<Button className="min-h-11 px-6">
   Submit
 </Button>
 ```

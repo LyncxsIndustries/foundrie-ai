@@ -46,8 +46,14 @@ export function ChatMessageList({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
   const prevMessageCountRef = useRef(messages.length);
   const prevLastContentRef = useRef('');
+
+  // Track mounted state to prevent hydration mismatch with locale-dependent dates
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const scrollToBottom = (smooth = true) => {
     scrollRef.current?.scrollTo({
@@ -114,18 +120,27 @@ export function ChatMessageList({
   let currentGroup: { dateLabel: string; messages: Message[] } | null = null;
 
   const formatDateLabel = (dateStr: string) => {
+    // Use ISO date (YYYY-MM-DD) as stable server-side key
     const date = new Date(dateStr);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const isoDate = date.toISOString().split('T')[0];
+    
+    // After mount, use client-local formatting
+    if (isMounted) {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
 
-    if (date.toDateString() === today.toDateString()) {
-      return 'Today';
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+      if (date.toDateString() === today.toDateString()) {
+        return 'Today';
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        return 'Yesterday';
+      } else {
+        return date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+      }
     }
+    
+    // Server-side: return ISO date as fallback (will be replaced on client)
+    return isoDate;
   };
 
   messages.forEach((msg) => {

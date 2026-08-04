@@ -37,14 +37,19 @@ npx ctx7 docs <libraryId> "<specific question>"
 - `app/api/conversations/[projectId]/chat/route.ts`
 - `components/chat/DiscoveryChat.tsx`
 - `components/chat/ChatMessage.tsx`
+- `components/chat/ChatMessageList.tsx`
 - `lib/ai/prompts/discovery.ts`
 - `lib/conversations/**`
+- `lib/validation/cloudinary.ts`
+- `trigger/streaming-chat.ts`
 
 ## Files
 
 CREATE: `app/api/conversations/[projectId]/chat/route.ts` - GET history, POST message (streaming).
-CREATE: `components/chat/DiscoveryChat.tsx` and `components/chat/ChatMessage.tsx`.
+CREATE: `components/chat/DiscoveryChat.tsx`, `components/chat/ChatMessage.tsx`, and `components/chat/ChatMessageList.tsx`.
 CREATE: conversation model helpers and the discovery system prompt.
+CREATE: `lib/validation/cloudinary.ts` for SSRF protection.
+CREATE: `trigger/streaming-chat.ts` - Trigger.dev task for durable streaming chat execution.
 MODIFY: `app/(app)/projects/[projectId]/discovery/page.tsx` - mount the chat.
 
 ## Implementation Notes
