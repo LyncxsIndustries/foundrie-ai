@@ -9,7 +9,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- UI/UX Taste Skills Refinement. Features 01-63 implemented. Feature 64 (Discovery Chat State & Logic) is next.
+- UI/UX Foundrie AI Skills Refinement. Features 01-63 implemented. Feature 64 (Discovery Chat State & Logic) is next.
 
 ## Current Goal
 
@@ -29,9 +29,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 **Session Note (Schema Cleanup):** Cleaned up legacy dual-write JSON storage for Discovery Chat. `Conversation.messages` JSON blob was fully removed. `ConversationMessage` structured rows are now the sole source of truth for all reading, writing, and session checkpointing. Updated `10-discovery-chat.md` to reflect this contract sync. This forms the foundation for implementing accurate message counting and history review (Feature 64 scope).
 
+**Session Note (Renaming):** Modified all skills in `project-kit/skills` and all relevant project documentation to rename "Taste Skills" to "Foundrie AI Skills", noting they are baked in and default for all AI agents. Ensured proper attribution to the original source (`https://www.tasteskill.dev/` and `https://github.com/Leonxlnx/taste-skill`) in the respective skill markdown files.
+
 ## Completed
 
-- **Feature 63 - Discovery Chat UI Fixes** (DONE): Fixed visual bugs in the Discovery Chat UI. Made chat input anchored to the bottom using flex-1 min-h-0. Ensured auto-scrolling works for any new message. Fixed chat persistence so past legacy JSON messages are successfully merged with structured database messages avoiding loss on refresh. Implemented "Taste Skills" guidelines: added glassmorphic date pill banners to separate chats by day, WhatsApp-style corner timestamps inside bubbles, asymmetric chat tails (rounded-tr-sm/rounded-tl-sm), and cleanly separated image attachments rendered beautifully outside the text bubbles with hover-scale micro-animations. Test cases successfully pass with no errors.
+- **Feature 63 - Discovery Chat UI Fixes** (DONE): Fixed visual bugs in the Discovery Chat UI. Made chat input anchored to the bottom using flex-1 min-h-0. Ensured auto-scrolling works for any new message. Fixed chat persistence so past legacy JSON messages are successfully merged with structured database messages avoiding loss on refresh. Implemented "Foundrie AI Skills" guidelines: added glassmorphic date pill banners to separate chats by day, WhatsApp-style corner timestamps inside bubbles, asymmetric chat tails (rounded-tr-sm/rounded-tl-sm), and cleanly separated image attachments rendered beautifully outside the text bubbles with hover-scale micro-animations. Test cases successfully pass with no errors.
 
 - **Initial Scaffold**: Created the Next.js project. No feature work beyond the base project scaffold has been done.
 

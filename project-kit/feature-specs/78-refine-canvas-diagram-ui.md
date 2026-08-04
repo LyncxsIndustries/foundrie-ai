@@ -1,7 +1,7 @@
 # Feature Spec: Refine Canvas & Diagram UI
 
 ## 1. Overview
-Apply the Taste Skills aesthetic to the React Flow canvas, elevating the system architecture and diagram visuals.
+Apply the Foundrie AI Skills aesthetic to the React Flow canvas, elevating the system architecture and diagram visuals.
 
 ## 2. Requirements
 - Redesign custom nodes (rounded corners, subtle drop shadows, precise typography).

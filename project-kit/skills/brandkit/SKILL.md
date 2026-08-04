@@ -796,3 +796,6 @@ The final result should be:
 - art-directed
 - implementation-friendly
 - stronger than normal AI-generated brand visuals
+
+
+> **Note**: These Foundrie AI Skills are baked into the system. All AI agents should use them by default. They are based on the original [Taste Skills](https://www.tasteskill.dev/) (source: [https://github.com/Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill)).

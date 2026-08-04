@@ -1226,3 +1226,6 @@ The result should be:
 - and strong as implemented frontend
 
 The final outcome should look like a top-tier website concept translated faithfully into real code, not a tiny unreadable design board and not a generic coded reinterpretation.
+
+
+> **Note**: These Foundrie AI Skills are baked into the system. All AI agents should use them by default. They are based on the original [Taste Skills](https://www.tasteskill.dev/) (source: [https://github.com/Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill)).

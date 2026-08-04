@@ -227,7 +227,7 @@ describe('build-project-zip', () => {
       const zip = await JSZip.loadAsync(buffer);
 
       const paths = Object.keys(zip.files);
-      // The .agents folder should exist because of the global Taste Skills
+      // The .agents folder should exist because of the global Foundrie AI Skills
       expect(paths.some(p => p.includes('/.agents/'))).toBe(true);
     });
   });

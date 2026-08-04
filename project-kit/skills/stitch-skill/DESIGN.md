@@ -119,3 +119,6 @@ Every screen must work flawlessly across all viewports. **Responsive is not opti
 - No `z-index` spam — use only for Navbar, Modal, Overlay layer contexts
 - No `h-screen` — always `min-h-[100dvh]`
 - No circular loading spinners — skeletal shimmer only
+
+
+> **Note**: These Foundrie AI Skills are baked into the system. All AI agents should use them by default. They are based on the original [Taste Skills](https://www.tasteskill.dev/) (source: [https://github.com/Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill)).
