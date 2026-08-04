@@ -9,11 +9,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- UI/UX Foundrie AI Skills Refinement. Features 01-63 implemented. Feature 64 (Discovery Chat State & Logic) is next.
+- UI/UX Foundrie AI Skills Refinement. Features 01-63 completed. Feature 64 (Discovery Chat State & Logic with WhatsApp-style enhancements) is next.
 
 ## Current Goal
 
-- **Feature 64 - Discovery Chat State & Logic**: Fix state management logic for Discovery Chat to track completion status, count messages accurately, and implement dynamic stopping conditions.
+- **Feature 64 - Discovery Chat State & Logic**: Implement comprehensive WhatsApp-style messaging platform with state management, reply threading, Pinterest-style masonry image gallery, separate text/media bubbles, unified actions (Copy/Delete/Reply), and delete cascade (DB + Cloudinary cleanup).
 
 ## Next Up
 
@@ -21,7 +21,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## In Progress
 
-- None. Feature 63 is complete and ready for review.
+- None. Feature 63 is complete, merged, and pushed. Feature 64 spec has been enhanced and documented, ready for implementation.
 
 **Session Note (Schema Cleanup):** Cleaned up legacy dual-write JSON storage for Discovery Chat. `Conversation.messages` JSON blob was fully removed. `ConversationMessage` structured rows are now the sole source of truth for all reading, writing, and session checkpointing. Updated `10-discovery-chat.md` to reflect this contract sync. This forms the foundation for implementing accurate message counting and history review (Feature 64 scope).
 
@@ -184,6 +184,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - None recorded. Record any missing product decision here before inventing behavior.
 
 ## Session Notes
+
+- **Session 2026-08-04 (Feature 64 Spec Enhancement - WhatsApp-Style Chat)**: Expanded Feature 64 spec from basic state management to comprehensive WhatsApp-style messaging platform. Added reply threading (any message/attachment can be replied to with parent preview and visual connection), Pinterest-style masonry image gallery (handles 20+ images with lazy loading), separate text/media bubbles (each gets own avatar/timestamp/actions), unified actions (Copy/Delete/Reply work on text and media), and delete cascade (DB soft-delete + background Cloudinary cleanup via Trigger.dev). Updated spec to include 11 new files: ImageGallery, ReplyPreview, ImageLightbox, AttachmentBubble components, Cloudinary bulk delete utility, conversation delete/reply helpers, and message CRUD API routes. Added comprehensive implementation notes covering masonry layout algorithm, lightbox features, deletion cascade flow (14-step process), reply threading database contracts, performance optimizations (virtual scrolling, lazy loading, Cloudinary transformations), and accessibility standards (keyboard nav, screen readers, WCAG AA). Updated architecture-context.md with full "Messaging & Reply Threading Architecture" section (200+ lines) documenting bubble structure, reply threading, image gallery, unified actions, database contracts, API routes, deletion cascade flow, frontend components, performance optimizations, and accessibility standards. Added dependencies: react-masonry-css@^1.0.16 and yet-another-react-lightbox@^3.21.6 (chosen for minimal deps, TypeScript support, active maintenance). Expanded acceptance criteria from 13 to 66 items across 6 categories: State Management, Reply Threading, Image Gallery & Media Handling, Unified Actions, Delete Cascade, Testing & Quality. **ConversationMessage.replyToId field already exists from Feature 57** - no schema migration needed for threading. Soft deletes preserve conversation history and thread integrity. Background Cloudinary deletion via Trigger.dev ensures audit trail and graceful failure handling. This transforms Feature 64 from basic state tracking to a professional-grade messaging platform matching WhatsApp/Slack/Discord quality. All contracts synchronized across spec, architecture-context, and progress-tracker per Hard Rule 0.
 
 - **Session 2026-08-04 (Feature 63 - Discovery Chat UI Fixes)**: Branched `feature/63-discovery-chat-ui-fixes` from synced master. Fixed critical visual bug where text and images rendered in same message bubble. Separated rendering: text gets its own bubble, each attachment (image/video/document) gets its own independent bubble with avatar and actions. Modified `components/chat/ChatMessage.tsx` to move attachments outside text bubble container and map each attachment to a separate bubble structure. Created comprehensive test suite `components/chat/ChatMessage.test.tsx` with 9 tests covering all attachment types and separation scenarios. Updated Feature 63 spec to match actual file paths (`components/chat/` not `components/discovery/`). Scroll behavior already correct from Feature 54 (header/input fixed, only messages scroll, auto-scroll working). All acceptance criteria met: text in own bubble, images in separate bubbles, multiple images each get own bubble. Gates: `sync:check` 6/6 verified, `test` 9 ChatMessage tests passing, `build` green, TypeScript clean (0 errors). Tracker flipped to Feature 64 / Next Up Feature 65.
 
