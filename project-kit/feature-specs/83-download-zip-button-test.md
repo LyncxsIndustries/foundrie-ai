@@ -1,4 +1,4 @@
-# Feature 63 - Download zip button test
+# Feature 83 - Download zip button test
 
 ## Description
 Add a Vitest + React Testing Library test for `components/project/DownloadZipButton.tsx`.

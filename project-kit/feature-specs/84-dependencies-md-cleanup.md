@@ -1,4 +1,4 @@
-# Feature 64 - Dependencies.md cleanup
+# Feature 84 - Dependencies.md cleanup
 
 ## Description
 Clean up `docs/DEPENDENCIES_UPGRADE_NOTES.md` (blank line after heading, tidy wording).

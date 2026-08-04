@@ -1,9 +1,36 @@
-# Feature Spec: Refine Canvas & Diagram UI
+# Feature 78 - Refine Canvas & Diagram UI
 
-## 1. Overview
-Apply the Foundrie AI Skills aesthetic to the React Flow canvas, elevating the system architecture and diagram visuals.
+## Type
+ENHANCEMENT
 
-## 2. Requirements
-- Redesign custom nodes (rounded corners, subtle drop shadows, precise typography).
-- Style the canvas background (e.g., subtle dot pattern with low opacity).
-- Refine edge/connection lines (animated paths, clear arrowheads) and the minimap to look fully integrated into the premium dark theme.
+## What This Delivers
+Applies Foundrie AI Skills aesthetic to React Flow canvas, elevating system architecture and diagram visuals. Redesigned nodes, styled canvas background, refined edges.
+
+## Dependencies
+- Feature 14 (React Flow Canvas)
+- Feature 16 (Custom Node Types)
+- Feature 17 (Custom Edge Types)
+- Feature 66 (Global Theme)
+
+## Context To Read First
+- `context/ui-rules.md`
+- `project-kit/skills/foundrie-ai-skill/SKILL.md`
+- `inspo/*.png`
+
+## Files Owned
+None
+
+## Files
+MODIFY: `components/canvas/CustomNode.tsx`
+MODIFY: `components/canvas/CustomEdge.tsx`
+MODIFY: `components/canvas/CanvasBackground.tsx`
+MODIFY: `lib/canvas/styles.ts`
+
+## Acceptance Criteria
+- [ ] Custom nodes with rounded corners, drop shadows
+- [ ] Subtle dot pattern canvas background
+- [ ] Animated edge paths with clear arrowheads
+- [ ] Minimap integrated into dark theme
+- [ ] Node typography precise and readable
+- [ ] Tests pass, build succeeds
+- [ ] Progress tracker updated to Feature 79
