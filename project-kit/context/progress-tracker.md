@@ -9,21 +9,22 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- V15.0.0 Documentation Complete. Features 01-63 implemented. Feature 64 next.
+- UI/UX Taste Skills Refinement. Features 01-62 implemented. Feature 63 (Discovery Chat UI Fixes) is next.
 
 ## Current Goal
 
-- **Feature 64 - Dependencies.md cleanup**: Clean up `docs/DEPENDENCIES_UPGRADE_NOTES.md` (blank line after heading, tidy wording).
+- **Feature 63 - Discovery Chat UI Fixes**: Fix visual bugs in the Discovery Chat UI (anchored chat input, scroll limits, chat bubble separation).
 
 ## Next Up
 
-- **Feature 65 - Premium Dashboard UI Redesign**: Implement premium dashboard redesign with Lynx Theme Pro dark aesthetic.
+- **Feature 64 - Discovery Chat State & Logic**: Fix the logic for Discovery Chat to track when it ends and correctly count messages.
 
 ## In Progress
 
-- `[ ]` Insert missing blank line in DEPENDENCIES_UPGRADE_NOTES.md.
-- `[ ]` Tidy formatting and wording.
-- `[ ]` Run the validation pipeline.
+- `[ ]` Ensure chat input is sticky/anchored to the bottom of the viewport.
+- `[ ]` Restrict scrolling on the entire page so only the message container is scrollable.
+- `[ ]` Auto-scroll to the bottom of the chat container when a new message arrives.
+- `[ ]` Fix chat message bubbles so text is in its own box and images in their own boxes.
 
 ## Completed
 

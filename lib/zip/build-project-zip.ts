@@ -10,9 +10,27 @@ import { ContextFileType } from '@/lib/generated/prisma/enums';
 import { get } from '@vercel/blob';
 import { getCategoryInfo } from '@/lib/media/categories';
 import type { ZipBuildOptions } from '@/trigger/types';
+import fs from 'fs';
+import path from 'path';
 
 interface BuildZipOptionsLegacy {
   includeResearchAssets?: boolean;
+}
+
+// Helper to recursively add local directories to JSZip
+async function addLocalDirToZip(localPath: string, zipFolder: any) {
+  if (!fs.existsSync(localPath)) return;
+  const entries = await fs.promises.readdir(localPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(localPath, entry.name);
+    if (entry.isDirectory()) {
+      const subFolder = zipFolder.folder(entry.name);
+      if (subFolder) await addLocalDirToZip(fullPath, subFolder);
+    } else {
+      const content = await fs.promises.readFile(fullPath);
+      zipFolder.file(entry.name, content);
+    }
+  }
 }
 
 // Merge legacy options with new progress-enabled options
@@ -423,6 +441,32 @@ export async function buildProjectZip(
         }
       }
     }
+  }
+
+  reportProgress("Adding local Taste Skills, Examples, Inspo, and Research...", 78);
+  
+  try {
+    const basePath = process.cwd();
+    
+    // Add project-kit/skills to .agents/skills
+    const globalAgentsFolder = root.folder('.agents') || root;
+    const globalSkillsFolder = globalAgentsFolder.folder('skills') || globalAgentsFolder;
+    await addLocalDirToZip(path.join(basePath, 'project-kit', 'skills'), globalSkillsFolder);
+    
+    // Add project-kit/examples to project-kit/examples
+    const projectKitFolder = root.folder('project-kit') || root;
+    const examplesFolder = projectKitFolder.folder('examples') || projectKitFolder;
+    await addLocalDirToZip(path.join(basePath, 'project-kit', 'examples'), examplesFolder);
+
+    // Add inspo to inspo
+    const inspoFolder = root.folder('inspo') || root;
+    await addLocalDirToZip(path.join(basePath, 'inspo'), inspoFolder);
+
+    // Add research to research (we already have a research folder in ZIP, let's append)
+    const existingResearchFolder = root.folder('research') || root;
+    await addLocalDirToZip(path.join(basePath, 'research'), existingResearchFolder);
+  } catch (error) {
+    console.error("Failed to add local directories to ZIP", error);
   }
 
   reportProgress("Compressing ZIP file...", 80);
