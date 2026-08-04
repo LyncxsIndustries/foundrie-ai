@@ -17,7 +17,13 @@ export const generateRequirementsTask = task({
       where: { id: projectId },
       include: {
         user: true,
-        conversation: true,
+        conversation: {
+          include: {
+            conversationMessages: {
+              orderBy: { createdAt: "asc" },
+            },
+          },
+        },
         researchDocuments: true,
         requirements: true, // Fetch existing requirements for incremental update
       },
@@ -28,8 +34,8 @@ export const generateRequirementsTask = task({
     }
 
     const plan = project.user.plan as Plan;
-    const conversationMessages = project.conversation?.messages
-      ? JSON.stringify(project.conversation.messages, null, 2)
+    const conversationMessages = project.conversation?.conversationMessages
+      ? JSON.stringify(project.conversation.conversationMessages, null, 2)
       : "[]";
 
     const researchContext = project.researchDocuments
