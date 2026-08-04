@@ -4,6 +4,7 @@ import type { generateRequirementsTask } from "@/trigger/generate-requirements";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { requireProjectMember } from "@/lib/projects/auth";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { markConversationDone } from "@/lib/conversations/completion";
 
 export async function POST(
   req: Request,
@@ -18,6 +19,9 @@ export async function POST(
     // Ensure the user is an authorized member of the project.
     // requireProjectMember throws a ProjectAuthError (404) if unauthorized.
     await requireProjectMember(projectId, user.id);
+
+    // Feature 64: Mark conversation as done when generating requirements
+    await markConversationDone(projectId, "user_generated_requirements");
 
     // Trigger the durable task asynchronously.
     const handle = await tasks.trigger<typeof generateRequirementsTask>(

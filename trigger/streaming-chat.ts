@@ -31,6 +31,24 @@ export const streamingChatTask = task({
         "Loading conversation history",
       ]);
 
+    // Feature 64: Fetch conversation state for dynamic stopping logic
+    const conversation = await db.conversation.findUnique({
+      where: { projectId },
+      select: {
+        messageCount: true,
+        project: {
+          select: {
+            complexity: true,
+          },
+        },
+      },
+    });
+
+    const messageCount = conversation?.messageCount || 0;
+    const complexity = conversation?.project?.complexity || "STANDARD";
+
+    metadata.append("logs", `Conversation state: ${messageCount} messages, ${complexity} complexity`);
+
     // Download and convert images to base64
     let media: AIMediaAttachment[] | undefined = undefined;
     if (attachments && attachments.length > 0) {
@@ -69,7 +87,7 @@ export const streamingChatTask = task({
       if (media.length === 0) media = undefined;
     }
 
-    const systemPrompt = getDiscoverySystemPrompt();
+    const systemPrompt = getDiscoverySystemPrompt(messageCount, complexity);
     const userPrompt = `Here is the conversation history:\n\n${historyText}${attachmentContext}\n\nRespond to the last User message. Do not prefix your response with "Assistant:".`;
 
     // Update metadata before calling AI

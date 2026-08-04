@@ -82,15 +82,25 @@ export async function appendMessages(projectId: string, newMessages: Message[]):
       : m.content
   }));
 
-  // Create new messages in DB
-  await db.conversationMessage.createMany({
-    data: sanitizedNew.map(msg => ({
-      conversationId: conversation.id,
-      projectId,
-      role: msg.role.toUpperCase() as MessageRole,
-      content: msg.content,
-      isActive: true,
-    })),
+  // Create new messages in DB and increment message count
+  await db.$transaction(async (tx) => {
+    await tx.conversationMessage.createMany({
+      data: sanitizedNew.map(msg => ({
+        conversationId: conversation.id,
+        projectId,
+        role: msg.role.toUpperCase() as MessageRole,
+        content: msg.content,
+        isActive: true,
+      })),
+    });
+
+    // Increment message count by the number of new messages (Feature 64)
+    await tx.conversation.update({
+      where: { id: conversation.id },
+      data: {
+        messageCount: { increment: sanitizedNew.length },
+      },
+    });
   });
 
   // Cap total conversation length by marking old messages as inactive

@@ -230,14 +230,45 @@ model Conversation {
   phaseCompletionData Json?    // Store completion analysis per phase
   autoAdvanced        Boolean @default(false) // Track if phase auto-advanced
 
-  project           Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  conversationMessages ConversationMessage[] // Feature 54: structured messages with attachments
+  // Chat completion state (Feature 64).
+  isDone            Boolean @default(false)  // Conversation marked complete
+  messageCount      Int     @default(0)      // Running count of messages
+  completionReason  String?                  // "user_generated_requirements" | "auto_completed" | "discarded"
+  currentVersion    Int     @default(1)      // Current version number (V1, V2, etc.)
+  activeVersionId   String?                  // ID of the active snapshot, null = using live messages
+
+  project              Project                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  conversationMessages ConversationMessage[]    // Feature 54: structured messages with attachments
+  snapshots            ConversationSnapshot[]   // Feature 64: versioned snapshots
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([projectId, phase])
   @@index([projectId, updatedAt(sort: Desc)])
+  @@index([projectId, isDone])
+}
+
+// Versioned snapshots of conversation state (Feature 64).
+// Created when user marks conversation as "done" or creates an "update".
+model ConversationSnapshot {
+  id             String   @id @default(cuid())
+  conversationId String
+  version        Int      // V1, V2, V3, etc.
+  messageCount   Int      // Messages at time of snapshot
+  snapshotReason String   // "initial_completion" | "project_update"
+  label          String?  // Optional user-provided label (e.g., "After adding payments feature")
+
+  // Snapshot stores message IDs at the time of capture
+  // We don't duplicate message content - just reference the messages that existed
+  messageIds     String[] // Array of message IDs included in this version
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([conversationId, version])
+  @@index([conversationId, version])
 }
 
 // Individual message in a conversation (Feature 54).
