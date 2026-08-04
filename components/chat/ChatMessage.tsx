@@ -49,6 +49,12 @@ export const ChatMessage = React.memo(function ChatMessage({
   const [isLogsExpanded, setIsLogsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Track mounted state to prevent hydration mismatch with locale-dependent timestamps
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // ---- <think> tag parsing (DeepSeek R1 reasoning) ----
   const thinkStart = message.content.indexOf('<think>');
@@ -251,7 +257,7 @@ export const ChatMessage = React.memo(function ChatMessage({
           <img
             src={attachment.cloudinaryUrl}
             alt={attachment.originalName}
-            className="w-full h-auto object-cover bg-bg-surface/50"
+            className="max-w-full h-auto max-h-[400px] object-contain"
           />
         </a>
       );
@@ -379,7 +385,10 @@ export const ChatMessage = React.memo(function ChatMessage({
                 "text-[10px] mt-1 self-end font-medium opacity-60 flex items-center gap-1",
                 isUser ? "text-primary-foreground/80" : "text-muted-foreground"
               )}>
-                {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {isMounted 
+                  ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : new Date(message.createdAt).toISOString().split('T')[1].slice(0, 5)
+                }
                 {isUser && <Check className="w-3 h-3 opacity-70" />}
               </div>
             )}

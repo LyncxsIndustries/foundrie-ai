@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { AttachmentType } from "@/lib/generated/prisma/client";
 import { auth, tasks } from "@trigger.dev/sdk";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { validateAttachment } from "@/lib/validation/cloudinary";
 
 interface IncomingAttachment {
   type: AttachmentType;
@@ -71,7 +72,25 @@ export async function POST(
       return new NextResponse("Invalid message", { status: 400 });
     }
 
-    let { conversation } = await getDiscoveryConversation(projectId);
+    // Validate attachments before persistence (SSRF protection)
+    if (message.attachments && Array.isArray(message.attachments)) {
+      for (const att of message.attachments) {
+        const validation = validateAttachment({
+          cloudinaryUrl: att.cloudinaryUrl,
+          mimeType: att.mimeType,
+          sizeBytes: att.sizeBytes,
+        });
+        
+        if (!validation.valid) {
+          return new NextResponse(
+            `Invalid attachment: ${validation.error}`,
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    const { conversation } = await getDiscoveryConversation(projectId);
 
     await db.conversationMessage.create({
       data: {
