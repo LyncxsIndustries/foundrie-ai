@@ -27,6 +27,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - `[ ]` The AI should have a dynamic stopping condition, asking fewer questions for simpler requirements and knowing when to stop.
 - `[ ]` "Generate Requirements" button should mark the chat as done and save the state.
 
+**Session Note (Schema Cleanup):** Cleaned up legacy dual-write JSON storage for Discovery Chat. `Conversation.messages` JSON blob was fully removed. `ConversationMessage` structured rows are now the sole source of truth for all reading, writing, and session checkpointing. Updated `10-discovery-chat.md` to reflect this contract sync. This forms the foundation for implementing accurate message counting and history review (Feature 64 scope).
+
 ## Completed
 
 - **Feature 63 - Discovery Chat UI Fixes** (DONE): Fixed visual bugs in the Discovery Chat UI. Made chat input anchored to the bottom using flex-1 min-h-0. Ensured auto-scrolling works for any new message. Fixed chat persistence so past legacy JSON messages are successfully merged with structured database messages avoiding loss on refresh. Implemented "Taste Skills" guidelines: added glassmorphic date pill banners to separate chats by day, WhatsApp-style corner timestamps inside bubbles, asymmetric chat tails (rounded-tr-sm/rounded-tl-sm), and cleanly separated image attachments rendered beautifully outside the text bubbles with hover-scale micro-animations. Test cases successfully pass with no errors.

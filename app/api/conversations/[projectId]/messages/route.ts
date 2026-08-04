@@ -63,22 +63,8 @@ export async function GET(
       })),
     }));
 
-    // Fallback to merge legacy JSON messages if they exist but aren't in structured storage
-    const legacyMessages = (conversation.messages as any[]) || [];
-    const mergedMessages = [...legacyMessages];
-
-    // For every structured message, either replace the legacy one (if IDs match) or append it
-    for (const sMsg of structuredMessages) {
-      const idx = mergedMessages.findIndex(m => m.id === sMsg.id);
-      if (idx >= 0) {
-        mergedMessages[idx] = sMsg;
-      } else {
-        mergedMessages.push(sMsg);
-      }
-    }
-
     return NextResponse.json({
-      messages: mergedMessages,
+      messages: structuredMessages,
     });
   } catch (error) {
     console.error('Failed to fetch messages:', error);

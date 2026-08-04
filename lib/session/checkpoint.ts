@@ -13,7 +13,7 @@ export async function getSessionCheckpoint(projectId: string): Promise<SessionCh
   const project = await db.project.findUnique({
     where: { id: projectId },
     include: {
-      conversation: true,
+      conversation: { include: { _count: { select: { conversationMessages: true } } } },
       diagrams: true,
       executionPlans: {
         where: {
@@ -39,11 +39,11 @@ export async function getSessionCheckpoint(projectId: string): Promise<SessionCh
 
   // 1. Discovery Chat unfinished
   if (project.status === ProjectStatus.DISCOVERY && project.conversation) {
-    const messages = Array.isArray(project.conversation.messages) ? project.conversation.messages : [];
-    if (messages.length > 0) {
+    const count = project.conversation._count.conversationMessages;
+    if (count > 0) {
       hasUnfinishedSession = true;
       resumeUrl = `/projects/${projectId}/discovery`;
-      checkpointSummary = `Unfinished discovery chat (${messages.length} messages)`;
+      checkpointSummary = `Unfinished discovery chat (${count} messages)`;
     }
   }
 
@@ -100,9 +100,8 @@ export async function discardSession(projectId: string): Promise<void> {
   if (!project) return;
 
   if (project.status === ProjectStatus.DISCOVERY) {
-    await db.conversation.update({
-      where: { projectId },
-      data: { messages: [] }
+    await db.conversationMessage.deleteMany({
+      where: { projectId }
     });
   }
 

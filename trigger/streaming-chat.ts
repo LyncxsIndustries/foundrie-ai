@@ -2,7 +2,7 @@ import { task, metadata } from "@trigger.dev/sdk";
 import { aiChatStream } from "./streams";
 import { callAIStream } from "@/lib/ai/rotation-engine";
 import { getDiscoverySystemPrompt } from "@/lib/ai/prompts/discovery";
-import { appendConversationMessage, ChatMessage } from "@/lib/conversations/chat";
+import { ChatMessage } from "@/lib/conversations/chat";
 import { db } from "@/lib/db";
 import { AIMediaAttachment } from "@/lib/ai/providers/types";
 
@@ -112,14 +112,7 @@ export const streamingChatTask = task({
       .set("status", "Saving response…")
       .append("logs", "Stream complete, saving message to database");
 
-    if (aiFullText.trim()) {
-      const aiMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: aiFullText,
-        createdAt: new Date().toISOString(),
-      };
-
+    if (aiFullText.trim() && conversationId) {
       // Helper to retry database saves 
       const saveWithRetry = async (operation: () => Promise<any>, maxRetries = 3) => {
         for (let i = 0; i < maxRetries; i++) {
@@ -133,22 +126,16 @@ export const streamingChatTask = task({
         }
       };
 
-      await saveWithRetry(() => appendConversationMessage(projectId, aiMessage)).catch(err => {
-        console.error("Failed to append AI message after retries:", err);
+      await saveWithRetry(() => db.conversationMessage.create({
+        data: {
+          conversationId,
+          projectId,
+          role: 'ASSISTANT',
+          content: aiFullText,
+        },
+      })).catch(err => {
+        console.error("Failed to persist structured AI message after retries:", err);
       });
-      
-      if (conversationId) {
-        await saveWithRetry(() => db.conversationMessage.create({
-          data: {
-            conversationId,
-            projectId,
-            role: 'ASSISTANT',
-            content: aiFullText,
-          },
-        })).catch(err => {
-          console.error("Failed to persist structured AI message after retries:", err);
-        });
-      }
     }
 
     metadata

@@ -226,9 +226,6 @@ model Conversation {
   projectId String            @unique
   phase     ConversationPhase @default(DISCOVERY)
 
-  // Whole-document JSON: the ordered message transcript. Never selected in lists.
-  messages Json @default("[]")
-
   // Phase completion tracking (Feature 53).
   phaseCompletionData Json?    // Store completion analysis per phase
   autoAdvanced        Boolean @default(false) // Track if phase auto-advanced
