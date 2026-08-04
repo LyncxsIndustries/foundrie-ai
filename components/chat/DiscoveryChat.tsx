@@ -380,7 +380,7 @@ export function DiscoveryChat({ projectId }: DiscoveryChatProps) {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-background">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-background">
       {/* Conditionally mount the stream subscriber only when there's an active run.
           This prevents useRealtimeStream from crashing with undefined values. */}
       {activeRun && (

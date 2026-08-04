@@ -16,7 +16,7 @@ export async function GET(
 
     const { projectId } = await params;
 
-    // Get conversation with messages (limited to last 200 for performance)
+    // Get conversation with messages
     const conversation = await db.conversation.findFirst({
       where: {
         projectId,
@@ -34,9 +34,9 @@ export async function GET(
             attachments: true,
           },
           orderBy: {
-            createdAt: 'asc',
+            createdAt: 'desc',
           },
-          take: -200, // Negative take fetches last 200 messages
+          take: 200, 
         },
       },
     });
@@ -45,23 +45,40 @@ export async function GET(
       return NextResponse.json({ messages: [] });
     }
 
-    return NextResponse.json({
-      messages: conversation.conversationMessages.map((msg) => ({
-        id: msg.id,
-        role: msg.role.toLowerCase(),
-        content: msg.content,
-        createdAt: msg.createdAt,
-        attachments: msg.attachments.map((att) => ({
-          id: att.id,
-          type: att.type.toLowerCase(),
-          cloudinaryUrl: att.cloudinaryUrl,
-          originalName: att.originalName,
-          mimeType: att.mimeType,
-          sizeBytes: att.sizeBytes,
-          width: att.width,
-          height: att.height,
-        })),
+    // Reverse to get chronological order
+    const structuredMessages = conversation.conversationMessages.reverse().map((msg) => ({
+      id: msg.id,
+      role: msg.role.toLowerCase(),
+      content: msg.content,
+      createdAt: msg.createdAt,
+      attachments: msg.attachments.map((att) => ({
+        id: att.id,
+        type: att.type.toLowerCase(),
+        cloudinaryUrl: att.cloudinaryUrl,
+        originalName: att.originalName,
+        mimeType: att.mimeType,
+        sizeBytes: att.sizeBytes,
+        width: att.width,
+        height: att.height,
       })),
+    }));
+
+    // Fallback to merge legacy JSON messages if they exist but aren't in structured storage
+    const legacyMessages = (conversation.messages as any[]) || [];
+    const mergedMessages = [...legacyMessages];
+
+    // For every structured message, either replace the legacy one (if IDs match) or append it
+    for (const sMsg of structuredMessages) {
+      const idx = mergedMessages.findIndex(m => m.id === sMsg.id);
+      if (idx >= 0) {
+        mergedMessages[idx] = sMsg;
+      } else {
+        mergedMessages.push(sMsg);
+      }
+    }
+
+    return NextResponse.json({
+      messages: mergedMessages,
     });
   } catch (error) {
     console.error('Failed to fetch messages:', error);

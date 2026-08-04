@@ -14,7 +14,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   await auth.protect();
   
   return (
-    <div className="flex h-[100dvh] flex-col bg-background text-foreground overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden">
       <TopNav />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>

@@ -9,24 +9,27 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- UI/UX Taste Skills Refinement. Features 01-62 implemented. Feature 63 (Discovery Chat UI Fixes) is next.
+- UI/UX Taste Skills Refinement. Features 01-63 implemented. Feature 64 (Discovery Chat State & Logic) is next.
 
 ## Current Goal
 
-- **Feature 63 - Discovery Chat UI Fixes**: Fix visual bugs in the Discovery Chat UI (anchored chat input, scroll limits, chat bubble separation).
+- **Feature 64 - Discovery Chat State & Logic**: Fix the logic for Discovery Chat to track when it ends and correctly count messages.
 
 ## Next Up
 
-- **Feature 64 - Discovery Chat State & Logic**: Fix the logic for Discovery Chat to track when it ends and correctly count messages.
+- **Feature 65 - Requirements Page Integration**: Adjust the flow from Discovery Chat to the Requirements page.
 
 ## In Progress
 
-- `[ ]` Ensure chat input is sticky/anchored to the bottom of the viewport.
-- `[ ]` Restrict scrolling on the entire page so only the message container is scrollable.
-- `[ ]` Auto-scroll to the bottom of the chat container when a new message arrives.
-- `[ ]` Fix chat message bubbles so text is in its own box and images in their own boxes.
+- `[ ]` Implement message counting and history review functionality in the Discovery Chat Modal.
+- `[ ]` Allow users to discard chat or resume chat accurately.
+- `[ ]` Track "DONE" state in the database when the chat concludes.
+- `[ ]` The AI should have a dynamic stopping condition, asking fewer questions for simpler requirements and knowing when to stop.
+- `[ ]` "Generate Requirements" button should mark the chat as done and save the state.
 
 ## Completed
+
+- **Feature 63 - Discovery Chat UI Fixes** (DONE): Fixed visual bugs in the Discovery Chat UI. Made chat input anchored to the bottom using flex-1 min-h-0. Ensured auto-scrolling works for any new message. Fixed chat persistence so past legacy JSON messages are successfully merged with structured database messages avoiding loss on refresh. Implemented "Taste Skills" guidelines: added glassmorphic date pill banners to separate chats by day, WhatsApp-style corner timestamps inside bubbles, asymmetric chat tails (rounded-tr-sm/rounded-tl-sm), and cleanly separated image attachments rendered beautifully outside the text bubbles with hover-scale micro-animations. Test cases successfully pass with no errors.
 
 - **Initial Scaffold**: Created the Next.js project. No feature work beyond the base project scaffold has been done.
 

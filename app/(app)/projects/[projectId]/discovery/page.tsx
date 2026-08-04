@@ -27,9 +27,7 @@ export default async function DiscoveryPage({ params }: DiscoveryPageProps) {
       </div>
 
       {/* Chat Area — fills remaining height, manages its own internal scroll */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <DiscoveryChat projectId={projectId} />
-      </div>
+      <DiscoveryChat projectId={projectId} />
     </div>
   );
 }

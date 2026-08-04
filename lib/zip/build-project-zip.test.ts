@@ -203,7 +203,7 @@ describe('build-project-zip', () => {
       expect(paths.some(p => p.includes('/.agents/skills/test-skill/SKILL.md'))).toBe(true);
     });
 
-    it('excludes agent skills folder when empty', async () => {
+    it('includes .agents folder for local skills even when project agent skills are empty', async () => {
       const mockProject = {
         slug: 'test-project',
         name: 'Test Project',
@@ -227,7 +227,8 @@ describe('build-project-zip', () => {
       const zip = await JSZip.loadAsync(buffer);
 
       const paths = Object.keys(zip.files);
-      expect(paths.some(p => p.includes('/.agents/'))).toBe(false);
+      // The .agents folder should exist because of the global Taste Skills
+      expect(paths.some(p => p.includes('/.agents/'))).toBe(true);
     });
   });
 });
