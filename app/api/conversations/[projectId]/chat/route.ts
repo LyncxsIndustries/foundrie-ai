@@ -92,6 +92,14 @@ export async function POST(
 
     const { conversation } = await getDiscoveryConversation(projectId);
 
+    // Feature 64: Check if conversation is done - prevent new messages
+    if (conversation.isDone) {
+      return new NextResponse(
+        "Conversation is marked as complete. Resume or update it first.",
+        { status: 400 }
+      );
+    }
+
     await db.conversationMessage.create({
       data: {
         conversationId: conversation.id,
