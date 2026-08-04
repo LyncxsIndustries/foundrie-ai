@@ -1,9 +1,35 @@
-# Feature Spec: Global Layout & Interactions
+# Feature 70 - Global Layout Interactions
 
-## 1. Overview
-Enhance global layouts and interactions across the Foundrie app, strictly applying Foundrie AI Skills UI/UX principles.
+## Type
+ENHANCEMENT
 
-## 2. Requirements
-- Add micro-animations across all interactive elements (buttons, inputs, links).
-- Ensure consistent responsive layouts.
-- Apply subtle hover effects and transition states globally to create a dynamic, alive interface.
+## What This Delivers
+Enhances global layouts and interactions across Foundrie app with micro-animations, consistent responsive layouts, subtle hover effects creating a dynamic interface.
+
+## Dependencies
+- Feature 01 (Design System)
+- Feature 06 (Layout Shell)
+- Feature 66 (Global Theme)
+
+## Context To Read First
+- `context/ui-rules.md`
+- `context/ui-tokens.md`
+- `project-kit/skills/foundrie-ai-skill/SKILL.md`
+
+## Files Owned
+None - enhances existing components
+
+## Files
+MODIFY: `components/ui/button.tsx`
+MODIFY: `components/ui/input.tsx`
+MODIFY: `components/layout/Sidebar.tsx`
+MODIFY: `components/layout/Header.tsx`
+
+## Acceptance Criteria
+- [ ] Micro-animations on all interactive elements
+- [ ] Consistent hover effects globally
+- [ ] Smooth transition states
+- [ ] Responsive layouts work on all viewports
+- [ ] Accessibility maintained
+- [ ] Tests pass, build succeeds
+- [ ] Progress tracker updated to point at Feature 71

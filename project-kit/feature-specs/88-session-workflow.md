@@ -1,4 +1,4 @@
-# Feature 68 - Resume/Review/Discard Session Workflow
+# Feature 88 - Resume/Review/Discard Session Workflow
 
 ## Type
 
