@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# PERMANENT SAFEGUARD: Prevent progress tracker session notes from polluting feature specs
+# This pollution causes Vercel deployment failures by making sync:check find file references
+# from other features and treating them as missing requirements.
+
+set -e
+
+echo "🔍 Validating feature specs for progress tracker pollution..."
+
+polluted_specs=()
+
+# Check all staged feature spec files
+for spec in project-kit/feature-specs/*.md; do
+  if git diff --cached --name-only | grep -q "$(basename "$spec")"; then
+    # Check if spec contains session notes markers (pollution indicator)
+    if grep -q "^\*\*Session Note\|^## Architecture Decisions.*Feature [0-9]" "$spec"; then
+      polluted_specs+=("$(basename "$spec")")
+    fi
+    
+    # Check if spec is suspiciously long (likely polluted)
+    lines=$(wc -l < "$spec")
+    if [ "$lines" -gt 1000 ]; then
+      polluted_specs+=("$(basename "$spec") (${lines} lines - suspiciously long)")
+    fi
+  fi
+done
+
+if [ ${#polluted_specs[@]} -gt 0 ]; then
+  echo ""
+  echo "❌ COMMIT BLOCKED: Polluted feature specs detected!"
+  echo ""
+  echo "The following specs contain progress tracker session notes:"
+  for spec in "${polluted_specs[@]}"; do
+    echo "  - $spec"
+  done
+  echo ""
+  echo "This pollution causes Vercel deployment failures because sync:check"
+  echo "reads file references from OTHER features' session notes and treats"
+  echo "them as missing requirements for the current feature."
+  echo ""
+  echo "FIX:"
+  echo "1. Remove session notes sections from spec files"
+  echo "2. Keep session notes ONLY in project-kit/context/progress-tracker.md"
+  echo "3. Re-stage the cleaned files and commit again"
+  echo ""
+  exit 1
+fi
+
+echo "✅ All feature specs clean - no pollution detected"
