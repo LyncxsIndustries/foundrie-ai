@@ -5,6 +5,24 @@ import { db } from "@/lib/db";
 export type CompletionReason = "user_generated_requirements" | "auto_completed" | "discarded";
 export type SnapshotReason = "initial_completion" | "project_update";
 
+export interface ConversationStatus {
+  exists: true;
+  isDone: boolean;
+  messageCount: number;
+  currentVersion: number;
+  completionReason: CompletionReason | null;
+  activeVersionId: string | null;
+  hasSnapshots: boolean;
+  isViewingSnapshot: boolean;
+  snapshots: Array<{
+    version: number;
+    messageCount: number;
+    label: string | null;
+    snapshotReason: string;
+    createdAt: Date;
+  }>;
+}
+
 /**
  * Mark conversation as done and create a snapshot.
  */
@@ -78,37 +96,47 @@ export async function resumeConversationForUpdate(
   projectId: string
 ): Promise<{ success: true; newVersion: number } | { success: false; error: string }> {
   try {
-    const conversation = await db.conversation.findUnique({
-      where: { projectId },
-      select: {
-        id: true,
-        isDone: true,
-        currentVersion: true,
-      },
+    // Use serializable transaction to atomically allocate version numbers
+    const result = await db.$transaction(async (tx) => {
+      const conversation = await tx.conversation.findUnique({
+        where: { projectId },
+        select: {
+          id: true,
+          isDone: true,
+          currentVersion: true,
+        },
+      });
+
+      if (!conversation) {
+        throw new Error("Conversation not found");
+      }
+
+      if (!conversation.isDone) {
+        throw new Error("Conversation is not done, cannot resume for update");
+      }
+
+      const newVersion = conversation.currentVersion + 1;
+
+      // Atomically increment version and clear completion state
+      await tx.conversation.update({
+        where: { 
+          id: conversation.id,
+          currentVersion: conversation.currentVersion, // Optimistic lock
+        },
+        data: {
+          isDone: false,
+          completionReason: null,
+          currentVersion: newVersion,
+          activeVersionId: null, // Working on live messages now
+        },
+      });
+
+      return { newVersion };
+    }, {
+      isolationLevel: 'Serializable', // Prevent concurrent version conflicts
     });
 
-    if (!conversation) {
-      return { success: false, error: "Conversation not found" };
-    }
-
-    if (!conversation.isDone) {
-      return { success: false, error: "Conversation is not done, cannot resume for update" };
-    }
-
-    const newVersion = conversation.currentVersion + 1;
-
-    // Mark as undone and increment version
-    await db.conversation.update({
-      where: { id: conversation.id },
-      data: {
-        isDone: false,
-        completionReason: null,
-        currentVersion: newVersion,
-        activeVersionId: null, // Working on live messages now
-      },
-    });
-
-    return { success: true, newVersion };
+    return { success: true, newVersion: result.newVersion };
   } catch (error) {
     console.error("[resumeConversationForUpdate] Error:", error);
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
@@ -184,7 +212,7 @@ export async function completeUpdateSession(
 export async function rollbackToVersion(
   projectId: string,
   targetVersion: number
-): Promise<{ success: true; version: number } | { success: false; error: string }> {
+): Promise<{ success: true; restoredVersion: number } | { success: false; error: string }> {
   try {
     const conversation = await db.conversation.findUnique({
       where: { projectId },
@@ -246,7 +274,7 @@ export async function rollbackToVersion(
       });
     });
 
-    return { success: true, version: targetVersion };
+    return { success: true, restoredVersion: targetVersion };
   } catch (error) {
     console.error("[rollbackToVersion] Error:", error);
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
@@ -291,7 +319,7 @@ export async function getConversationVersions(projectId: string) {
 /**
  * Get conversation status (for UI to know what buttons to show).
  */
-export async function getConversationStatus(projectId: string) {
+export async function getConversationStatus(projectId: string): Promise<ConversationStatus | null> {
   const conversation = await db.conversation.findUnique({
     where: { projectId },
     select: {
@@ -326,7 +354,8 @@ export async function getConversationStatus(projectId: string) {
     isDone: conversation.isDone,
     messageCount: conversation.messageCount,
     currentVersion: conversation.currentVersion,
-    completionReason: conversation.completionReason,
+    completionReason: conversation.completionReason as CompletionReason | null,
+    activeVersionId: conversation.activeVersionId,
     hasSnapshots,
     isViewingSnapshot,
     snapshots: conversation.snapshots,

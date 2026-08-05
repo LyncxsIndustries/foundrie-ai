@@ -33,6 +33,7 @@ npx ctx7 library next.js "server actions and optimistic updates"
 ## Files Owned
 
 - `lib/conversations/completion.ts` (NEW)
+- `scripts/backfill-message-counts.ts` (NEW - one-time idempotent backfill)
 - `app/api/conversations/[projectId]/complete/route.ts` (NEW)
 - `app/api/conversations/[projectId]/resume/route.ts` (NEW)
 - `app/api/conversations/[projectId]/complete-update/route.ts` (NEW)
@@ -43,6 +44,7 @@ npx ctx7 library next.js "server actions and optimistic updates"
 ## Files
 
 CREATE: `lib/conversations/completion.ts` - conversation versioning and completion helpers
+CREATE: `scripts/backfill-message-counts.ts` - idempotent script to initialize messageCount for existing conversations
 CREATE: `app/api/conversations/[projectId]/complete/route.ts` - mark conversation done
 CREATE: `app/api/conversations/[projectId]/resume/route.ts` - resume for updates (creates new version)
 CREATE: `app/api/conversations/[projectId]/complete-update/route.ts` - complete an update session
@@ -80,7 +82,9 @@ model Conversation {
 }
 
 // Versioned snapshots of conversation state (Feature 64).
-// Created when user marks conversation as "done" or creates an "update".
+// Created when user marks conversation as "done" (V1) or completes an update session (V2, V3...).
+// Note: resumeConversationForUpdate increments currentVersion but does NOT create a snapshot.
+// completeUpdateSession creates the snapshot for that working version.
 model ConversationSnapshot {
   id             String   @id @default(cuid())
   conversationId String
@@ -106,6 +110,24 @@ model ConversationSnapshot {
 export type CompletionReason = "user_generated_requirements" | "auto_completed" | "discarded";
 export type SnapshotReason = "initial_completion" | "project_update";
 
+export interface ConversationStatus {
+  exists: true;
+  isDone: boolean;
+  messageCount: number;
+  currentVersion: number;
+  completionReason: CompletionReason | null;
+  activeVersionId: string | null;
+  hasSnapshots: boolean;
+  isViewingSnapshot: boolean;
+  snapshots: Array<{
+    version: number;
+    messageCount: number;
+    label: string | null;
+    snapshotReason: string;
+    createdAt: Date;
+  }>;
+}
+
 export async function markConversationDone(
   projectId: string,
   reason: CompletionReason,
@@ -115,6 +137,8 @@ export async function markConversationDone(
 export async function resumeConversationForUpdate(
   projectId: string
 ): Promise<{ success: true; newVersion: number } | { success: false; error: string }>
+// Note: Uses Serializable transaction with optimistic locking to atomically allocate
+// version numbers and prevent concurrent resume conflicts.
 
 export async function completeUpdateSession(
   projectId: string,
@@ -126,25 +150,30 @@ export async function rollbackToVersion(
   targetVersion: number
 ): Promise<{ success: true; restoredVersion: number } | { success: false; error: string }>
 
-export async function getConversationVersions(projectId: string): Promise<ConversationSnapshot[]>
-
-export async function getConversationStatus(projectId: string): Promise<{
-  isDone: boolean;
-  messageCount: number;
+export async function getConversationVersions(projectId: string): Promise<{
   currentVersion: number;
-  completionReason: string | null;
   activeVersionId: string | null;
+  versions: Array<{
+    id: string;
+    version: number;
+    messageCount: number;
+    snapshotReason: string;
+    label: string | null;
+    createdAt: Date;
+  }>;
 } | null>
+
+export async function getConversationStatus(projectId: string): Promise<ConversationStatus | null>
 ```
 
 ### API Routes
 
 - **POST `/api/conversations/[projectId]/complete`**: Mark conversation done (creates V1 snapshot)
-- **POST `/api/conversations/[projectId]/resume`**: Resume for updates (increments version, marks undone)  
-- **POST `/api/conversations/[projectId]/complete-update`**: Complete an update session (creates new snapshot)
-- **POST `/api/conversations/[projectId]/rollback`**: Restore previous version (requires `version` in body)
+- **POST `/api/conversations/[projectId]/resume`**: Resume for updates (increments currentVersion to V2/V3/etc, clears isDone, sets activeVersionId=null; does NOT create snapshot yet)  
+- **POST `/api/conversations/[projectId]/complete-update`**: Complete an update session (creates snapshot for the working version opened by resume)
+- **POST `/api/conversations/[projectId]/rollback`**: Restore previous version (requires `version` in body, returns `restoredVersion` in response)
 - **GET `/api/conversations/[projectId]/versions`**: List all snapshots
-- **GET `/api/conversations/[projectId]/status`**: Get conversation state (isDone, messageCount, currentVersion)
+- **GET `/api/conversations/[projectId]/status`**: Get conversation state (includes exists, hasSnapshots, isViewingSnapshot, snapshots array)
 
 ### Dynamic Stopping Logic
 
@@ -191,6 +220,13 @@ Use semantic analysis of message content to detect when sufficient information i
 - [x] "Discard chat" marks completionReason as "discarded"
 - [x] State persistence survives page refresh
 - [x] All state transitions are tested (9 tests in completion.test.ts)
+- [x] Message count backfill script exists and is idempotent (can run multiple times safely)
+- [x] Backfill script initializes messageCount for existing conversations with 0 count
+- [x] Atomic version allocation prevents concurrent resume conflicts (Serializable transaction + optimistic lock)
+- [x] rollback returns restoredVersion property (aligned across helper/routes/tests)
+- [x] getConversationStatus returns ConversationStatus type with all fields (exists, hasSnapshots, isViewingSnapshot, snapshots)
+- [x] resumeConversationForUpdate clarified: increments version, does NOT create snapshot
+- [x] completeUpdateSession creates snapshot for working version
 - [x] `context/progress-tracker.md` is updated to mark this feature DONE and point Current Goal/Next Up at Feature 65
 - [x] All quality gates pass (sync:check, security:all, test, build)
 - [ ] CodeRabbit review completed and all findings resolved (recommended quality gate)

@@ -157,7 +157,7 @@ describe("Conversation Completion API Routes", () => {
   describe("POST /api/conversations/[projectId]/rollback", () => {
     it("should rollback to specified version successfully", async () => {
       const rollbackMock = vi.spyOn(completionHelpers, "rollbackToVersion");
-      rollbackMock.mockResolvedValue({ success: true, version: 1 });
+      rollbackMock.mockResolvedValue({ success: true, restoredVersion: 1 });
 
       const { POST } = await import("@/app/api/conversations/[projectId]/rollback/route");
       
@@ -173,7 +173,7 @@ describe("Conversation Completion API Routes", () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data).toEqual({ success: true, version: 1 });
+      expect(data).toEqual({ success: true, restoredVersion: 1 });
       expect(rollbackMock).toHaveBeenCalledWith(mockProjectId, 1);
       expect(mockCaptureServerEvent).toHaveBeenCalledWith(
         mockUser.id,
