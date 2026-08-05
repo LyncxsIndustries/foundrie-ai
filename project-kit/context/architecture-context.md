@@ -648,6 +648,257 @@ Project statuses: `DISCOVERY`, `REQUIREMENTS`, `ARCHITECTURE`, `DIAGRAM_GENERATI
 
 Cloudflare (DDoS/WAF/CDN) → Vercel Edge (anycast) → Next.js → Rust Axum on ECS Fargate (auto-scale by CPU + queue depth) → Python LangGraph on GPU ECS → Neon (primary + 3 read replicas per region) + Upstash Redis + ChromaDB + Vercel Blob. Three regions (`us-east-1`, `eu-west-1`, `ap-southeast-1`) with data-residency routing. Training data lives in an isolated MongoDB Atlas cluster with zero access to production Neon. Performance targets: discovery P99 < 8 s, diagram generation P99 < 15 s, ZIP P99 < 5 s, 100 MB upload P99 < 30 s.
 
+## Messaging & Reply Threading Architecture (Feature 64)
+
+### WhatsApp-Style Chat Structure
+
+Discovery chat implements professional messaging UX patterns matching WhatsApp, Slack, and Discord quality standards.
+
+**Message Bubble Structure:**
+- Text content and attachments render in **separate bubbles** (not combined)
+- Rendering order: Text bubble (if content exists) → Image bubble 1 → Image bubble 2 → ... → Document/video bubbles
+- Each bubble gets its own avatar, timestamp, and action menu
+- Bubbles are grouped by sender but remain visually distinct
+- User messages align right with primary color background; AI messages align left with muted background
+
+**Reply Threading (Feature 57 schema, Feature 64 UI):**
+- Any message (text or media) can be replied to
+- Parent message preview shows above reply (max 3 lines with ellipsis)
+- Visual connection via subtle vertical line from parent to reply
+- Click parent preview scrolls to original message in viewport
+- Database: `ConversationMessage.replyToId` points to parent (self-referential relation)
+- Multiple reply levels supported (reply to a reply)
+- Deleted messages show "Message deleted" placeholder in reply preview
+
+**Image Gallery (Masonry Layout):**
+- 1 image: Full-width display (max 400px)
+- 2 images: Side-by-side grid
+- 3+ images: Staggered masonry grid (Pinterest/Instagram style, 2-3 columns based on viewport)
+- Variable heights for visual interest
+- 8px gap between images
+- Lazy loading for performance with 20+ images per message
+- Click to open lightbox modal with:
+  - Full-screen overlay
+  - Keyboard navigation (arrow keys, Esc to close)
+  - Zoom controls
+  - Download button
+  - Image counter (e.g., "3 of 12")
+  - Swipe gestures on mobile
+
+**Unified Actions:**
+- **Copy**: Works on text (copies content) and images (copies Cloudinary URL)
+- **Delete**: Triggers cascade cleanup (DB soft-delete + background Cloudinary deletion)
+- **Reply**: Works on all message types (text, image, document, video)
+- **Edit**: Text messages only (not attachments, to preserve media integrity)
+- Actions appear on hover, consistent styling across all bubble types
+
+### Database Contracts
+
+**ConversationMessage Model:**
+```prisma
+model ConversationMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  projectId      String
+  role           MessageRole  // USER | ASSISTANT | SYSTEM
+  content        String       @db.Text
+  phaseId        String?
+  metadata       Json?
+  
+  // Reply threading (Feature 57)
+  isActive       Boolean      @default(true)  // Soft delete preserves history
+  replyToId      String?
+  replyTo        ConversationMessage?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        ConversationMessage[] @relation("MessageReplies")
+  
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  project      Project       @relation("conversationMessages", fields: [projectId], references: [id], onDelete: Cascade)
+  attachments  Attachment[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([conversationId, createdAt])
+  @@index([projectId, createdAt])
+}
+```
+
+**Attachment Model:**
+```prisma
+model Attachment {
+  id            String         @id @default(cuid())
+  messageId     String
+  type          AttachmentType // IMAGE | DOCUMENT | VIDEO | DESIGN_FILE
+  cloudinaryId  String         // Cloudinary public_id
+  cloudinaryUrl String         // Cloudinary secure_url
+  originalName  String
+  mimeType      String
+  sizeBytes     Int
+  width         Int?           // For images/videos
+  height        Int?
+  extractedText String?        @db.Text  // OCR/document text for PDFs, docs
+  
+  message ConversationMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([messageId])
+}
+```
+
+### API Routes
+
+**Message CRUD:**
+```typescript
+// Delete message with cascade cleanup
+DELETE /api/conversations/[projectId]/messages/[messageId]
+  - Verifies ownership (message.project.userId === userId)
+  - Fetches all attachments for message
+  - Extracts Cloudinary publicIds
+  - Queues bulk deletion in background Trigger.dev task (safety, max 100 resources/request)
+  - Deletes Attachment records from database
+  - Soft-deletes message (isActive = false, preserves threading)
+  - Returns { success: true, deletedAttachments: number, errors: string[] }
+  - Continues on individual Cloudinary failures (returns error list)
+
+// Update message content (text only)
+PATCH /api/conversations/[projectId]/messages/[messageId]
+  - Updates content field only
+  - Validates ownership
+  - Preserves attachments (cannot edit media after send)
+  - Returns updated message
+
+// Create reply
+POST /api/conversations/[projectId]/messages/[messageId]/reply
+  - Creates new ConversationMessage with replyToId pointing to parent
+  - Supports attachments in reply
+  - Returns full message object with populated replyTo parent
+  - Validates parent message exists and is active
+
+// Fetch messages with replies
+GET /api/conversations/[projectId]/messages
+  - Returns messages with replyTo relation populated
+  - Includes attachments array per message
+  - Orders by createdAt ascending
+  - Filters isActive = true (hides deleted)
+  - Limit 200 messages per fetch (cursor pagination)
+```
+
+### Deletion Cascade Flow
+
+1. User clicks delete on message (text or attachment bubble)
+2. Frontend shows confirmation dialog
+3. DELETE request sent to message endpoint
+4. Server verifies ownership via `requireProjectMember`
+5. Fetch all `Attachment` records for `messageId`
+6. Extract `cloudinaryId` array from attachments
+7. **Queue Trigger.dev task** `bulk-delete-cloudinary` with publicIds (safety, audit logging)
+8. Delete `Attachment` records from Neon (cascade to message FK)
+9. Set `ConversationMessage.isActive = false` (soft delete)
+10. Return success response with count
+11. Frontend optimistically removes message from UI
+12. Background task deletes from Cloudinary (max 100/request)
+13. Log all deletions for audit trail
+14. Continue on individual Cloudinary failures (return error list for retry)
+
+**Why soft delete:**
+- Preserves conversation history for exports
+- Maintains reply thread integrity (replies reference deleted message)
+- Enables undo/recovery within grace period
+- Audit trail for compliance
+- Database constraints remain valid
+
+### Frontend Components
+
+**ImageGallery Component:**
+```typescript
+// components/chat/ImageGallery.tsx
+interface ImageGalleryProps {
+  images: Attachment[]
+  onImageClick: (index: number) => void
+  messageRole: 'user' | 'assistant'
+}
+
+// Uses react-masonry-css for staggered layout
+// Lazy loading via Intersection Observer
+// Cloudinary thumbnails: /image/upload/c_fill,w_300,h_300/
+```
+
+**ReplyPreview Component:**
+```typescript
+// components/chat/ReplyPreview.tsx
+interface ReplyPreviewProps {
+  parentMessage: ConversationMessage | null
+  onClick: () => void  // Scroll to parent
+}
+
+// Displays parent content (max 3 lines)
+// Shows attachment icon if parent had media
+// Gray background to distinguish from main message
+// Vertical line connector to main message
+```
+
+**ImageLightbox Component:**
+```typescript
+// components/chat/ImageLightbox.tsx
+// Uses yet-another-react-lightbox
+// Full-screen modal overlay
+// Keyboard navigation (←/→ arrows, Esc)
+// Zoom controls
+// Download button (downloads from Cloudinary URL)
+// Image counter ("3 of 12")
+```
+
+**AttachmentBubble Component:**
+```typescript
+// components/chat/AttachmentBubble.tsx
+interface AttachmentBubbleProps {
+  attachment: Attachment
+  messageRole: 'user' | 'assistant'
+  onCopy: () => void     // Copy Cloudinary URL
+  onDelete: () => void   // Trigger cascade
+  onReply: () => void    // Start reply to this attachment
+}
+
+// Individual bubble per attachment
+// Avatar + timestamp + action menu
+// Matches text message styling
+```
+
+### Performance Optimizations
+
+1. **Virtual scrolling** for large message lists (TanStack Virtual, handles 1000+ messages)
+2. **Lazy loading** for images via Intersection Observer API
+3. **Cloudinary transformations** for thumbnails instead of full-size images
+4. **Debounced scroll handlers** for auto-scroll detection (prevent thrashing)
+5. **Optimistic updates** for message sending (show immediately, sync async)
+6. **Cursor-based pagination** (fetch 200 messages per load, no offset drift)
+7. **Masonry grid** with CSS instead of JS layout (better performance)
+8. **Image preloading** for lightbox next/prev (smooth navigation)
+
+### Accessibility Standards
+
+- **Keyboard navigation**: Tab through action buttons, arrow keys in lightbox, Esc to close modals
+- **Screen reader labels**: "Reply to message from [user] sent at [time]", "Image 3 of 12", "Delete message"
+- **Focus indicators**: Visible outline on all interactive elements (2px accent color)
+- **ARIA roles**: `role="article"` for messages, `role="button"` for actions, `role="dialog"` for lightbox
+- **Alt text**: Image filenames as fallback, AI-generated descriptions when available from analysis
+- **Color contrast**: WCAG AA minimum 4.5:1 for text, 3:1 for UI components
+- **Touch targets**: Minimum 44×44px for mobile action buttons
+
+### Dependencies
+
+```bash
+npm install react-masonry-css@^1.0.16 --save-exact
+npm install yet-another-react-lightbox@^3.21.6 --save-exact
+```
+
+**Why these libraries:**
+- `react-masonry-css`: Simple, performant masonry with no jQuery, responsive breakpoints
+- `yet-another-react-lightbox`: Modern, accessible, zero-dependency, tree-shakeable, built-in keyboard/touch
+
+Both chosen for minimal dependencies, TypeScript support, and active maintenance (2024+ releases).
+
 ## API Route Map
 
 ```text
