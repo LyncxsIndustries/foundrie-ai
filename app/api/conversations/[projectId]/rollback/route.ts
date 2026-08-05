@@ -46,7 +46,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      version: result.version,
+      restoredVersion: result.restoredVersion,
     }, { status: 200 });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
