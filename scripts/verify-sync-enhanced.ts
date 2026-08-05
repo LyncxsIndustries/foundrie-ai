@@ -239,6 +239,28 @@ function extractSpecRequirements(specPath: string): SpecRequirement[] {
   const requirements: SpecRequirement[] = [];
   const lines = content.split('\n');
 
+  // POLLUTION DETECTION: Fail fast if spec contains progress tracker session notes
+  // This causes false positives by treating file references from OTHER features as requirements
+  const pollutionMarkers = [
+    /^\*\*Session Note/,
+    /^## Architecture Decisions.*Feature \d+/,
+    /^## Session Notes/,
+  ];
+  
+  for (let i = 0; i < lines.length; i++) {
+    for (const marker of pollutionMarkers) {
+      if (marker.test(lines[i])) {
+        error(`Spec is polluted with progress tracker session notes at line ${i + 1}`);
+        error(`Found: ${lines[i].substring(0, 80)}`);
+        error('');
+        error('FIX: Remove session notes sections from spec files');
+        error('Keep session notes ONLY in project-kit/context/progress-tracker.md');
+        error('');
+        process.exit(1);
+      }
+    }
+  }
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 

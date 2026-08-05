@@ -3,6 +3,14 @@
 # Pre-commit hook: Contract Synchronization Gate
 # This hook CANNOT be bypassed - it enforces AGENTS.md Hard Rule 0
 
+# First, validate specs are not polluted with progress tracker session notes
+.husky/pre-commit-spec-validator
+
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+echo ""
 echo "🔒 Running contract synchronization verification..."
 echo ""
 
