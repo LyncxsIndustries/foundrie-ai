@@ -395,17 +395,9 @@ export const ChatMessage = React.memo(function ChatMessage({
           </div>
         )}
 
-        {/* Render attachments */}
-        {message.attachments && message.attachments.length > 0 && (
-          <div className="space-y-2">
-            {message.attachments.map((attachment) => (
-              <div key={attachment.id}>{renderAttachment(attachment)}</div>
-            ))}
-          </div>
-        )}
       </div>
       
-      {/* Action Menu (hover) */}
+      {/* Action Menu for text bubble (hover) */}
       {!isWaitingForStream && !activeRun && (
         <div className={cn(
           "opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1",
@@ -452,6 +444,53 @@ export const ChatMessage = React.memo(function ChatMessage({
             </div>
           )}
         </div>
+      )}
+      
+      {/* Render attachments - each in its own separate bubble */}
+      {message.attachments && message.attachments.length > 0 && (
+        <>
+          {message.attachments.map((attachment) => (
+            <div 
+              key={attachment.id} 
+              className={cn(
+                "group flex items-start gap-3 mb-4",
+                isUser ? "flex-row-reverse" : "flex-row"
+              )}
+            >
+              {/* Avatar for attachment bubble */}
+              <div className={cn(
+                "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm",
+                isUser ? "bg-primary" : "bg-accent-primary"
+              )}>
+                {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+              </div>
+
+              {/* Attachment bubble */}
+              <div
+                className={cn(
+                  "rounded-2xl px-4 py-3 shadow-sm max-w-[85%] sm:max-w-[70%] lg:max-w-[60%] flex flex-col gap-2",
+                  isUser
+                    ? "bg-primary text-primary-foreground rounded-tr-sm"
+                    : "bg-surface-secondary text-foreground rounded-tl-sm"
+                )}
+              >
+                {renderAttachment(attachment)}
+              </div>
+
+              {/* Action menu for attachment bubble */}
+              <div className={cn(
+                "opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1",
+                isUser ? "flex-row-reverse mr-2" : "ml-2"
+              )}>
+                <Button size="icon" variant="ghost" className="h-6 w-6" title="Copy URL" onClick={() => {
+                  navigator.clipboard.writeText(attachment.cloudinaryUrl);
+                }}>
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </>
       )}
     </div>
   );

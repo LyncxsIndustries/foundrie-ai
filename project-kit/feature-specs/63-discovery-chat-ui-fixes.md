@@ -37,10 +37,8 @@ None - this feature modifies existing Discovery Chat files but does not own them
 
 ## Files
 
-MODIFY: `components/discovery/DiscoveryChat.tsx` - fix scroll container and input positioning
-MODIFY: `components/discovery/MessageBubble.tsx` - separate text and image rendering
-MODIFY: `app/project/[projectId]/discovery/page.tsx` - ensure proper layout hierarchy
-UPDATE: `components/discovery/DiscoveryChat.test.tsx` - add tests for scroll behavior
+MODIFY: `components/chat/ChatMessage.tsx` - separate text and image rendering into distinct bubbles
+CREATE: `components/chat/ChatMessage.test.tsx` - add tests for separate bubble rendering
 
 ## Implementation Notes
 
@@ -59,7 +57,7 @@ UPDATE: `components/discovery/DiscoveryChat.test.tsx` - add tests for scroll beh
   {/* Messages - scrollable only */}
   <div className="flex-1 overflow-y-auto" ref={messagesContainerRef}>
     {messages.map((msg) => (
-      <MessageBubble key={msg.id} message={msg} />
+      <ChatMessage key={msg.id} message={msg} />
     ))}
   </div>
   
@@ -140,7 +138,7 @@ useEffect(() => {
 - [ ] Text messages render in their own bubble
 - [ ] Images render in separate bubbles from text
 - [ ] Multiple images in sequence each get their own bubble
-- [ ] Scroll behavior is tested in `DiscoveryChat.test.tsx`
+- [ ] Separate bubble rendering is tested in `components/chat/ChatMessage.test.tsx`
 - [ ] Layout works on mobile, tablet, and desktop viewports
 - [ ] `context/progress-tracker.md` is updated to mark this feature DONE and point Current Goal/Next Up at Feature 64
 - [ ] All quality gates pass
