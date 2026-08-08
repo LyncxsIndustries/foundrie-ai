@@ -2,7 +2,7 @@ import { defineConfig } from "@trigger.dev/sdk";
 
 export default defineConfig({
   project: "proj_rfntzniuotazsdtgwkli",
-  runtime: "node",
+  runtime: "node-22",
   retries: {
     enabledInDev: true,
     default: {
