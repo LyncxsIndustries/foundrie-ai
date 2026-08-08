@@ -57,7 +57,7 @@ Use known library IDs from `project-kit/context/architecture-context.md` when av
 
 Feature specs are in `project-kit/feature-specs/`. Implement them in strict numeric order, one spec at a time. Phase names are roadmap labels, not implementation batches. Do not implement `01-06` as a group, do not bundle multiple specs into one pull request, and do not start the next spec until the current one passes review.
 
-**Note on Spec Renumbering:** Specs originally numbered 63-79 have been shifted forward to 83-99 to accommodate 20 new UI/UX Foundrie AI Skill specs (63-82) added to the beginning of this block.
+**Note on Spec Renumbering (2026-08-08):** Specs originally numbered 65-99 have been shifted forward to 71-105 to accommodate 6 new Discovery Orchestration specs (65-70) that implement the phase state machine, AI model selection per phase, discovery-to-requirements handoff contract, UI state integration, phase-specific AI prompts, and session recovery. This ensures the discovery → requirements transition is deterministic, validated, and resilient before requirements generation begins.
 
 For every single feature spec:
 

@@ -9,15 +9,22 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- UI/UX Foundrie AI Skills Refinement. Features 01-63 implemented. Feature 64 (Discovery Chat State & Logic) is next.
+- UI/UX Foundrie AI Skills Refinement & Discovery Orchestration Enhancement. Features 01-64 implemented. Feature 65 (Discovery Phase State Machine) is next.
 
 ## Current Goal
 
-- **Feature 65 - Requirements Page Integration**: Adjust the flow from Discovery Chat to the Requirements page.
+- **Feature 65 - Discovery Phase State Machine**: Implements project complexity classification (SIMPLE/STANDARD/COMPLEX), dynamic phase progression with semantic completion detection, phase requirement validation, and phase history tracking with context accumulation.
 
 ## Next Up
 
-- **Feature 66 - AI Error Handling & Rate Limit Recovery**: Implement comprehensive AI error handling.
+After Feature 65 completes the Discovery Orchestration block (Features 65-70):
+- **Feature 66 - AI Model Selection Per Phase**: Phase-aware model routing with context window management
+- **Feature 67 - Discovery-to-Requirements Handoff**: Handoff contract with Zod validation
+- **Feature 68 - Discovery UI State Integration**: Phase indicator, complexity badge, validation status UI
+- **Feature 69 - AI Prompt Templates Per Phase**: Phase-specific AI prompts with guardrails
+- **Feature 70 - Discovery Session Recovery & Resume**: Robust session recovery mechanisms
+
+Then continue with Requirements & UI Refinement (Features 71-88):
 
 ## In Progress
 
