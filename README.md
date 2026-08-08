@@ -118,36 +118,30 @@ Raw animation files are rejected. Users provide extracted frames or frame ZIPs.
 
 Feature specs live in `project-kit/feature-specs/` and are implemented one at a time:
 
+## Feature Specs
+
+Feature specs live in `project-kit/feature-specs/` and are implemented one at a time:
+
 ```text
-01 design system
-02 auth
-03 database schema
-04 project CRUD
-05 AI rotation engine
-06 layout shell
-07 research library
-08 visual and motion research analysis
-09 web research connectors
-10 discovery chat
-11 requirements generation
-12 requirements review UI
-13 architecture proposal
-14 React Flow canvas
-15 diagram type selector
-16 custom node types
-17 custom edge types
-18 diagram planning
-19 sequential generation
-20 diagram storage
-21 canvas export
-22 project overview generation
-23 architecture context generation
-24 UI context generation
-25 code standards generation
-26 feature specs generation
-27 project-specific agent skills generation
-28 AGENTS.md generation
-29 progress tracker generation
+01-64 (Core foundation through Discovery Chat State & Logic)
+65-70 (Discovery Orchestration: phase machine, model selection, handoff, UI, prompts, recovery)
+71-88 (UI refinements and skills integration)
+89-99 (ZIP testing and templates)
+100-105 (Production readiness: AI errors, backups, payments, scaling, UX, deployment)
+106-112 (PostHog & Trigger.dev instrumentation)
+113 discovery chat memory & RAG integration (ChromaDB)
+114 structured phase completion system
+115 chat vs tool separation (harness)
+116 model testing & validation suite
+117 discovery chat Trigger.dev migration (hybrid architecture)
+```
+
+**Key Architecture Updates (Features 113-117):**
+- **Memory & RAG**: ChromaDB vector store prevents question repetition
+- **Phase Completion**: Structured question tracking with automated phase advancement
+- **Separation of Concerns**: Chat (LLM) vs Tools (DB mutations)
+- **Hybrid Model**: Trigger.dev (durability) + Custom Rotation Engine (intelligence)
+- **Model Validation**: Test all providers, validate fallback chains
 30 ZIP builder
 31 Trigger ZIP job
 32 download button

@@ -337,6 +337,157 @@ export function FileUploadZone() {
 
 In Foundrie's full deployed system, ZIP/key-rotation/file-ingestion/diagram-rendering live in the Rust execution layer, discovery orchestration in the Python AI layer, and routing in the Go gateway. The Next.js app is the user-facing surface and the orchestration entry point.
 
+## Discovery Orchestration & Phase State Machine
+
+**Features 65-70** implement the discovery orchestration layer that manages the conversation flow from initial problem definition through validated requirements handoff.
+
+### Phase State Machine (Feature 65)
+
+Discovery progresses through 8 phases with dynamic complexity classification:
+
+```typescript
+enum ProjectComplexity {
+  SIMPLE      // Landing pages, portfolios - 3-4 phases, 5-10 messages
+  STANDARD    // SaaS apps, APIs - 6-7 phases, 15-25 messages
+  COMPLEX     // Enterprise platforms - 8 phases, 30+ messages
+}
+
+enum DiscoveryPhase {
+  PHASE_1_PROBLEM_USERS          // What problem, who uses it, success criteria
+  PHASE_2_CORE_FLOWS             // Happy path, supporting workflows
+  PHASE_3_SCOPE_CONSTRAINTS      // Out of scope, timeline, team capability
+  PHASE_4_TECHNICAL_DIRECTION    // Stack selection, deployment strategy
+  PHASE_5_FEATURE_SEQUENCE       // Preliminary feature ordering
+  PHASE_6_ARCHITECTURE_DIAGRAMS  // Full diagram suite generation
+  PHASE_7_FEATURE_SPECS          // DAG-driven spec generation
+  PHASE_8_ZIP_ASSEMBLY           // Package compilation
+}
+```
+
+**Phase Progression:**
+- Each phase has `minMessages`, `requiredTopics`, and `completionSignals`
+- AI performs semantic analysis on conversation to detect topic coverage
+- `canAdvancePhase()` checks both message count and semantic completion
+- SIMPLE projects skip Phase 4 and 5 (jump from Phase 3 → Phase 6)
+- Phase history tracks completion timestamps and message counts
+
+**Database Schema:**
+- `DiscoverySession` model tracks `currentPhase`, `complexity`, `phaseHistory`, `phaseContext`
+- Session state persists across page refreshes
+- Phase context accumulates key information for handoff
+
+### AI Model Selection Per Phase (Feature 66)
+
+Each phase routes to optimal model based on task type:
+
+```typescript
+const PHASE_MODEL_MAP = {
+  PHASE_1_PROBLEM_USERS: {
+    primaryModel: "gemini-2.5-pro",      // Long-context synthesis
+    taskType: "synthesis",
+    contextWindow: 1_000_000,
+  },
+  PHASE_4_TECHNICAL_DIRECTION: {
+    primaryModel: "deepseek-r1",         // Critical reasoning
+    taskType: "critique",
+    contextWindow: 64_000,
+  },
+  PHASE_7_FEATURE_SPECS: {
+    primaryModel: "deepseek-v3",         // Technical writing
+    taskType: "writing",
+    contextWindow: 64_000,
+  },
+  // ... all 8 phases mapped
+};
+```
+
+**Tier-Aware Routing:**
+- FREE tier: DeepSeek R1 for all phases
+- PRO/TEAM: Phase-specific primary models
+- ENTERPRISE: Claude Sonnet 4 preferred when available
+
+**Context Window Management:**
+- Tracks token usage per conversation
+- Triggers compression at 70% utilization
+- Preserves recent 5 messages verbatim
+- Semantically summarizes older messages
+- Reduces to 50% of max window after compression
+
+### Discovery-to-Requirements Handoff Contract (Feature 67)
+
+Structured validation ensures complete information capture before requirements generation:
+
+```typescript
+// Zod schema validates all required fields
+const DiscoveryHandoffSchema = z.object({
+  problemStatement: z.string().min(50),
+  targetUsers: z.object({
+    primary: TargetUserSchema,    // profile, painPoints, goals
+    secondary: z.array(TargetUserSchema),
+  }),
+  successCriteria: SuccessCriteriaSchema,  // metrics, timeline
+  coreFlows: z.array(CoreFlowSchema).min(1),  // steps, actors, systems
+  features: z.array(FeatureSchema).min(1),    // priority, description
+  constraints: ConstraintsSchema,             // outOfScope, timeline, team
+  technicalStack: TechnicalStackSchema,       // language, framework, reasoning
+  integrations: z.array(IntegrationSchema),
+  nonFunctional: NonFunctionalSchema,         // performance, security
+  designRefs: z.array(DesignRefSchema).optional(),
+});
+```
+
+**Handoff Process:**
+1. Phase 5 completion triggers handoff extraction
+2. AI extracts structured data from full conversation
+3. Data stored in `DiscoveryHandoff` model
+4. Validation checks all required fields present
+5. Completeness percentage calculated (0-100)
+6. Missing fields listed for user correction
+7. Requirements generation blocked until `isValid: true`
+
+**Database Schema:**
+```prisma
+model DiscoveryHandoff {
+  id                String   @id
+  projectId         String   @unique
+  sessionId         String   @unique
+  
+  problemStatement  String
+  targetUsers       Json     // Structured user profiles
+  successCriteria   Json     // Measurable metrics
+  coreFlows         Json     // Workflow definitions
+  features          Json     // Feature list with priorities
+  constraints       Json     // Scope boundaries
+  technicalStack    Json     // Stack choices with reasoning
+  integrations      Json     // External service requirements
+  nonFunctional     Json     // Performance/security/scale
+  
+  complexity        String   // "SIMPLE" | "STANDARD" | "COMPLEX"
+  isValid           Boolean  @default(false)
+  validationErrors  Json[]   @default([])
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+```
+
+**API Contract:**
+- `POST /api/discovery/[projectId]/validate-handoff` → validation result
+- `POST /api/discovery/[projectId]/extract-context` → extracted handoff data
+- `POST /api/requirements/[projectId]/generate` → blocked if handoff not valid
+
+### Session Recovery (Feature 70)
+
+Resilient session persistence survives all failure modes:
+
+- **LangGraph Checkpoints:** After each AI turn
+- **Page Refresh Recovery:** Resumes at exact message
+- **Power Loss Recovery:** Latest checkpoint from database
+- **Cross-Device Continuation:** Session state in Neon
+- **Recovery UI:** Offers Resume / Review history / Start fresh
+
+All discovery state (messages, phase, handoff data) stored in Neon ensures zero data loss.
+
 ## Authentication and Authorization Model
 
 Authentication and authorization are deliberately separate. Clerk authenticates users and owns sessions. Foundrie authorization code enforces ownership, plan limits, and admin access.
